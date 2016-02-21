@@ -1,0 +1,415 @@
+<html ng-app="hmApp">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" type="text/css" href="css/app.css">
+  <script src="bower_components/angular/angular.js"></script>
+  <script src="bower_components/angular/angular-route.js"></script>
+  <script src="bower_components/angular/angular-resource.js"></script>
+  <script src="bower_components/angular/angular-sanitize.js"></script>
+  <script src="bower_components/angular/angular-cookies.js"></script>
+  <script src="bower_components/d3/d3.min.js"></script>
+  <script src="bower_components/n3-line-chart/line-chart.min.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/controllers.js"></script>
+  <script src="js/UserCtrl.js"></script>
+  <script src="js/BalanceSheetCtrl.js"></script>
+  <script src="js/CategoriesCtrl.js"></script>
+  <script src="js/BalancesCtrl.js"></script>
+  <script src="js/ReservesCtrl.js"></script>
+  <script src="js/MoneyTrnsCtrl.js"></script>
+</head>
+<body>
+<div ng-controller="UserCtrl" class="block">
+  <h2>Домашние деньги</h2>
+  <!--a href="api/database/clear-n-create-balance-sheet">clear database and create balance sheet</a-->
+  <div class="form">
+    <input type="text" ng-readonly="isLogged()" ng-model="email" placeholder="Email"/>
+    <input type="password" ng-readonly="isLogged()" ng-model="pwd" placeholder="Пароль"/>
+    <input type="submit"
+           ng-hide="isLogged()"
+           ng-click="login(email, pwd)"
+           value="Войти"/>
+    <input type="submit"
+           ng-show="isLogged()"
+           ng-click="logout()"
+           value="Выйти"/>
+    <span ng-bind="errMsg"></span>
+  </div>
+</div>
+
+<div ng-controller="BalanceSheetCtrl" class="block">
+  <div>
+    Свободные деньги:
+    <span ng-bind-html="formatMoney(bsStat.debitSaldo - bsStat.reserveSaldo)"
+          class="{{bsStat.debitSaldo - bsStat.reserveSaldo >= 0 ? 'positive-money' : 'negative-money'}}">
+    </span>
+    Баланс:
+    <span ng-bind-html="formatMoney(bsStat.totalSaldo)"
+          class="{{bsStat.totalSaldo >= 0 ? 'positive-money' : 'negative-money'}}">
+    </span>
+    Резервы:
+    <span ng-bind-html="formatMoney(bsStat.reserveSaldo)"
+          class="{{bsStat.reserveSaldo >= 0 ? 'positive-money' : 'negative-money'}}">
+    </span>
+  </div>
+  <div>
+    Последние
+    <input type="number" ng-model="interval" ng-change ="loadBsStat()"/>
+    дней
+    Доходы:
+    <span ng-bind-html="formatMoney(bsStat.incomeAmount)" class="positive-money"></span>
+    Расходы:
+    <span ng-bind-html="formatMoney(bsStat.chargesAmount)" class="negative-money"></span>
+  </div>
+  <div>
+    <linechart data="bsStat.dayStats" options="options" mode="" width="800" height="200"></linechart>
+  </div>
+</div>
+
+<div ng-controller="MoneyTrnsCtrl" class="block">
+  <div>
+  Журнал операций
+  <div>
+    <a href="" ng-click="showSearchClick()">поиск</a>
+  </div>
+  <div ng-show="showSearch">
+    <input type="text" ng-model="search"/>
+    <input type="button" ng-click="find(search)" value="искать"/>
+  </div>
+  <div>
+    <span>Добавить</span>
+    <a href="" ng-click="newTrn('expense')">расход</a>,
+    <a href="" ng-click="newTrn('income')">доход</a> или
+    <a href="" ng-click="newTrn('transfer')">перевод</a>.
+  </div>
+  <div ng-repeat="groupList in trns.data">
+    <div align="center">
+      <a href="" ng-click="groupList.expanded = !groupList.expanded"">{{groupList.caption}}</a>
+    </div>
+    <div ng-repeat="trn in groupList.data" ng-show="groupList.expanded" class="list-item-block">
+      <div ng-show="!trn.isEdited">
+        <span ng-hide="trn.status == 'done'">{{trn.trnDate}}</span>
+        <a href=""
+           ng-click="trn.isEdited=true"
+           ng-bind-html="formatMoney(getSignedAmount(trn))"
+           class="{{trn.type == 'transfer' ? 'money' : (trn.type == 'income' ? 'positive-money' : 'negative-money')}}">
+        </a>
+        <span ng-bind="trn[trn.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
+        <span ng-bind="trn.type == 'income' ? '&larr;' : '&rarr;'"></span>
+        <span ng-bind="trn[trn.type == 'income' ? 'fromAccName' : 'toAccName']"></span>
+        Периодичность: <span ng-bind="getPeriodName(trn)"></span>
+        <div>
+          <span>{{trn['comment']}}</span>
+          <span class="label" ng-repeat="label in trn['labels']">{{label}}</span>
+          <span>
+            <a href=""
+               ng-show="trn.status == 'done'"
+               ng-click="upTrn(trn)">вверх</a>
+            <a href=""
+               ng-show="trn.status == 'done' && trn.period != 'SINGLE'"
+               ng-click="createTemplByTrn(trn)">шаблон</a>
+            <a href=""
+               ng-show="trn.status == 'pending'"
+               ng-click="completeTrn(trn)">выполнить</a>
+            <a href=""
+               ng-hide="trn.status == 'pending' && trn.templId != null"
+               ng-click="deleteTrn(trn)">удалить</a>
+            <a href=""
+               ng-show="trn.status == 'pending' && trn.templId != null"
+               ng-click="skipTrn(trn)">пропустить</a>
+          </span>
+        </div>
+      </div>
+      <div ng-if="trn.isEdited">
+        <div class="form">
+          <div>
+            <span ng-bind="trn.type == 'expense' ? 'расход' : trn.type == 'income' ? 'доход' : 'перевод'"/>
+          </div>
+          <div>
+            <input type="text" class="date" ng-model="trn.trnDate" placeholder="Дата"/>
+            <input type="text" class="amount" ng-model="trn.amount" placeholder="Сумма"/>
+            <span ng-bind="trn.type == 'income' ? 'Куда: ' : 'Откуда: '"></span>
+            <select
+                ng-if="trn.type != 'income'"
+                ng-model="trn.fromAccId"
+                ng-options="acc.id as acc.name for acc in getFirstAccounts(trn)">
+            </select>
+            <select
+                ng-if="trn.type == 'income'"
+                ng-model="trn.toAccId"
+                ng-options="acc.id as acc.name for acc in getFirstAccounts(trn)">
+            </select>
+            <span ng-bind="trn.type == 'transfer' ? 'Куда: ' : 'Категория: '"></span>
+            <select
+                ng-if="trn.type != 'income'"
+                ng-model="trn.toAccId"
+                ng-options="acc.id as acc.name for acc in getSecondAccounts(trn)">
+            </select>
+            <select
+                ng-if="trn.type == 'income'"
+                ng-model="trn.fromAccId"
+                ng-options="acc.id as acc.name for acc in getSecondAccounts(trn)">
+            </select>
+            <select ng-model="trn.period">
+              <option value="month">Месяц</option>
+              <option value="quarter">Квартал</option>
+              <option value="year">Год</option>
+              <option value="single">Разовая</option>
+            </select>
+          </div>
+          <div>
+            <input type="text" ng-model="trn.comment" placeholder="Комментарий"/>
+            <span>
+              <span ng-repeat="label in trn['labels']">
+                <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
+                <input type="text" class="label" ng-show="labelIsEdited[$index]" ng-model="label"
+                     ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, trn)"/>
+              </span>
+              <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
+              <input type="text" class="label" ng-hide="!isNewLabel" ng-model="label"
+                   ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, trn);label=$event.keyCode==13 ? null : label"/>
+            </span>
+          </div>
+          <div>
+            <input type="submit"
+                   ng-click="saveTrn(trn)"
+                   ng-disabled="!trn.amount.length && !trn.fromAccId && !trn.toAccId"
+                   value="сохранить"/>
+            <a href="" ng-click="cancelTrn(trn)">отменить</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href="" ng-show="hasTrnsNextPage()" ng-click="loadTrnsNextPage(search)">еще</a>
+  </div>
+
+  <div>
+  Повторяющиеся платежи
+  <a href="" ng-click="showTempls=!showTempls" ng-bind="showTempls ? 'скрыть' : 'показать'"></a>
+  <div ng-hide="!showTempls" ng-repeat="templ in templs" class="list-item-block">
+    <div>
+      <div ng-hide="templ.isEdited">
+        <span>{{templ.nextDate}}</span>
+        <span ng-bind-html="formatMoney(getSignedAmount(templ))"
+              class="{{templ.type == 'transfer' ? 'money' : (templ.type == 'income' ? 'positive-money' : 'negative-money')}}">
+        </span>
+        <span ng-bind="templ[templ.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
+        <span ng-bind="templ.type == 'income' ? '&larr;' : '&rarr;'"></span>
+        <span ng-bind="templ[templ.type == 'income' ? 'fromAccName' : 'toAccName']"></span>
+        <span>Периодичность: {{getPeriodName(templ)}}</span>
+        <div>
+          <span>{{templ['comment']}}</span>
+          <div><span class="label" ng-repeat="label in templ['labels']">{{label}}</span></div>
+          <span>
+            <a href="" ng-click="templ.isEdited=true">изменить</a>
+            <a href="" ng-click="deleteTempl(templ)">удалить</a>
+          </span>
+        </div>
+      </div>
+      <div ng-show="templ.isEdited">
+        <div class="form">
+          <div>
+            <input type="text" class="date" ng-model="templ.nextDate" placeholder="Дата"/>
+            <select
+                ng-model="templ.fromAccId"
+                ng-options="acc.id as acc.name for acc in fromAccounts"
+                ng-click="refreshToAccounts(templ.fromAccId)">
+            </select>
+            <input type="text" class="amount" ng-model="templ.amount" placeholder="Сумма"/>
+            <select
+                ng-model="templ.toAccId"
+                ng-options="acc.id as acc.name for acc in toAccounts"
+                ng-click="refreshFromAccounts(templ.toAccId)">
+            </select>
+            <select ng-model="templ.period">
+              <option value="month">Месяц</option>
+              <option value="quarter">Квартал</option>
+              <option value="year">Год</option>
+            </select>
+          </div>
+          <div>
+            <input type="text" ng-model="templ.comment" placeholder="Комментарий"/>
+            <span>
+              <span ng-repeat="label in templ['labels']">
+                <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
+                <input type="text" class="label" ng-show="labelIsEdited[$index]" ng-model="label"
+                       ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, templ)"/>
+              </span>
+              <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
+              <input type="text" class="label" ng-hide="!isNewLabel" ng-model="label"
+                     ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, templ);label=$event.keyCode==13 ? null : label"/>
+            </span>
+          </div>
+          <div>
+            <input type="submit"
+                   ng-click="saveTempl(templ)"
+                   ng-disabled="!templ.amount.length && !templ.nextDate.length"
+                   value="сохранить"/>
+            <a href="" ng-click="cancelTempl()">отменить</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<div ng-controller="BalancesCtrl" class="block">
+  Остатки <a href="" ng-click="newBalance()">добавить</a>
+  <div ng-repeat="balance in getBalances(arcViewed)" class="list-item-block">
+    <div ng-hide="balance.isEdited">
+      <div class="balance-left-block">
+        <div>{{balance.name}} <span ng-show="balance.isArc == true">[в архиве]</span></div>
+        <div ng-show="balance['reserveId'] != null">Резерв: {{getReserveName(balance['reserveId'])}}</div>
+      </div>
+      <div class="balance-right-block">
+        <div ng-show="balance['creditLimit'] > 0 || balance['minValue'] > 0">Доступные средства:
+          <span ng-bind-html="formatMoney(balance['freeFunds'])"
+                class="{{balance['freeFunds'] >= 0 ? 'positive-money' : 'negative-money'}}">
+          </span>
+        </div>
+        <div>Баланс:
+          <span ng-bind-html="formatMoney(balance['value'])"
+                class="{{balance['value'] >= 0 ? 'positive-money' : 'negative-money'}}">
+          </span>
+        </div>
+        <div ng-show="balance['creditLimit'] > 0">
+          Кредитный лимит: <span ng-bind-html="formatMoney(balance['creditLimit'])"></span>
+        </div>
+        <div ng-show="balance['minValue'] > 0">
+          Минимальный остаток: <span ng-bind-html="formatMoney(balance['minValue'])"></span>
+        </div>
+        <div>
+          <a href="" ng-click="upBalance(balance)">вверх</a>
+          <a href="" ng-click="balance.isEdited=true">изменить</a>
+          <a href="" ng-click="deleteBalance(balance)">удалить</a>
+        </div>
+      </div>
+    </div>
+    <div ng-show="balance.isEdited" class="form">
+      <div>
+        <input type="text" ng-model="balance.name" placeholder="Название"/>
+        <input type="text" class="date" ng-model="balance.createdDate" placeholder="Дата"/>
+        <select ng-model="balance.type">
+          <option value="debit">Места хранения</option>
+          <option value="credit">Кредиты</option>
+          <option value="asset">Активы</option>
+        </select>
+        <select
+            ng-model="balance.reserveId"
+            ng-options="reserve.id as reserve.name for reserve in getReserves()">
+        </select>
+        <input type="checkbox" ng_model="balance.isArc">Архивный</input>
+      </div>
+      <div>
+        Остаток: <input type="text" ng-model="balance.value"/>
+      </div>
+      <div>
+        Кредитный лимит: <input type="text" ng-model="balance.creditLimit"/>
+      </div>
+      <div>
+        Минимальный остаток: <input type="text" ng-model="balance.minValue"/>
+      </div>
+      <input type="submit"
+             ng-click="saveBalance(balance)"
+             ng-disabled="!(balance.name.length && balance.type.length)"
+             value="сохранить"/>
+      <a href="" ng-click="cancelEditBalance(balance)">отменить</a>
+    </div>
+  </div>
+  <a href=""
+     ng-click="arcViewed = !arcViewed"
+     ng-bind="arcViewed ? 'скрыть архивные' : 'показать архивные'">
+  </a>
+</div>
+
+<div ng-controller="ReservesCtrl" class="block">
+  Резервы <a href="" ng-click="newReserve()">добавить</a>
+  <div ng-repeat="reserve in getReserves(arcViewed)" class="list-item-block">
+    <div ng-hide="reserve.isEdited">
+      <div class="balance-left-block">
+        <div>{{reserve.name}}<span ng-show="reserve.isArc == true"> [в архиве]</span></div>
+      </div>
+      <div class="balance-right-block">
+        <div>Цель: <span ng-bind-html="formatMoney(reserve.target)" class="money"></span></div>
+        <div>Текущее значение: <span ng-bind-html="formatMoney(reserve.value)" class="money"></span></div>
+        <div>
+          <a href="" ng-click="reserve.isEdited = true">изменить</a>
+          <a href="" ng-click="deleteReserve(reserve)">удалить</a>
+        </div>
+      </div>
+    </div>
+    <div ng-show="reserve.isEdited" class="form">
+      <div class="form">
+        <div>
+          <input type="text" ng-model="reserve.name" placeholder="Название"/>
+          <input type="checkbox" ng_model="reserve.isArc">Архивный</input>
+        </div>
+        <div>
+          Цель: <input type="text" ng-model="reserve.target"/>
+        </div>
+        <div>
+          Текущее значение: <input type="text" ng-model="reserve.value"/>
+        </div>
+        <div>
+          <input type="submit"
+                 ng-click="saveReserve(reserve)"
+                 ng-disabled="!(reserve.name.length)"
+                 value="сохранить"/>
+          <a href="" ng-click="cancelEditReserve(reserve)">отменить</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href=""
+     ng-click="arcViewed = !arcViewed"
+     ng-bind="arcViewed ? 'скрыть архивные' : 'показать архивные'">
+  </a>
+</div>
+
+<div ng-controller="CategoriesCtrl" class="block">
+  Категории доходов и расходов <a href="" ng-click="newCategory()">добавить</a>
+  <div ng-repeat="category in getCategories(arcViewed)" class="list-item-block">
+    <div ng-hide="category.isEdited">
+      <div class="{{getClass(category)}}">
+        {{category.name}}
+        <span ng-show="category.isArc == true"> [в архиве]</span>
+      </div>
+      <div>
+        <a href="" ng-click="category.isEdited = true">изменить</a>
+        <a href="" ng-click="deleteCategory(category)">удалить</a>
+      </div>
+    </div>
+    <div ng-show="category.isEdited">
+      <div class="form">
+        <div>
+          <input type="text" ng-model="category.name" placeholder="Название"/>
+          <input type="checkbox" ng-model="category.isArc">Архивный</input>
+          <select ng-model="category.type">
+            <option value="expense">Расходы</option>
+            <option value="income">Доходы</option>
+          </select>
+          <select
+              ng-model="category.rootId"
+              ng-options="root.id as root.name for root in rootCategories">
+          </select>
+        </div>
+        <div>
+          <input type="submit"
+                 ng-click="saveCategory(category)"
+                 ng-disabled="!category.name.length || !category.type.length" value="сохранить"/>
+          <a href="" ng-click="cancelEditCategory(category)">отменить</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <a href=""
+     ng-click="arcViewed = !arcViewed"
+     ng-bind="arcViewed ? 'скрыть архивные' : 'показать архивные'">
+  </a>
+</div>
+
+</body>
+</html>

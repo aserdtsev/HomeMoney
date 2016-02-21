@@ -1,0 +1,87 @@
+div.block {
+    background-color: mintcream;
+    width: 800px;
+    margin: 7px;
+    padding: 10px;
+    border: 1px solid black;
+}
+
+div.form {
+    background-color: #ffffff;
+    padding: 3px;
+}
+
+div.list-item-block {
+    background-color: #ffffff;
+    color: black;
+    margin: 4px;
+    padding-left: 3px;
+    padding-right: 3px;
+    border: 1px solid darkgrey;
+    border-radius: 5px;
+    text-decoration: inherit;
+}
+
+.money, .positive-money, .negative-money {
+    text-align: right;
+}
+
+.positive-money {
+    color: darkgreen;
+}
+
+.negative-money {
+    color: darkred;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    color: #843534;
+    border-bottom: 1px dotted;
+}
+
+input.date {
+    width: 70px;
+}
+
+input.amount {
+    width: 100px;
+}
+
+.income {
+    color: darkgreen;
+}
+
+.expense {
+    color: darkred;
+}
+
+.category-level1 {
+    padding-left: 15px;
+}
+
+.label {
+    display: inline-block;
+    margin: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 4px;
+    background-color: dimgrey;
+    color: white;
+    font-family: monospace;
+    text-decoration: inherit;
+    border-width: 0px;
+}
+
+div.balance-left-block {
+    float: left;
+    width: 400px;
+}
+
+div.balance-right-block {
+    margin-left: 410px;
+}
+
