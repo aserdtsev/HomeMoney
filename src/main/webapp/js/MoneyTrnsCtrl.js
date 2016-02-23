@@ -3,7 +3,7 @@
 hmControllers.controller('MoneyTrnsCtrl',
     ['$scope', '$rootScope', 'MoneyTrnsSvc', 'MoneyTrnTemplsSvc', 'AccountsSvc', MoneyTrnsCtrl]);
 function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, AccountsSvc) {
-  $scope.defaultDate = new Date();
+  $scope.defaultDate;
   $scope.pageSize = 5;
   $scope.accounts;
   $scope.search = '';
@@ -62,12 +62,12 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
   }
 
   $scope.addToTrns = function(list) {
-    var today = new Date();
+    var today = $scope.getToday();
     list.forEach(function(trn) {
       var groupName = (trn.status == "done") ? trn.trnDate : "Ближайшие";
       var groupList = $scope.getGroupList(groupName);
       groupList.data = groupList.data.concat(trn);
-      if (groupName == 'Ближайшие' && trn.trnDate == today) {
+      if (groupName == 'Ближайшие' && (new Date(trn.trnDate + 'Z+06:00') - today) == 0) {
         groupList.expanded = true;
       }
     });
@@ -140,8 +140,17 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
   };
 
   $scope.getDefaultDate = function() {
+    if (typeof $scope.defaultDate == 'undefined') {
+      $scope.defaultDate = getToday();
+    }
     return $scope.defaultDate;
   };
+
+  $scope.getToday = function() {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }
 
   $scope.getFirstAccounts = function(trn) {
     if (typeof $scope.accounts == 'undefined') {
@@ -238,7 +247,7 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
     } else {
       $scope.updateTrn(trn);
     }
-    $scope.defaultDate = new Date(Date.parse(trn.trnDate));
+    $scope.defaultDate = new Date(trn.trnDate + 'Z+06:00');
   };
 
   $scope.createTrn = function(trn) {
