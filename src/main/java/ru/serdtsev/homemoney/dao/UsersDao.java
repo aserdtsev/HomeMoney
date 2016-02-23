@@ -29,18 +29,18 @@ public class UsersDao {
       user = getUser(conn, email);
       String pwdHash = Hashing.sha1().hashString(pwd + email + SHARE_SALT, Charsets.UTF_8).toString();
       if (user != null) {
-        if (!user.pwdHash.equals(pwdHash)) {
+        if (!user.getPwdHash().equals(pwdHash)) {
           throw new HmException(HmException.Code.AuthWrong);
         }
       } else {
         user = createUser(conn, email, pwdHash);
       }
-      saveAuthToken(conn, user.userId, authToken);
+      saveAuthToken(conn, user.getUserId(), authToken);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
-    return new Authentication(user.userId, user.bsId, authToken);
+    return new Authentication(user.getUserId(), user.getBsId(), authToken);
   }
 
   private static User getUser(Connection conn, String email) throws SQLException {
