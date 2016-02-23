@@ -6,13 +6,13 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-public class Account implements java.io.Serializable {
+public class Account {
   public enum Type { debit, credit, expense, income, reserve, asset, service }
-  private Optional<UUID> id;
-  private Optional<String> name;
-  private Optional<Type> type;
-  private Optional<Date> createdDate = Optional.empty();
-  private Optional<Boolean> isArc = Optional.empty();
+  private UUID id;
+  private String name;
+  private Type type;
+  private Date createdDate;
+  private Boolean isArc;
 
   public Account() {
   }
@@ -28,44 +28,44 @@ public class Account implements java.io.Serializable {
   }
 
   public UUID getId() {
-    return this.id.get();
+    return this.id;
   }
 
   public void setId(UUID id) {
-    this.id = Optional.of(id);
+    this.id = id;
   }
 
   public String getName() {
-    return name.get();
+    return this.name;
   }
 
   public void setName(String name) {
-    this.name = Optional.of(name);
+    this.name = name;
   }
 
   public Type getType() {
-    return this.type.get();
+    return this.type;
   }
 
   public void setType(Type type) {
-    this.type = Optional.of(type);
+    this.type = type;
   }
 
   public Date getCreatedDate() {
-    return createdDate.orElse(Date.valueOf(LocalDate.now()));
+    return Optional.ofNullable(createdDate).orElse(Date.valueOf(LocalDate.now()));
   }
 
   @SuppressWarnings("unused")
   public void setCreatedDate(Date createdDate) {
-    this.createdDate = Optional.ofNullable(createdDate);
+    this.createdDate = createdDate;
   }
 
   public Boolean getIsArc() {
-    return isArc.orElse(false);
+    return Optional.ofNullable(isArc).orElse(false);
   }
 
   public void setIsArc(Boolean isArc) {
-    this.isArc = Optional.of(isArc);
+    this.isArc = isArc;
   }
 
   @XmlTransient
@@ -80,11 +80,11 @@ public class Account implements java.io.Serializable {
     if (this == o) return true;
     if (!(o instanceof Account)) return false;
     Account that = (Account) o;
-    return id.get().equals(that.getId());
+    return id.equals(that.getId());
   }
 
   @Override
   public int hashCode() {
-    return id.isPresent() ? id.get().hashCode() : 0;
+    return Optional.ofNullable(id).isPresent() ? id.hashCode() : 0;
   }
 }
