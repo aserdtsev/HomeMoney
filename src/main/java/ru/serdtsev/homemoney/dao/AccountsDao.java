@@ -51,7 +51,7 @@ public class AccountsDao {
     QueryRunner run = new QueryRunner();
     run.update(conn,
         "insert into accounts(id, balance_sheet_id, name, type, created_date, is_arc) values (?, ?, ?, ?, ?, ?)",
-        account.getId(), bsId, account.getName(), account.getType().name(), account.getCreatedDate(), account.getIsArc());
+        account.getId(), bsId, account.getName(), account.getType().name(), account.getCreatedDate(), account.isArc());
   }
 
   public static void deleteAccount(Connection conn, UUID bsId, UUID id) throws SQLException {
@@ -72,7 +72,7 @@ public class AccountsDao {
     QueryRunner run = new QueryRunner();
     int rows = run.update(conn,
         "update accounts set type = ?, name = ?, created_date = ?, is_arc = ? where balance_sheet_id = ? and id = ?",
-        account.getType().name(), account.getName(), account.getCreatedDate(), account.getIsArc(), bsId, account.getId());
+        account.getType().name(), account.getName(), account.getCreatedDate(), account.isArc(), bsId, account.getId());
     if (rows == 0) {
       throw new IllegalArgumentException("Запись не найдена.");
     }
