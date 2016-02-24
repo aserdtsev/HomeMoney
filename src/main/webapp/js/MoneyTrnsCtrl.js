@@ -141,7 +141,7 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
 
   $scope.getDefaultDate = function() {
     if (typeof $scope.defaultDate == 'undefined') {
-      $scope.defaultDate = getToday();
+      $scope.defaultDate = $scope.getToday();
     }
     return $scope.defaultDate;
   };
