@@ -20,7 +20,7 @@ public class CategoriesDao {
       ResultSetHandler<List<Category>> h = new BeanListHandler<>(Category.class);
       QueryRunner run = new QueryRunner();
       list = run.query(conn,
-          "select a.id, a.name, a.type, a.is_arc as isArc, c.root_id as rootId, " +
+          "select a.id, a.name, a.type, a.is_arc as arc, c.root_id as rootId, " +
                 "case when c.root_id is null then a.name " +
                   "else (select name from accounts where id = c.root_id) || '#' || a.name end as sort " +
               "from accounts a, categories c " +

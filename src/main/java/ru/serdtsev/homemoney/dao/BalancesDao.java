@@ -32,7 +32,7 @@ public class BalancesDao {
     List<Balance> list;ResultSetHandler<List<Balance>> h = new BeanListHandler<>(Balance.class);
     QueryRunner run = new QueryRunner();
     list = run.query(conn,
-        "select a.id, a.type, a.name, b.value, a.created_date as createdDate, a.is_arc as isArc, b.reserve_id as reserveId," +
+        "select a.id, a.type, a.name, b.value, a.created_date as createdDate, a.is_arc as arc, b.reserve_id as reserveId," +
               " b.credit_limit as creditLimit, b.min_value as minValue, b.num" +
             " from accounts a, balances b " +
             " where a.balance_sheet_id = ? and a.type in ('debit', 'credit', 'asset') and b.id = a.id " +
@@ -46,7 +46,7 @@ public class BalancesDao {
     ResultSetHandler<Balance> h = new BeanHandler<>(Balance.class);
     QueryRunner run = new QueryRunner();
     balance = run.query(conn,
-        "select a.id, a.type, a.name, b.value, a.created_date as createdDate, a.is_arc as isArc, b.reserve_id as reserveId," +
+        "select a.id, a.type, a.name, b.value, a.created_date as createdDate, a.is_arc as arc, b.reserve_id as reserveId," +
               " b.credit_limit as creditLimit, b.min_value as minValue" +
             " from accounts a, balances b" +
             " where a.id = ? and b.id = a.id",

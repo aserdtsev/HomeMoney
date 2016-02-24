@@ -85,7 +85,7 @@
   </div>
   <div ng-repeat="groupList in trns.data">
     <div align="center">
-      <a href="" ng-click="groupList.expanded = !groupList.expanded"">{{groupList.caption}}</a>
+      <a href="" ng-click="groupList.expanded = !groupList.expanded">{{groupList.caption}}</a>
     </div>
     <div ng-repeat="trn in groupList.data" ng-show="groupList.expanded" class="list-item-block">
       <div ng-show="!trn.isEdited">

@@ -21,7 +21,7 @@ public class ReservesDao {
       ResultSetHandler<List<Reserve>> h = new BeanListHandler<>(Reserve.class);
       QueryRunner run = new QueryRunner();
       list = run.query(conn,
-          "select a.id, a.name, a.type, b.value, a.created_date as createdDate, a.is_arc isArc, r.target " +
+          "select a.id, a.name, a.type, b.value, a.created_date as createdDate, a.is_arc arc, r.target " +
               "from accounts a, balances b, reserves r " +
               "where a.balance_sheet_id = ? and b.id = a.id and r.id = a.id " +
               "order by a.created_date desc",
@@ -47,7 +47,7 @@ public class ReservesDao {
     ResultSetHandler<Reserve> h = new BeanHandler<>(Reserve.class);
     QueryRunner run = new QueryRunner();
     reserve = run.query(conn,
-        "select a.id, a.name, a.type, b.value, a.created_date as createdDate, a.is_arc as isArc, r.target " +
+        "select a.id, a.name, a.type, b.value, a.created_date as createdDate, a.is_arc as arc, r.target " +
             "from accounts a, balances b, reserves r " +
             "where a.id = ? and b.id = r.id and r.id = a.id",
         h, id);

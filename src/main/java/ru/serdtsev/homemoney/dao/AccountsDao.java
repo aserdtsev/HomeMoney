@@ -19,7 +19,7 @@ public class AccountsDao {
       ResultSetHandler<List<Account>> h = new BeanListHandler<>(Account.class);
       QueryRunner run = new QueryRunner();
       list = run.query(conn,
-          "select a.id, a.type, a.name, a.created_date as createdDate, a.is_arc as isArc, " +
+          "select a.id, a.type, a.name, a.created_date as createdDate, a.is_arc as arc, " +
                 " case when c.root_id is null then a.name " +
                 " else (select name from accounts where id = c.root_id) || '#' || a.name end as sort " +
               "from accounts a left join categories c on c.id = a.id " +
@@ -38,7 +38,7 @@ public class AccountsDao {
       ResultSetHandler<Account> h = new BeanHandler<>(Account.class);
       QueryRunner run = new QueryRunner();
       account = run.query(conn,
-          "select id, name, type, created_date as createdDate, is_arc as isArc " +
+          "select id, name, type, created_date as createdDate, is_arc as arc " +
               " from accounts where id = ?",
           h, id);
     } catch (SQLException e) {
