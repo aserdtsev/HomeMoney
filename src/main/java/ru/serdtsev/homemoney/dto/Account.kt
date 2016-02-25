@@ -6,14 +6,10 @@ import java.util.*
 import javax.xml.bind.annotation.XmlElement
 import javax.xml.bind.annotation.XmlTransient
 
-open class Account {
+open class Account(var id: UUID?, var type: Type?, var name: String?) {
   enum class Type {
     debit, credit, expense, income, reserve, asset, service
   }
-
-  var id: UUID? = null
-  var name: String? = null
-  var type: Type? = null
 
   var createdDate: Date = Date.valueOf(LocalDate.now())
 
@@ -21,27 +17,14 @@ open class Account {
   var arc: Boolean = false
   fun isArc() = arc
 
-  constructor() {
-  }
-
-  constructor(category: Category) : this(category.id, category.type, category.name) {
-  }
-
-  constructor(id: UUID?, type: Type?, name: String?) {
-    this.id = id
-    this.name = name
-    this.type = type
-  }
+  constructor(): this(null, null, null)
+  constructor(category: Category) : this(category.id, category.type, category.name)
 
   @XmlTransient
-  fun isBalance() = Type.debit == type
-      || Type.credit == type
-      || Type.reserve == type
+  fun isBalance() = Type.debit == type || Type.credit == type || Type.reserve == type
 
-  override fun equals(o: Any?): Boolean {
-    if (this === o) return true
-    if (o !is Account) return false
-    return id == o.id
+  override fun equals(other: Any?): Boolean {
+    return (this === other) || (other is Account && id == other.id)
   }
 
   override fun hashCode(): Int {
