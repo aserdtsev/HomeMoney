@@ -6,18 +6,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class Balance extends Account {
-  private Optional<UUID> reserveId;
-  private Optional<BigDecimal> value;
-  private Optional<BigDecimal> creditLimit;
-  private Optional<BigDecimal> minValue;
+  private UUID reserveId;
+  private BigDecimal value;
+  private BigDecimal creditLimit;
+  private BigDecimal minValue;
   private Long num;
 
-  @SuppressWarnings("unused")
   public Balance() {
-    this.value = Optional.empty();
-    this.reserveId = Optional.empty();
-    this.creditLimit = Optional.empty();
-    this.minValue = Optional.empty();
   }
 
   public Balance(UUID id, Type type, String name, BigDecimal value, UUID reserveId,
@@ -30,57 +25,51 @@ public class Balance extends Account {
   }
 
   public BigDecimal getValue() {
-    return value.orElse(BigDecimal.ZERO);
+    return Optional.ofNullable(value).orElse(BigDecimal.ZERO);
   }
 
   public void setValue(BigDecimal value) {
-    this.value = Optional.ofNullable(value);
+    this.value = value;
   }
 
-  @SuppressWarnings("unused")
   public UUID getReserveId() {
-    return reserveId.orElse(null);
+    return reserveId;
   }
 
-  @SuppressWarnings("unused")
   public void setReserveId(UUID reserveId) {
-    this.reserveId = Optional.ofNullable(reserveId);
+    this.reserveId = reserveId;
   }
 
   public BigDecimal getCreditLimit() {
-    return creditLimit.orElse(BigDecimal.ZERO);
+    return Optional.ofNullable(creditLimit).orElse(BigDecimal.ZERO);
   }
 
   public void setCreditLimit(BigDecimal creditLimit) {
-    this.creditLimit = Optional.ofNullable(creditLimit);
+    this.creditLimit = creditLimit;
   }
 
   public BigDecimal getMinValue() {
-    return minValue.orElse(BigDecimal.ZERO);
+    return Optional.ofNullable(minValue).orElse(BigDecimal.ZERO);
   }
 
   public void setMinValue(BigDecimal minValue) {
-    this.minValue = Optional.ofNullable(minValue);
+    this.minValue = minValue;
   }
 
-  @SuppressWarnings("unused")
   public Long getNum() {
     return num;
   }
 
-  @SuppressWarnings("unused")
   public void setNum(Long num) {
     this.num = num;
   }
 
   @XmlElement(name="freeFunds")
-  @SuppressWarnings("unused")
   public BigDecimal getFreeFunds() {
     return getValue().add(getCreditLimit().subtract(getMinValue()));
   }
 
   @XmlElement(name="freeFunds")
-  @SuppressWarnings("unused")
   public void setFreeFunds(BigDecimal availableBalance) {
     // Поле вычисляемое. Метод нужен для сериализации класса из JSON.
   }
