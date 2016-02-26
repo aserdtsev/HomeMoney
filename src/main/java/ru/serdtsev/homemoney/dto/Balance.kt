@@ -6,19 +6,18 @@ import javax.xml.bind.annotation.XmlElement
 
 open class Balance : Account {
   var reserveId: UUID? = null
-  var value: BigDecimal = BigDecimal.ZERO
+
+  var value: BigDecimal? = null
+    get() = field ?: BigDecimal.ZERO
 
   var creditLimit: BigDecimal? = null
-    set(value) {
-      this.creditLimit = value ?: BigDecimal.ZERO
-    }
+    get() = field ?: BigDecimal.ZERO
 
-  var minValue: BigDecimal? = BigDecimal.ZERO
-    set(value) {
-      this.minValue = value ?: BigDecimal.ZERO
-    }
+  var minValue: BigDecimal? = null
+    get() = field ?: BigDecimal.ZERO
 
-  var num: Long = 0
+  var num: Long? = null
+    get() = field ?: 0L
 
   constructor(id: UUID, type: Account.Type, name: String, value: BigDecimal, reserveId: UUID,
               creditLimit: BigDecimal, minValue: BigDecimal) : super(id, type, name) {
@@ -30,12 +29,13 @@ open class Balance : Account {
 
   constructor() : super()
 
-  // Поле вычисляемое. Метод нужен для сериализации класса из JSON.
-  var freeFunds: BigDecimal
-    @XmlElement(name = "freeFunds")
-    get() = value.add(creditLimit?.subtract(minValue))
+  @Suppress("unused")
+  @XmlElement(name = "freeFunds")
+  fun getFreeFunds() = value!!.add(creditLimit!!.subtract(minValue))
 
-    @XmlElement(name = "freeFunds")
-    set(availableBalance) {
-    }
+  // Для сериализации класса из JSON.
+  @Suppress("unused", "unused_parameter")
+  @XmlElement(name = "freeFunds")
+  fun setFreeFunds(value: BigDecimal) {
+  }
 }
