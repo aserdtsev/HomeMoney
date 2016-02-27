@@ -9,14 +9,13 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public class MoneyTrn implements Serializable {
   public enum Status { pending, done, cancelled }
   public enum Period { month, quarter, year, single }
   private UUID id;
-  private Optional<Status> status;
+  private Status status;
   private Date trnDate;
   private Integer dateNum;
   private UUID fromAccId;
@@ -28,7 +27,7 @@ public class MoneyTrn implements Serializable {
   private BigDecimal amount;
   private String comment;
   private Timestamp createdTs;
-  private Optional<Period> period = Optional.empty();
+  private Period period;
   private List<String> labels = new ArrayList<>();
   private UUID templId;
 
@@ -65,11 +64,11 @@ public class MoneyTrn implements Serializable {
   }
 
   public Status getStatus() {
-    return status.get();
+    return status;
   }
 
   public void setStatus(Status status) {
-    this.status = Optional.of(status);
+    this.status = status;
   }
 
   public Timestamp getCreatedTs() {
@@ -165,11 +164,11 @@ public class MoneyTrn implements Serializable {
   }
 
   public Period getPeriod() {
-    return period.orElse(Period.month);
+    return period != null ? period : Period.month;
   }
 
   public void setPeriod(Period period) {
-    this.period = Optional.ofNullable(period);
+    this.period = period;
   }
 
   public List<String> getLabels() {
