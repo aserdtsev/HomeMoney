@@ -16,6 +16,11 @@ class BsDayStat(var date: Date) {
   @XmlTransient
   var chargeAmount = BigDecimal.ZERO
 
+  fun getDate() = date.time
+
+  @XmlTransient
+  fun getDateAsLocalDate() = date.toLocalDate()
+
   val totalSaldo: BigDecimal
     get() = getSaldo(Account.Type.debit).add(getSaldo(Account.Type.credit)).add(getSaldo(Account.Type.asset))
 
@@ -26,9 +31,7 @@ class BsDayStat(var date: Date) {
     get() = getSaldo(Account.Type.reserve)
 
   @XmlTransient
-  fun getSaldo(type: Account.Type): BigDecimal {
-    return (saldoMap as java.util.Map<Account.Type, BigDecimal>).getOrDefault(type, BigDecimal.ZERO)
-  }
+  fun getSaldo(type: Account.Type) = saldoMap.getOrDefault(type, BigDecimal.ZERO)
 
   @XmlTransient
   fun setSaldo(type: Account.Type, value: BigDecimal) {
@@ -36,9 +39,7 @@ class BsDayStat(var date: Date) {
   }
 
   @XmlTransient
-  fun getDelta(type: Account.Type): BigDecimal {
-    return (deltaMap as java.util.Map<Account.Type, BigDecimal>).getOrDefault(type, BigDecimal.ZERO)
-  }
+  fun getDelta(type: Account.Type) = deltaMap.getOrDefault(type, BigDecimal.ZERO)
 
   @XmlTransient
   fun setDelta(type: Account.Type, amount: BigDecimal) {

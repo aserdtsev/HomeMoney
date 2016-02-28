@@ -198,7 +198,7 @@ public class MainDao {
     Map<Account.Type, BigDecimal> saldoMap = new HashMap<>(Account.Type.values().length);
     bsStat.saldoMap.forEach((type, value) -> saldoMap.put(type, value.plus()));
     List<BsDayStat> dayStats = new ArrayList<>(map.values());
-    dayStats.sort((e1, e2) -> e1.getDate().toLocalDate().isAfter(e2.getDate().toLocalDate()) ? -1 : 1);
+    dayStats.sort((e1, e2) -> e1.getDateAsLocalDate().isAfter(e2.getDateAsLocalDate()) ? -1 : 1);
     dayStats.forEach(dayStat -> {
       Arrays.asList(Account.Type.values()).forEach(type -> {
         dayStat.setSaldo(type, saldoMap.getOrDefault(type, BigDecimal.ZERO));
