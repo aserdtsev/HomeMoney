@@ -227,15 +227,15 @@ public class MainDao {
    */
   private static void fillBsDayStatMap(Map<Date, BsDayStat> map, List<Turnover> turnovers) {
     turnovers.forEach(t -> {
-      map.putIfAbsent(t.trnDate, new BsDayStat(t.trnDate));
-      BsDayStat dayStat = map.get(t.trnDate);
-      dayStat.setDelta(t.fromAccType, dayStat.getDelta(t.fromAccType).subtract(t.amount));
-      dayStat.setDelta(t.toAccType, dayStat.getDelta(t.toAccType).add(t.amount));
-      if (Account.Type.income.equals(t.fromAccType)) {
-        dayStat.setIncomeAmount(dayStat.getIncomeAmount().add(t.amount));
+      map.putIfAbsent(t.getTrnDate(), new BsDayStat(t.getTrnDate()));
+      BsDayStat dayStat = map.get(t.getTrnDate());
+      dayStat.setDelta(t.getFromAccType(), dayStat.getDelta(t.getFromAccType()).subtract(t.getAmount()));
+      dayStat.setDelta(t.getToAccType(), dayStat.getDelta(t.getToAccType()).add(t.getAmount()));
+      if (Account.Type.income.equals(t.getFromAccType())) {
+        dayStat.setIncomeAmount(dayStat.getIncomeAmount().add(t.getAmount()));
       }
-      if (Account.Type.expense.equals(t.toAccType)) {
-        dayStat.setChargeAmount(dayStat.getChargeAmount().add(t.amount));
+      if (Account.Type.expense.equals(t.getToAccType())) {
+        dayStat.setChargeAmount(dayStat.getChargeAmount().add(t.getAmount()));
       }
     });
   }
