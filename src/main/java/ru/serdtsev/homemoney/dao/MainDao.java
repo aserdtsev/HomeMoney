@@ -198,14 +198,14 @@ public class MainDao {
     Map<Account.Type, BigDecimal> saldoMap = new HashMap<>(Account.Type.values().length);
     bsStat.saldoMap.forEach((type, value) -> saldoMap.put(type, value.plus()));
     List<BsDayStat> dayStats = new ArrayList<>(map.values());
-    dayStats.sort((e1, e2) -> e1.date.toLocalDate().isAfter(e2.date.toLocalDate()) ? -1 : 1);
+    dayStats.sort((e1, e2) -> e1.getDate().toLocalDate().isAfter(e2.getDate().toLocalDate()) ? -1 : 1);
     dayStats.forEach(dayStat -> {
       Arrays.asList(Account.Type.values()).forEach(type -> {
         dayStat.setSaldo(type, saldoMap.getOrDefault(type, BigDecimal.ZERO));
         saldoMap.put(type, saldoMap.getOrDefault(type, BigDecimal.ZERO).subtract(dayStat.getDelta(type)));
       });
-      bsStat.incomeAmount = bsStat.incomeAmount.add(dayStat.incomeAmount);
-      bsStat.chargesAmount = bsStat.chargesAmount.add(dayStat.chargeAmount);
+      bsStat.incomeAmount = bsStat.incomeAmount.add(dayStat.getIncomeAmount());
+      bsStat.chargesAmount = bsStat.chargesAmount.add(dayStat.getChargeAmount());
     });
   }
 
@@ -232,10 +232,10 @@ public class MainDao {
       dayStat.setDelta(t.fromAccType, dayStat.getDelta(t.fromAccType).subtract(t.amount));
       dayStat.setDelta(t.toAccType, dayStat.getDelta(t.toAccType).add(t.amount));
       if (Account.Type.income.equals(t.fromAccType)) {
-        dayStat.incomeAmount = dayStat.incomeAmount.add(t.amount);
+        dayStat.setIncomeAmount(dayStat.getIncomeAmount().add(t.amount));
       }
       if (Account.Type.expense.equals(t.toAccType)) {
-        dayStat.chargeAmount = dayStat.chargeAmount.add(t.amount);
+        dayStat.setChargeAmount(dayStat.getChargeAmount().add(t.amount));
       }
     });
   }
