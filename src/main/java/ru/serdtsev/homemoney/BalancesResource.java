@@ -13,7 +13,7 @@ public class BalancesResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public HmResponse getBalances(@PathParam("bsId") UUID bsId) {
-    return HmResponse.getOk(BalancesDao.getBalances(bsId));
+    return HmResponse.Companion.getOk(BalancesDao.getBalances(bsId));
   }
 
   @POST
@@ -25,9 +25,9 @@ public class BalancesResource {
       Balance balance) {
     try {
       BalancesDao.createBalance(bsId, balance);
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -40,9 +40,9 @@ public class BalancesResource {
       Balance balance) {
     try {
       BalancesDao.updateBalance(bsId, balance);
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -55,9 +55,9 @@ public class BalancesResource {
       Balance balance) {
     try {
       BalancesDao.deleteBalance(bsId, balance.getId());
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -70,9 +70,9 @@ public class BalancesResource {
       Balance balance) {
     try {
       BalancesDao.upBalance(bsId, balance);
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 }

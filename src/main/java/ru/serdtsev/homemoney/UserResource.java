@@ -20,9 +20,9 @@ public class UserResource {
       @QueryParam("pwd") String pwd) {
     try {
       Authentication auth = UsersDao.login(email, pwd);
-      return HmResponse.getOk(auth);
+      return HmResponse.Companion.getOk(auth);
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -32,9 +32,9 @@ public class UserResource {
   public HmResponse getBalanceSheetId(@CookieParam("userId") UUID userId) {
     try {
       UUID bsId = UsersDao.getBsId(userId);
-      return HmResponse.getOk(bsId);
+      return HmResponse.Companion.getOk(bsId);
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -45,7 +45,7 @@ public class UserResource {
       @CookieParam("userId") UUID userId,
       @CookieParam("authToken") UUID authToken) {
     UsersDao.logout(userId, authToken);
-    return HmResponse.getOk();
+    return HmResponse.Companion.getOk();
   }
 
   @POST

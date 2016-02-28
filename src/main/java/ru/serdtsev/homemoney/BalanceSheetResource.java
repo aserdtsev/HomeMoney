@@ -16,9 +16,9 @@ public class BalanceSheetResource {
       @DefaultValue("30") @QueryParam("interval") Long interval
   ) {
     try {
-      return HmResponse.getOk(MainDao.getBsStat(bsId, interval));
+      return HmResponse.Companion.getOk(MainDao.getBsStat(bsId, interval));
     } catch (HmException e) {
-      return HmResponse.getFail("INCORRECT_AUTH_TOKEN");
+      return HmResponse.Companion.getFail("INCORRECT_AUTH_TOKEN");
     }
   }
 }

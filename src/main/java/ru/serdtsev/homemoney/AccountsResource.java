@@ -15,6 +15,6 @@ public class AccountsResource {
   @Produces(MediaType.APPLICATION_JSON)
   public HmResponse getAccountList(@PathParam("bsId") UUID bsId) {
     List<Account> allAccounts = AccountsDao.getAccounts(bsId);
-    return HmResponse.getOk(allAccounts);
+    return HmResponse.Companion.getOk(allAccounts);
   }
 }

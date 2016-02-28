@@ -38,9 +38,9 @@ public class MoneyTrnsResource {
       trns.addAll(hasNext ? doneTrns.subList(0, limit) : doneTrns);
 
       PagedList<MoneyTrn> pagedList = new PagedList<>(trns, limit, offset, hasNext);
-      return HmResponse.getOk(pagedList);
+      return HmResponse.Companion.getOk(pagedList);
     } catch (HmException e) {
-      return  HmResponse.getFail(e.getCode());
+      return  HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -53,9 +53,9 @@ public class MoneyTrnsResource {
   {
     try {
       MoneyTrn moneyTrn = MoneyTrnsDao.getMoneyTrn(bsId, id);
-      return HmResponse.getOk(moneyTrn);
+      return HmResponse.Companion.getOk(moneyTrn);
     } catch (HmException e) {
-      return  HmResponse.getFail(e.getCode());
+      return  HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -66,7 +66,7 @@ public class MoneyTrnsResource {
   public HmResponse createMoneyTrn(
       @PathParam("bsId") UUID bsId,
       MoneyTrn moneyTrn) {
-    return HmResponse.getOk(MoneyTrnsDao.createMoneyTrn(bsId, moneyTrn));
+    return HmResponse.Companion.getOk(MoneyTrnsDao.createMoneyTrn(bsId, moneyTrn));
   }
 
   @POST
@@ -78,9 +78,9 @@ public class MoneyTrnsResource {
       MoneyTrn moneyTrn) {
     try {
       MoneyTrnsDao.deleteMoneyTrn(bsId, moneyTrn.getId());
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -93,9 +93,9 @@ public class MoneyTrnsResource {
       MoneyTrn moneyTrn) {
     try {
       MoneyTrnsDao.updateMoneyTrn(bsId, moneyTrn);
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -108,9 +108,9 @@ public class MoneyTrnsResource {
       MoneyTrn moneyTrn) {
     try {
       MoneyTrnsDao.skipMoneyTrn(bsId, moneyTrn);
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -123,9 +123,9 @@ public class MoneyTrnsResource {
       MoneyTrn moneyTrn) {
     try {
       MoneyTrnsDao.upMoneyTrn(bsId, moneyTrn.getId());
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 }

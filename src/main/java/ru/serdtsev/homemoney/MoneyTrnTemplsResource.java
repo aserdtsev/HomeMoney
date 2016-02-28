@@ -21,9 +21,9 @@ public class MoneyTrnTemplsResource {
       @QueryParam("search") String search) {
     try {
       List<MoneyTrnTempl> list = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, Optional.ofNullable(Strings.emptyToNull(search)));
-      return HmResponse.getOk(list);
+      return HmResponse.Companion.getOk(list);
     } catch (HmException e) {
-      return  HmResponse.getFail(e.getCode());
+      return  HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -39,7 +39,7 @@ public class MoneyTrnTemplsResource {
         moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
         moneyTrn.getComment(), moneyTrn.getLabels());
     MoneyTrnTemplsDao.createMoneyTrnTempl(bsId, templ);
-    return HmResponse.getOk();
+    return HmResponse.Companion.getOk();
   }
 
   @POST
@@ -51,7 +51,7 @@ public class MoneyTrnTemplsResource {
       MoneyTrnTempl templ) {
     templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
     MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
-    return HmResponse.getOk();
+    return HmResponse.Companion.getOk();
   }
 
   @POST
@@ -63,9 +63,9 @@ public class MoneyTrnTemplsResource {
       MoneyTrnTempl templ) {
     try {
       MoneyTrnTemplsDao.deleteMoneyTrnTempl(bsId, templ.getId());
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
@@ -78,9 +78,9 @@ public class MoneyTrnTemplsResource {
       MoneyTrnTempl templ) {
     try {
       MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
-      return HmResponse.getOk();
+      return HmResponse.Companion.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.Companion.getFail(e.getCode());
     }
   }
 
