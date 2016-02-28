@@ -51,7 +51,7 @@ public class UserResource {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public void createBalanceSheet(BalanceSheet balanceSheet) {
-    MainDao.createBalanceSheet(balanceSheet.id);
+    MainDao.createBalanceSheet(balanceSheet.getId());
   }
 
   @DELETE

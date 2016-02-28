@@ -106,8 +106,8 @@ public class BalancesDao {
     if (balance.getValue().compareTo(currBalance.getValue()) != 0) {
       BalanceSheet bs = MainDao.getBalanceSheet(bsId);
       Boolean more = balance.getValue().compareTo(currBalance.getValue()) > 0;
-      UUID fromAccId = more ? bs.uncatIncomeId : balance.getId();
-      UUID toAccId = more ? balance.getId() : bs.uncatCostsId;
+      UUID fromAccId = more ? bs.getUncatIncomeId() : balance.getId();
+      UUID toAccId = more ? balance.getId() : bs.getUncatCostsId();
       BigDecimal amount = balance.getValue().subtract(currBalance.getValue()).abs();
       MoneyTrn moneyTrn = new MoneyTrn(
           UUID.randomUUID(), MoneyTrn.Status.done, java.sql.Date.valueOf(LocalDate.now()), 0, fromAccId, toAccId,

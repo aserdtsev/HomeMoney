@@ -240,7 +240,7 @@ public class MoneyTrnsDao {
   private static MoneyTrn createReserveMoneyTrn(Connection conn, UUID balanceSheetId, MoneyTrn moneyTrn)
       throws SQLException {
     BalanceSheet bs = MainDao.getBalanceSheet(balanceSheetId);
-    Account svcRsv = AccountsDao.getAccount(bs.svcRsvId);
+    Account svcRsv = AccountsDao.getAccount(bs.getSvcRsvId());
 
     Account fromAcc = svcRsv;
     Account account = AccountsDao.getAccount(moneyTrn.getFromAccId());
