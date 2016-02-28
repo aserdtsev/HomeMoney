@@ -294,7 +294,7 @@ public class MainDao {
           turnovers.add(turnover);
         }
         turnover.setAmount(turnover.getAmount().add(t.getAmount()));
-        templNextDate = MoneyTrnTempl.calcNextDate(templNextDate, t.getPeriod());
+        templNextDate = MoneyTrnTempl.Companion.calcNextDate(templNextDate, t.getPeriod());
       }
     });
     return new ArrayList<>(turnovers);

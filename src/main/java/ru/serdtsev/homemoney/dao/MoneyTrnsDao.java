@@ -205,7 +205,7 @@ public class MoneyTrnsDao {
       createMoneyTrn(conn, bsId, moneyTrn, result);
       if (moneyTrn.getTemplId() != null) {
         MoneyTrnTempl templ = MoneyTrnTemplsDao.getMoneyTrnTempl(conn, bsId, moneyTrn.getTemplId());
-        templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
+        templ.setNextDate(MoneyTrnTempl.Companion.calcNextDate(templ.getNextDate(), templ.getPeriod()));
         MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
       }
       DbUtils.commitAndClose(conn);
@@ -417,7 +417,7 @@ public class MoneyTrnsDao {
       }
       if (trn.getTemplId() != null) {
         MoneyTrnTempl templ = MoneyTrnTemplsDao.getMoneyTrnTempl(conn, bsId, trn.getTemplId());
-        templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
+        templ.setNextDate(MoneyTrnTempl.Companion.calcNextDate(templ.getNextDate(), templ.getPeriod()));
         MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
       }
       DbUtils.commitAndClose(conn);
