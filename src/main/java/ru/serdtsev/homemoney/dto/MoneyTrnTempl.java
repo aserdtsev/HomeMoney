@@ -1,18 +1,16 @@
 package ru.serdtsev.homemoney.dto;
 
 import javax.xml.bind.annotation.XmlTransient;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Шаблон операции
  */
-public class MoneyTrnTempl implements Serializable {
+public class MoneyTrnTempl {
   public static Date calcNextDate(Date origDate, MoneyTrn.Period period) {
     LocalDate origLocalDate = origDate.toLocalDate();
     LocalDate nextDate = null;
@@ -26,7 +24,7 @@ public class MoneyTrnTempl implements Serializable {
 
   public enum Status { active, deleted }
   private UUID id;
-  private Optional<Status> status = Optional.empty();
+  private Status status;
   private UUID sampleId;
   private UUID lastMoneyTrnId;
   private java.sql.Date nextDate;
@@ -67,11 +65,11 @@ public class MoneyTrnTempl implements Serializable {
   }
 
   public Status getStatus() {
-    return status.orElse(Status.active);
+    return status != null ? status : Status.active;
   }
 
   public void setStatus(Status status) {
-    this.status = Optional.ofNullable(status);
+    this.status = status;
   }
 
   public UUID getSampleId() {
