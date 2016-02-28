@@ -2,13 +2,13 @@ package ru.serdtsev.homemoney.dto
 
 import java.math.BigDecimal
 import java.sql.Date
-import java.time.LocalDate
 import java.util.*
 import javax.xml.bind.annotation.XmlTransient
 
 /**
  * Шаблон операции
  */
+@Suppress("unused")
 class MoneyTrnTempl {
 
   enum class Status {
@@ -31,7 +31,6 @@ class MoneyTrnTempl {
   var comment: String? = null
   var labels: List<String>? = null
 
-  @SuppressWarnings("unused")
   constructor() {
   }
 
@@ -49,18 +48,17 @@ class MoneyTrnTempl {
     this.labels = labels
   }
 
-  val labelsAsString: String?
-    @XmlTransient
-    get() = labels?.joinToString(",")
+  @XmlTransient
+  fun getLabelsAsString() = labels?.joinToString(",")
 
   companion object {
     fun calcNextDate(origDate: Date, period: MoneyTrn.Period): Date {
       val origLocalDate = origDate.toLocalDate()
-      var nextDate: LocalDate? = null
-      when (period) {
-        MoneyTrn.Period.month -> nextDate = origLocalDate.plusMonths(1)
-        MoneyTrn.Period.quarter -> nextDate = origLocalDate.plusMonths(3)
-        MoneyTrn.Period.year -> nextDate = origLocalDate.plusYears(1)
+      val nextDate = when (period) {
+        MoneyTrn.Period.month -> origLocalDate.plusMonths(1)
+        MoneyTrn.Period.quarter -> origLocalDate.plusMonths(3)
+        MoneyTrn.Period.year -> origLocalDate.plusYears(1)
+        else -> origDate.toLocalDate()
       }
       return Date.valueOf(nextDate)
     }
