@@ -170,7 +170,7 @@ public class MainDao {
       calcTrendSaldoNTurnovers(bsStat, trendMap);
 
       map.putAll(trendMap);
-      bsStat.dayStats = new ArrayList<>(map.values());
+      bsStat.setDayStats(new ArrayList<>(map.values()));
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
@@ -190,13 +190,13 @@ public class MainDao {
             "  group by type",
         aggrAccBalanceHandler, bsStat.getBsId());
     for (AggrAccSaldo saldo : aggrAccSaldo) {
-      bsStat.saldoMap.put(saldo.getType(), saldo.getSaldo());
+      bsStat.getSaldoMap().put(saldo.getType(), saldo.getSaldo());
     }
   }
 
   private static void calcPastSaldoNTurnovers(BsStat bsStat, Map<Date, BsDayStat> map) {
     Map<Account.Type, BigDecimal> saldoMap = new HashMap<>(Account.Type.values().length);
-    bsStat.saldoMap.forEach((type, value) -> saldoMap.put(type, value.plus()));
+    bsStat.getSaldoMap().forEach((type, value) -> saldoMap.put(type, value.plus()));
     List<BsDayStat> dayStats = new ArrayList<>(map.values());
     dayStats.sort((e1, e2) -> e1.getDateAsLocalDate().isAfter(e2.getDateAsLocalDate()) ? -1 : 1);
     dayStats.forEach(dayStat -> {
@@ -204,15 +204,15 @@ public class MainDao {
         dayStat.setSaldo(type, saldoMap.getOrDefault(type, BigDecimal.ZERO));
         saldoMap.put(type, saldoMap.getOrDefault(type, BigDecimal.ZERO).subtract(dayStat.getDelta(type)));
       });
-      bsStat.incomeAmount = bsStat.incomeAmount.add(dayStat.getIncomeAmount());
-      bsStat.chargesAmount = bsStat.chargesAmount.add(dayStat.getChargeAmount());
+      bsStat.setIncomeAmount(bsStat.getIncomeAmount().add(dayStat.getIncomeAmount()));
+      bsStat.setChargesAmount(bsStat.getChargesAmount().add(dayStat.getChargeAmount()));
     });
   }
 
   private static void calcTrendSaldoNTurnovers(BsStat bsStat, Map<Date, BsDayStat> trendMap) {
     ArrayList<BsDayStat> dayStats = new ArrayList<>(trendMap.values());
     Map<Account.Type, BigDecimal> saldoMap = new HashMap<>(Account.Type.values().length);
-    bsStat.saldoMap.forEach((type, value) -> saldoMap.put(type, value.plus()));
+    bsStat.getSaldoMap().forEach((type, value) -> saldoMap.put(type, value.plus()));
     dayStats.forEach(dayStat ->
       Arrays.asList(Account.Type.values()).forEach(type -> {
         BigDecimal saldo = saldoMap.getOrDefault(type, BigDecimal.ZERO).add(dayStat.getDelta(type));
