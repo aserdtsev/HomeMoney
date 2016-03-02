@@ -1,12 +1,16 @@
 package ru.serdtsev.homemoney.dto
 
 import java.math.BigDecimal
-import java.sql.Date
 import java.util.*
 import javax.xml.bind.annotation.XmlTransient
 
 @Suppress("unused")
-class BsDayStat(var date: Date) {
+class BsDayStat {
+  var date: Long = 0L
+
+  @XmlTransient
+  fun getDateAsLocalDate() = java.sql.Date(date).toLocalDate()
+
   @XmlTransient
   private val saldoMap = HashMap<Account.Type, BigDecimal>()
   @XmlTransient
@@ -16,11 +20,6 @@ class BsDayStat(var date: Date) {
   @XmlTransient
   var chargeAmount = BigDecimal.ZERO
 
-  fun getDate() = date.time
-
-  @XmlTransient
-  fun getDateAsLocalDate() = date.toLocalDate()
-
   val totalSaldo: BigDecimal
     get() = getSaldo(Account.Type.debit).add(getSaldo(Account.Type.credit)).add(getSaldo(Account.Type.asset))
 
@@ -29,6 +28,10 @@ class BsDayStat(var date: Date) {
 
   val reserveSaldo: BigDecimal
     get() = getSaldo(Account.Type.reserve)
+
+  constructor(date: Long) {
+    this.date = date
+  }
 
   @XmlTransient
   fun getSaldo(type: Account.Type) = saldoMap.getOrDefault(type, BigDecimal.ZERO)

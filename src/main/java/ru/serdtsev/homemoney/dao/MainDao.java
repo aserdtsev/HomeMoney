@@ -227,7 +227,7 @@ public class MainDao {
    */
   private static void fillBsDayStatMap(Map<Date, BsDayStat> map, List<Turnover> turnovers) {
     turnovers.forEach(t -> {
-      map.putIfAbsent(t.getTrnDate(), new BsDayStat(t.getTrnDate()));
+      map.putIfAbsent(t.getTrnDate(), new BsDayStat(t.getTrnDate().getTime()));
       BsDayStat dayStat = map.get(t.getTrnDate());
       dayStat.setDelta(t.getFromAccType(), dayStat.getDelta(t.getFromAccType()).subtract(t.getAmount()));
       dayStat.setDelta(t.getToAccType(), dayStat.getDelta(t.getToAccType()).add(t.getAmount()));
