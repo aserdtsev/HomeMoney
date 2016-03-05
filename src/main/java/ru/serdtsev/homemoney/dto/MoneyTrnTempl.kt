@@ -35,7 +35,7 @@ class MoneyTrnTempl {
   }
 
   constructor(id: UUID, sampleId: UUID, lastMoneyTrnId: UUID, nextDate: Date, period: MoneyTrn.Period,
-              fromAccId: UUID, toAccId: UUID, amount: BigDecimal, comment: String, labels: List<String>) {
+              fromAccId: UUID, toAccId: UUID, amount: BigDecimal, comment: String?, labels: List<String>?) {
     this.id = id
     this.sampleId = sampleId
     this.lastMoneyTrnId = lastMoneyTrnId

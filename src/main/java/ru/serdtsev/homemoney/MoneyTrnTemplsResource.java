@@ -8,6 +8,7 @@ import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.sql.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,9 +35,9 @@ public class MoneyTrnTemplsResource {
   public HmResponse create(
       @PathParam("bsId") UUID bsId,
       MoneyTrn moneyTrn) {
-    MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(),
-        MoneyTrnTempl.Companion.calcNextDate(moneyTrn.getTrnDate(), moneyTrn.getPeriod()), moneyTrn.getPeriod(),
-        moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
+    Date nextDate = MoneyTrnTempl.Companion.calcNextDate(moneyTrn.getTrnDate(), moneyTrn.getPeriod());
+    MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(), nextDate,
+        moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
         moneyTrn.getComment(), moneyTrn.getLabels());
     MoneyTrnTemplsDao.createMoneyTrnTempl(bsId, templ);
     return HmResponse.Companion.getOk();
