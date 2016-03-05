@@ -43,21 +43,15 @@ object UsersDao {
   }
 
   @Throws(SQLException::class)
-  private fun getUser(conn: Connection, email: String): User? {
-    val user: User
-    val run = QueryRunner()
-    val h = BeanHandler(User::class.java)
-    user = run.query(conn,
+  private fun getUser(conn: Connection, email: String): User? =
+    QueryRunner().query(conn,
         "select user_id as userId, email, pwd_hash as pwdHash, bs_id as bsId from users where email = ?",
-        h, email)
-    return user
-  }
+        BeanHandler(User::class.java), email)
 
   fun logout(userId: UUID, authToken: UUID) {
     val conn = MainDao.getConnection()
     try {
-      val run = QueryRunner()
-      run.update(conn, "delete from auth_tokens where user_id = ? and token = ?", userId, authToken)
+      QueryRunner().update(conn, "delete from auth_tokens where user_id = ? and token = ?", userId, authToken)
       DbUtils.commitAndClose(conn)
 
       val cache = authTokensCache
@@ -76,24 +70,24 @@ object UsersDao {
       }
     } catch (e: SQLException) {
       throw HmSqlException(e)
+    } finally {
+      DbUtils.close(conn)
     }
 
   }
 
   @Throws(SQLException::class)
   internal fun createUser(conn: Connection, email: String, pwdHash: String): User {
-    val run = QueryRunner()
-    val bsId: UUID = UUID.randomUUID()
+    val bsId = UUID.randomUUID()
     MainDao.createBalanceSheet(conn, bsId)
-    run.update(conn, "insert into users(user_id, email, pwd_hash, bs_id) values (?, ?, ?, ?)",
+    QueryRunner().update(conn, "insert into users(user_id, email, pwd_hash, bs_id) values (?, ?, ?, ?)",
         UUID.randomUUID(), email, pwdHash, bsId)
     return getUser(conn, email)!!
   }
 
   @Throws(SQLException::class)
   private fun saveAuthToken(conn: Connection, userId: UUID, authToken: UUID) {
-    val run = QueryRunner()
-    run.update(conn, "insert into auth_tokens(user_id, token) values (?, ?)", userId, authToken)
+    QueryRunner().update(conn, "insert into auth_tokens(user_id, token) values (?, ?)", userId, authToken)
   }
 
   fun checkAuthToken(userId: UUID, authToken: UUID) {
@@ -121,9 +115,8 @@ object UsersDao {
 
   @Throws(SQLException::class)
   private fun checkAuthToken(conn: Connection, userId: UUID, authToken: UUID) {
-    val run = QueryRunner()
     val countHandler = ScalarHandler<Long>(1)
-    val tokenNum: Long = run.query(conn,
+    val tokenNum = QueryRunner().query(conn,
         "select count(1) from auth_tokens where user_id = ? and token = ?",
         countHandler, userId, authToken)
     if (tokenNum == 0L) {
@@ -159,11 +152,8 @@ object UsersDao {
   }
 
   @Throws(SQLException::class)
-  private fun getBsId(conn: Connection, userId: UUID): UUID {
-    val run = QueryRunner()
-    val uuidHandler = ScalarHandler<UUID>(1)
-    return run.query(conn, "select bs_id from users where user_id = ?", uuidHandler, userId)
-  }
+  private fun getBsId(conn: Connection, userId: UUID) =
+    QueryRunner().query(conn, "select bs_id from users where user_id = ?", ScalarHandler<UUID>(1), userId)
 
   private val authTokensCache: Cache
     get() = CacheManager.getInstance().getCache("authTokens")
