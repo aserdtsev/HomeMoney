@@ -19,19 +19,14 @@ import java.util.*
 object UsersDao {
   fun login(email: String, pwd: String): Authentication {
     val SHARE_SALT = "4301"
-    var user: User?
+    var user: User
     val authToken: UUID = UUID.randomUUID()
     val pwdHash = Hashing.sha1().hashString(pwd + email + SHARE_SALT, Charsets.UTF_8).toString()
     val conn = MainDao.getConnection()
     try {
-      user = getUser(conn, email)
-      if (user != null) {
-        if (user.pwdHash != pwdHash) {
-          throw HmException(HmException.Code.AuthWrong)
-        }
-      } else {
-        user = createUser(conn, email, pwdHash)
-      }
+      user = getUser(conn, email) ?: createUser(conn, email, pwdHash)
+      if (user.pwdHash != pwdHash)
+        throw HmException(HmException.Code.AuthWrong)
       saveAuthToken(conn, user.userId!!, authToken)
       DbUtils.commitAndClose(conn)
     } catch (e: SQLException) {
@@ -39,7 +34,7 @@ object UsersDao {
     } finally {
       DbUtils.close(conn)
     }
-    return Authentication(user?.userId!!, user?.bsId!!, authToken)
+    return Authentication(user.userId!!, user.bsId!!, authToken)
   }
 
   @Throws(SQLException::class)
@@ -54,17 +49,13 @@ object UsersDao {
       QueryRunner().update(conn, "delete from auth_tokens where user_id = ? and token = ?", userId, authToken)
       DbUtils.commitAndClose(conn)
 
-      val cache = authTokensCache
-      val element = cache.get(userId)
-      val authTokens: Set<*>
+      val element = authTokensCache.get(userId)
       if (element != null) {
-        authTokens = element.objectValue as Set<*>
+        val authTokens = element.objectValue as MutableSet<*>
         if (authTokens.contains(authToken)) {
-          authTokens.minus(authToken)
+          authTokens.remove(authToken)
           if (authTokens.isEmpty()) {
-            cache.remove(userId)
-          } else {
-            cache.put(element)
+            authTokensCache.remove(userId)
           }
         }
       }
@@ -91,10 +82,8 @@ object UsersDao {
   }
 
   fun checkAuthToken(userId: UUID, authToken: UUID) {
-    val cache = authTokensCache
-    val element = cache.get(userId)
+    val element = authTokensCache.get(userId)
     if (element != null) {
-      //noinspection unchecked
       val authTokens = element.objectValue as Set<*>
       if (authTokens.contains(authToken)) {
         return
@@ -113,31 +102,21 @@ object UsersDao {
 
   }
 
+  @Suppress("unchecked")
   @Throws(SQLException::class)
   private fun checkAuthToken(conn: Connection, userId: UUID, authToken: UUID) {
-    val countHandler = ScalarHandler<Long>(1)
     val tokenNum = QueryRunner().query(conn,
         "select count(1) from auth_tokens where user_id = ? and token = ?",
-        countHandler, userId, authToken)
+        ScalarHandler<Long>(1), userId, authToken)
     if (tokenNum == 0L) {
       throw HmException(HmException.Code.AuthWrong)
     }
 
-    val cache = authTokensCache
-    val element = cache.get(userId)
-    val authTokens: Set<*>
-    if (element != null) {
-      //noinspection unchecked
-      authTokens = element.objectValue as Set<*>
-      if (!authTokens.contains(authToken)) {
-        authTokens.plus(authToken)
-        cache.put(element)
-      }
-    } else {
-      authTokens = HashSet<UUID>()
-      authTokens.add(authToken)
-      cache.put(Element(userId, authTokens))
-    }
+    val element = authTokensCache.get(userId) ?: Element(userId, HashSet<UUID>())
+    val authTokens = element.objectValue as MutableSet<UUID>
+    if (authTokens.isEmpty())
+      authTokensCache.put(element)
+    authTokens.add(authToken)
   }
 
   fun getBsId(userId: UUID): UUID {
