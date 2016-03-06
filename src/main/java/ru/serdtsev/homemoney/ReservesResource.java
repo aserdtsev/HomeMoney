@@ -14,7 +14,7 @@ public class ReservesResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public HmResponse getReserveList(@PathParam("bsId") UUID bsId) {
-    return HmResponse.Companion.getOk(ReservesDao.getReserves(bsId));
+    return HmResponse.Companion.getOk(ReservesDao.INSTANCE.getReserves(bsId));
   }
 
   @POST
@@ -26,7 +26,7 @@ public class ReservesResource {
       Reserve reserve) {
     try {
       reserve.setType(Account.Type.reserve);
-      ReservesDao.createReserve(bsId, reserve);
+      ReservesDao.INSTANCE.createReserve(bsId, reserve);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -41,7 +41,7 @@ public class ReservesResource {
       @PathParam("bsId") UUID bsId,
       Reserve reserve) {
     try {
-      ReservesDao.updateReserve(bsId, reserve);
+      ReservesDao.INSTANCE.updateReserve(bsId, reserve);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -56,7 +56,7 @@ public class ReservesResource {
       @PathParam("bsId") UUID bsId,
       Reserve reserve) {
     try {
-      ReservesDao.deleteReserve(bsId, reserve.getId());
+      ReservesDao.INSTANCE.deleteReserve(bsId, reserve.getId());
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());

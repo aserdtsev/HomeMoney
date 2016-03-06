@@ -1,15 +1,15 @@
 package ru.serdtsev.homemoney.dto
 
 import ru.serdtsev.homemoney.HmException
-import java.io.Serializable
 import java.math.BigDecimal
 import java.sql.Date
 import java.sql.Timestamp
+import java.time.LocalDateTime
 import java.util.*
 import javax.xml.bind.annotation.XmlTransient
 
 @Suppress("unused")
-class MoneyTrn : Serializable {
+class MoneyTrn {
   enum class Status {
     pending, done, cancelled
   }
@@ -40,8 +40,9 @@ class MoneyTrn : Serializable {
   constructor() {
   }
 
-  constructor(id: UUID, status: Status, trnDate: Date, dateNum: Int?, fromAccId: UUID, toAccId: UUID, parentId: UUID,
-              amount: BigDecimal, comment: String, createdTs: Timestamp, period: Period, labels: List<String>, templId: UUID) {
+  constructor(id: UUID, status: Status, trnDate: Date, fromAccId: UUID, toAccId: UUID, amount: BigDecimal, period: Period,
+      comment: String? = null, labels: List<String>? = null, dateNum: Int? = 0,
+      parentId: UUID? = null, templId: UUID? = null, createdTs: Timestamp? = Timestamp.valueOf(LocalDateTime.now())) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
       throw HmException(HmException.Code.AmountWrong)
     }

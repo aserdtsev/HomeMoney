@@ -19,8 +19,8 @@ open class Balance : Account {
   var num: Long? = null
     get() = field ?: 0L
 
-  constructor(id: UUID, type: Account.Type, name: String, value: BigDecimal, reserveId: UUID,
-              creditLimit: BigDecimal, minValue: BigDecimal) : super(id, type, name) {
+  constructor(id: UUID, type: Account.Type, name: String, value: BigDecimal, reserveId: UUID? = null,
+      creditLimit: BigDecimal? = null, minValue: BigDecimal? = null) : super(id, type, name) {
     this.value = value
     this.reserveId = reserveId
     this.creditLimit = creditLimit

@@ -21,7 +21,7 @@ public class MoneyTrnTemplsResource {
       @PathParam("bsId") UUID bsId,
       @QueryParam("search") String search) {
     try {
-      List<MoneyTrnTempl> list = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, Optional.ofNullable(Strings.emptyToNull(search)));
+      List<MoneyTrnTempl> list = MoneyTrnTemplsDao.INSTANCE.getMoneyTrnTempls(bsId, Optional.ofNullable(Strings.emptyToNull(search)));
       return HmResponse.Companion.getOk(list);
     } catch (HmException e) {
       return  HmResponse.Companion.getFail(e.getCode());
@@ -39,7 +39,7 @@ public class MoneyTrnTemplsResource {
     MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(), nextDate,
         moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
         moneyTrn.getComment(), moneyTrn.getLabels());
-    MoneyTrnTemplsDao.createMoneyTrnTempl(bsId, templ);
+    MoneyTrnTemplsDao.INSTANCE.createMoneyTrnTempl(bsId, templ);
     return HmResponse.Companion.getOk();
   }
 
@@ -51,7 +51,7 @@ public class MoneyTrnTemplsResource {
       @PathParam("bsId") UUID bsId,
       MoneyTrnTempl templ) {
     templ.setNextDate(MoneyTrnTempl.Companion.calcNextDate(templ.getNextDate(), templ.getPeriod()));
-    MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
+    MoneyTrnTemplsDao.INSTANCE.updateMoneyTrnTempl(bsId, templ);
     return HmResponse.Companion.getOk();
   }
 
@@ -63,7 +63,7 @@ public class MoneyTrnTemplsResource {
       @PathParam("bsId") UUID bsId,
       MoneyTrnTempl templ) {
     try {
-      MoneyTrnTemplsDao.deleteMoneyTrnTempl(bsId, templ.getId());
+      MoneyTrnTemplsDao.INSTANCE.deleteMoneyTrnTempl(bsId, templ.getId());
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -78,7 +78,7 @@ public class MoneyTrnTemplsResource {
       @PathParam("bsId") UUID bsId,
       MoneyTrnTempl templ) {
     try {
-      MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
+      MoneyTrnTemplsDao.INSTANCE.updateMoneyTrnTempl(bsId, templ);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());

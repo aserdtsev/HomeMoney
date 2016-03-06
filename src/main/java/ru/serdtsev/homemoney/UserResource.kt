@@ -50,8 +50,8 @@ class UserResource {
 
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
-  fun createBalanceSheet(balanceSheet: BalanceSheet) {
-    MainDao.createBalanceSheet(balanceSheet.id)
+  fun createBalanceSheet(bs: BalanceSheet) {
+    MainDao.createBalanceSheet(bs.id!!)
   }
 
   @DELETE

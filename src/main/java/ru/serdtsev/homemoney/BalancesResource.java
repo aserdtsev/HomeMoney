@@ -13,7 +13,7 @@ public class BalancesResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public HmResponse getBalances(@PathParam("bsId") UUID bsId) {
-    return HmResponse.Companion.getOk(BalancesDao.getBalances(bsId));
+    return HmResponse.Companion.getOk(BalancesDao.INSTANCE.getBalances(bsId));
   }
 
   @POST
@@ -24,7 +24,7 @@ public class BalancesResource {
       @PathParam("bsId") UUID bsId,
       Balance balance) {
     try {
-      BalancesDao.createBalance(bsId, balance);
+      BalancesDao.INSTANCE.createBalance(bsId, balance);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -39,7 +39,7 @@ public class BalancesResource {
       @PathParam("bsId") UUID bsId,
       Balance balance) {
     try {
-      BalancesDao.updateBalance(bsId, balance);
+      BalancesDao.INSTANCE.updateBalance(bsId, balance);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -54,7 +54,7 @@ public class BalancesResource {
       @PathParam("bsId") UUID bsId,
       Balance balance) {
     try {
-      BalancesDao.deleteBalance(bsId, balance.getId());
+      BalancesDao.INSTANCE.deleteBalance(bsId, balance.getId());
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -69,7 +69,7 @@ public class BalancesResource {
       @PathParam("bsId") UUID bsId,
       Balance balance) {
     try {
-      BalancesDao.upBalance(bsId, balance);
+      BalancesDao.INSTANCE.upBalance(bsId, balance);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());

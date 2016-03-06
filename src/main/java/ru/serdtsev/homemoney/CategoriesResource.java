@@ -13,7 +13,7 @@ public class CategoriesResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public HmResponse getCategoryList(@PathParam("bsId") UUID bsId) {
-    return HmResponse.Companion.getOk(CategoriesDao.getCategories(bsId));
+    return HmResponse.Companion.getOk(CategoriesDao.INSTANCE.getCategories(bsId));
   }
 
   @POST
@@ -22,7 +22,7 @@ public class CategoriesResource {
   @Produces(MediaType.APPLICATION_JSON)
   public HmResponse createCategory(@PathParam("bsId") UUID bsId, Category category) {
     try {
-      CategoriesDao.createCategory(bsId, category);
+      CategoriesDao.INSTANCE.createCategory(bsId, category);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -38,7 +38,7 @@ public class CategoriesResource {
       Category category
   ) {
     try {
-      CategoriesDao.updateCategory(UUID.fromString(bsId), category);
+      CategoriesDao.INSTANCE.updateCategory(UUID.fromString(bsId), category);
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
@@ -53,7 +53,7 @@ public class CategoriesResource {
       @PathParam("bsId") UUID bsId,
       Category category) {
     try {
-      CategoriesDao.deleteCategory(bsId, category.getId());
+      CategoriesDao.INSTANCE.deleteCategory(bsId, category.getId());
       return HmResponse.Companion.getOk();
     } catch (HmException e) {
       return HmResponse.Companion.getFail(e.getCode());
