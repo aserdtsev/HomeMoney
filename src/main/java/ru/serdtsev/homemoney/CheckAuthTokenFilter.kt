@@ -6,7 +6,6 @@ import java.io.IOException
 import java.util.*
 import javax.ws.rs.container.ContainerRequestContext
 import javax.ws.rs.container.ContainerRequestFilter
-import javax.ws.rs.core.Cookie
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 
@@ -18,21 +17,19 @@ class CheckAuthTokenFilter : ContainerRequestFilter {
     if (!path.contains("api/user/login")) {
       val cookieMap = requestCtx.getCookies()
       try {
-        val userIdCookie = Optional.ofNullable<Cookie>(cookieMap["userId"])
-        val authTokenCookie = Optional.ofNullable<Cookie>(cookieMap["authToken"])
-        if (!userIdCookie.isPresent || !authTokenCookie.isPresent) {
+        val userIdCookie = cookieMap["userId"]
+        val authTokenCookie = cookieMap["authToken"]
+        if (userIdCookie == null || authTokenCookie == null)
           throw HmException(HmException.Code.AuthWrong)
-        }
         UsersDao.checkAuthToken(
-            UUID.fromString(userIdCookie.get().value),
-            UUID.fromString(authTokenCookie.get().value))
+            UUID.fromString(userIdCookie.value),
+            UUID.fromString(authTokenCookie.value))
       } catch (e: HmException) {
         requestCtx.abortWith(Response
             .status(Response.Status.UNAUTHORIZED)
             .entity("User cannot access the resource.")
             .build())
       }
-
     }
   }
 }
