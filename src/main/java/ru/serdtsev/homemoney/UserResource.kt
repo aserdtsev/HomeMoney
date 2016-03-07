@@ -20,7 +20,7 @@ class UserResource {
       val auth = UsersDao.login(email, pwd)
       return HmResponse.getOk(auth)
     } catch (e: HmException) {
-      return HmResponse.getFail(e.code)
+      return HmResponse.getFail(e.getCode())
     }
 
   }
@@ -33,7 +33,7 @@ class UserResource {
       val bsId = UsersDao.getBsId(userId)
       return HmResponse.getOk(bsId)
     } catch (e: HmException) {
-      return HmResponse.getFail(e.code)
+      return HmResponse.getFail(e.getCode())
     }
 
   }
