@@ -34,7 +34,7 @@ object MoneyTrnsDao {
           " and fa.id = mt.from_acc_id " +
           " and ta.id = mt.to_acc_id "
 
-  fun getDoneMoneyTrns(bsId: UUID, search: String, limit: Int, offset: Int): List<MoneyTrn> {
+  fun getDoneMoneyTrns(bsId: UUID, search: String?, limit: Int, offset: Int): List<MoneyTrn> {
     val trns: List<MoneyTrn>
     val conn = MainDao.getConnection()
     try {
@@ -49,7 +49,7 @@ object MoneyTrnsDao {
     return trns
   }
 
-  fun getPendingMoneyTrns(bsId: UUID, search: String, beforeDate: Date): List<MoneyTrn> {
+  fun getPendingMoneyTrns(bsId: UUID, search: String?, beforeDate: Date): List<MoneyTrn> {
     val trns: MutableList<MoneyTrn>
     val conn = MainDao.getConnection()
     try {
