@@ -38,8 +38,7 @@ object MoneyTrnsDao {
     val trns: List<MoneyTrn>
     val conn = MainDao.getConnection()
     try {
-      trns = getMoneyTrns(conn, bsId, Optional.of(MoneyTrn.Status.done), Optional.ofNullable<String>(Strings.emptyToNull(search)),
-          Optional.empty<Date>(), Optional.of(limit), Optional.of(offset))
+      trns = getMoneyTrns(conn, bsId, MoneyTrn.Status.done, search, limit, offset)
     } catch (e: SQLException) {
       throw HmSqlException(e)
     } finally {
@@ -53,9 +52,8 @@ object MoneyTrnsDao {
     val trns: MutableList<MoneyTrn>
     val conn = MainDao.getConnection()
     try {
-      trns = getMoneyTrns(conn, bsId, Optional.of(MoneyTrn.Status.pending), Optional.ofNullable(search), Optional.of(beforeDate),
-          Optional.empty<Int>(), Optional.empty<Int>())
-      trns.addAll(getTemplMoneyTrns(conn, bsId, Optional.ofNullable<String>(Strings.emptyToNull(search)), beforeDate))
+      trns = getMoneyTrns(conn, bsId, MoneyTrn.Status.pending, search, beforeDate = beforeDate)
+      trns.addAll(getTemplMoneyTrns(conn, bsId, search, beforeDate))
       Collections.sort(trns) { t1, t2 -> t2.trnDate!!.compareTo(t1.trnDate) }
     } catch (e: SQLException) {
       throw HmSqlException(e)
@@ -66,46 +64,43 @@ object MoneyTrnsDao {
     return trns
   }
 
-  fun getMoneyTrns(conn: Connection, bsId: UUID, status: Optional<Status>,
-                   search: Optional<String>, beforeDate: Optional<Date>, limit: Optional<Int>, offset: Optional<Int>): MutableList<MoneyTrn> {
+  fun getMoneyTrns(conn: Connection, bsId: UUID, status: Status, search: String?,
+                   limit: Int? = null, offset: Int? = null, beforeDate: Date? = null): MutableList<MoneyTrn> {
     val moneyTrnList: List<MoneyTrn>
     try {
-      val mtHandler = BeanListHandler(MoneyTrn::class.java,
-          BasicRowProcessor(MoneyTrnProcessor()))
+      val mtHandler = BeanListHandler(MoneyTrn::class.java, BasicRowProcessor(MoneyTrnProcessor()))
       val run = QueryRunner()
 
       val sql = StringBuilder(baseSelect)
       val params = ArrayList<Any>()
       params.add(bsId)
 
-      status.ifPresent { s ->
-        sql.append(" and status = ? ")
-        params.add(s.name)
-      }
+      sql.append(" and status = ? ")
+      params.add(status.name)
 
-      beforeDate.ifPresent { d ->
+      if (beforeDate != null) {
         sql.append(" and mt.trn_date < ? ")
-        params.add(d)
+        params.add(beforeDate)
       }
 
-      search.ifPresent { s ->
-        sql.append(" and (mt.comment ilike ? or mt.labels ilike ? or fa.name ilike ? or ta.name ilike ?)")
-        val searchTempl = "%$s%"
-        for (i in 0..3) {
-          params.add(searchTempl)
-        }
+      if (!Strings.isNullOrEmpty(search)) {
+        val condition = " and (mt.comment ilike ? or mt.labels ilike ? or fa.name ilike ? or ta.name ilike ?)"
+        sql.append(condition)
+        val paramNum = condition.filter { ch -> ch == '?' }.length
+        for (i in 1..paramNum)
+          params.add("%$search%")
       }
 
       sql.append(" order by trn_date desc, date_num, created_ts desc ")
 
-      limit.ifPresent { l ->
+      if (limit != null) {
         sql.append(" limit ? ")
-        params.add(l)
+        params.add(limit)
       }
 
-      offset.ifPresent { o ->
+      if (offset != null) {
         sql.append(" offset ? ")
-        params.add(o)
+        params.add(offset)
       }
 
       moneyTrnList = run.query(conn, sql.toString(), mtHandler, *params.toArray())
@@ -134,7 +129,7 @@ object MoneyTrnsDao {
     return moneyTrnList
   }
 
-  private fun getTemplMoneyTrns(conn: Connection, bsId: UUID, search: Optional<String>, beforeDate: Date): List<MoneyTrn> {
+  private fun getTemplMoneyTrns(conn: Connection, bsId: UUID, search: String?, beforeDate: Date): List<MoneyTrn> {
     try {
       val handler = BeanListHandler(MoneyTrn::class.java,
           BasicRowProcessor(MoneyTrnProcessor()))
@@ -152,11 +147,12 @@ object MoneyTrnsDao {
       val params = ArrayList<Any>()
       params.add(bsId)
       params.add(beforeDate)
-      search.ifPresent { s ->
-        sql.append(" and (te.comment ilike ? or te.labels ilike ? or fa.name ilike ? or ta.name ilike ?)")
-        val searchTempl = "%$s%"
-        for (i in 0..3) {
-          params.add(searchTempl)
+      if (!Strings.isNullOrEmpty(search)) {
+        val condition = " and (te.comment ilike ? or te.labels ilike ? or fa.name ilike ? or ta.name ilike ?)"
+        sql.append(condition)
+        val paramNum = condition.filter { ch -> ch == '?' }.count()
+        for (i in 1..paramNum) {
+          params.add("%$search%")
         }
       }
       sql.append(" order by trnDate desc ")
@@ -178,22 +174,10 @@ object MoneyTrnsDao {
   }
 
   fun getMoneyTrn(conn: Connection, bsId: UUID, id: UUID): MoneyTrn {
-    val moneyTrn: MoneyTrn
     try {
       val mtHandler = BeanHandler(MoneyTrn::class.java, BasicRowProcessor(MoneyTrnProcessor()))
       return QueryRunner().query(conn,
           baseSelect + " and mt.id = ?",
-          mtHandler, bsId, id)
-    } catch (e: SQLException) {
-      throw HmSqlException(e)
-    }
-  }
-
-  fun getChildMoneyTrn(conn: Connection, bsId: UUID, id: UUID): MoneyTrn {
-    try {
-      val mtHandler = BeanHandler(MoneyTrn::class.java, BasicRowProcessor(MoneyTrnProcessor()))
-      return QueryRunner().query(conn,
-          baseSelect + " and mt.parent_id = ?",
           mtHandler, bsId, id)
     } catch (e: SQLException) {
       throw HmSqlException(e)
@@ -311,51 +295,47 @@ object MoneyTrnsDao {
     if (status == trn.status) {
       return
     }
-    var fromAccId = Optional.empty<UUID>()
-    var toAccId = Optional.empty<UUID>()
+    var fromAccId: UUID? = null
+    var toAccId: UUID? = null
     when (status) {
       done -> if (trn.status == Status.pending || trn.status == Status.cancelled) {
-        fromAccId = Optional.of<UUID>(trn.fromAccId)
-        toAccId = Optional.of<UUID>(trn.toAccId)
+        fromAccId = trn.fromAccId!!
+        toAccId = trn.toAccId!!
       }
       MoneyTrn.Status.cancelled, pending -> if (trn.status == Status.done) {
-        fromAccId = Optional.of<UUID>(trn.toAccId)
-        toAccId = Optional.of<UUID>(trn.fromAccId)
+        fromAccId = trn.toAccId!!
+        toAccId = trn.fromAccId!!
       }
       else -> throw HmException(HmException.Code.UnknownMoneyTrnStatus)
     }
 
-    fromAccId.ifPresent { accId ->
-      val fromAccount = AccountsDao.getAccount(accId)
+    if (fromAccId != null) {
+      val fromAccount = AccountsDao.getAccount(fromAccId)
       if (!trn.trnDate!!.before(fromAccount.createdDate) && fromAccount.isBalance()) {
         val fromBalance: Balance
         try {
-          fromBalance = BalancesDao.getBalance(conn, accId)
+          fromBalance = BalancesDao.getBalance(conn, fromAccId)
           BalancesDao.changeBalanceValue(conn, fromBalance, trn.amount!!.negate())
         } catch (e: SQLException) {
           throw HmSqlException(e)
         }
-
       }
     }
 
-    toAccId.ifPresent { accId ->
-      val toAccount = AccountsDao.getAccount(accId)
+    if (toAccId != null) {
+      val toAccount = AccountsDao.getAccount(toAccId)
       if (!trn.trnDate!!.before(toAccount.createdDate) && toAccount.isBalance()) {
         val toBalance: Balance
         try {
-          toBalance = BalancesDao.getBalance(conn, accId)
+          toBalance = BalancesDao.getBalance(conn, toAccId)
           BalancesDao.changeBalanceValue(conn, toBalance, trn.amount!!)
         } catch (e: SQLException) {
           throw HmSqlException(e)
         }
-
       }
     }
 
-    val run = QueryRunner()
-    run.update(conn, "update money_trns set status = ? where id = ?",
-        status.name, trn.id)
+    QueryRunner().update(conn, "update money_trns set status = ? where id = ?", status.name, trn.id)
   }
 
   fun deleteMoneyTrn(bsId: UUID, id: UUID) {
