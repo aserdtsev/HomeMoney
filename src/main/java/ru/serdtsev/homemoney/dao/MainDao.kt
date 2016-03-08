@@ -144,10 +144,10 @@ object MainDao {
     }
   }
 
-  fun getBsStat(bsId: UUID, interval: Long?): BsStat {
+  fun getBsStat(bsId: UUID, interval: Long): BsStat {
     val today = LocalDate.now()
     val toDate = Date.valueOf(today)
-    val fromDate = Date.valueOf(today.minusDays(interval!!))
+    val fromDate = Date.valueOf(today.minusDays(interval))
 
     val bsStat = BsStat(bsId, fromDate, toDate)
     val conn = getConnection()
@@ -232,8 +232,11 @@ object MainDao {
    */
   private fun fillBsDayStatMap(map: MutableMap<Date, BsDayStat>, turnovers: List<Turnover>) {
     turnovers.forEach { t ->
-      (map as java.util.Map<Date, BsDayStat>).putIfAbsent(t.trnDate, BsDayStat(t.trnDate!!.time))
-      val dayStat = map[t.trnDate!!]!!
+      var dayStat = map[t.trnDate!!]
+      if (dayStat == null) {
+        dayStat = BsDayStat(t.trnDate!!.time)
+        map.put(t.trnDate!!, dayStat)
+      }
       dayStat.setDelta(t.fromAccType!!, dayStat.getDelta(t.fromAccType!!).subtract(t.amount))
       dayStat.setDelta(t.toAccType!!, dayStat.getDelta(t.toAccType!!).add(t.amount))
       if (Account.Type.income == t.fromAccType) {
@@ -280,7 +283,7 @@ object MainDao {
   }
 
   private fun getTemplTurnovers(bsId: UUID, toDate: Date): List<Turnover> {
-    val templs = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, Optional.empty<String>())
+    val templs = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId)
     val turnovers = HashSet<Turnover>()
     val today = Date.valueOf(LocalDate.now())
     templs.forEach { t ->

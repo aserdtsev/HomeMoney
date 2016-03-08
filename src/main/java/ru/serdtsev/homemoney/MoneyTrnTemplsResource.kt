@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney
 
-import com.google.common.base.Strings
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao
 import ru.serdtsev.homemoney.dto.HmResponse
 import ru.serdtsev.homemoney.dto.MoneyTrn
@@ -17,7 +16,7 @@ class MoneyTrnTemplsResource {
       @PathParam("bsId") bsId: UUID,
       @QueryParam("search") search: String?): HmResponse {
     try {
-      val list = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, Optional.ofNullable<String>(Strings.emptyToNull(search)))
+      val list = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, search)
       return HmResponse.getOk(list)
     } catch (e: HmException) {
       return HmResponse.getFail(e.getCode())

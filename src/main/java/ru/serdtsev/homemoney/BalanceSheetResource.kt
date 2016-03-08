@@ -12,7 +12,7 @@ class BalanceSheetResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun getBalanceSheetInfo(
       @PathParam("bsId") bsId: UUID,
-      @DefaultValue("30") @QueryParam("interval") interval: Long?): HmResponse {
+      @DefaultValue("30") @QueryParam("interval") interval: Long): HmResponse {
     try {
       return HmResponse.getOk(MainDao.getBsStat(bsId, interval))
     } catch (e: HmException) {

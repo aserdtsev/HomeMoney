@@ -28,6 +28,6 @@ open class Account(var id: UUID?, var type: Type?, var name: String?) {
   }
 
   override fun hashCode(): Int {
-    return if (Optional.ofNullable<UUID>(id).isPresent) id!!.hashCode() else 0
+    return id?.hashCode() ?: 0
   }
 }

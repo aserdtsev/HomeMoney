@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.dao
 
+import com.google.common.base.Strings
 import org.apache.commons.dbutils.BasicRowProcessor
 import org.apache.commons.dbutils.DbUtils
 import org.apache.commons.dbutils.QueryRunner
@@ -23,7 +24,7 @@ object MoneyTrnTemplsDao {
           "  where te.bs_id = ? " +
           "    and fa.id = te.from_acc_id and ta.id = te.to_acc_id "
 
-  fun getMoneyTrnTempls(bsId: UUID, search: Optional<String>): List<MoneyTrnTempl> {
+  fun getMoneyTrnTempls(bsId: UUID, search: String? = null): List<MoneyTrnTempl> {
     val conn = MainDao.getConnection()
     try {
       return getMoneyTrnTempls(conn, bsId, search)
@@ -34,15 +35,16 @@ object MoneyTrnTemplsDao {
     }
   }
 
-  private fun getMoneyTrnTempls(conn: Connection, bsId: UUID, search: Optional<String>): List<MoneyTrnTempl> {
+  private fun getMoneyTrnTempls(conn: Connection, bsId: UUID, search: String?): List<MoneyTrnTempl> {
     try {
       val sql = StringBuilder(baseSelect + " and te.status = 'active' ")
       val params = ArrayList<Any>()
       params.add(bsId)
-      search.ifPresent { s ->
-        sql.append(" and (te.comment ilike ? or te.labels ilike ? or fa.name ilike ? or ta.name ilike ?) ")
-        val searchTempl = "%$s%"
-        for (i in 0..3) {
+      if (!Strings.isNullOrEmpty(search)) {
+        val condition = " and (te.comment ilike ? or te.labels ilike ? or fa.name ilike ? or ta.name ilike ?) "
+        sql.append(condition)
+        val searchTempl = "%$search%"
+        for (i in 1..condition.count { ch -> ch == '?' }) {
           params.add(searchTempl)
         }
       }
