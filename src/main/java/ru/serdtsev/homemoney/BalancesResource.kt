@@ -21,15 +21,13 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun createBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse {
+      balance: Balance): HmResponse =
     try {
       BalancesDao.createBalance(bsId, balance)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/update")
@@ -37,15 +35,13 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun updateBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse {
+      balance: Balance): HmResponse =
     try {
       BalancesDao.updateBalance(bsId, balance)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/delete")
@@ -53,15 +49,13 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun deleteBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse {
+      balance: Balance): HmResponse =
     try {
       BalancesDao.deleteBalance(bsId, balance.id!!)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/up")
@@ -69,13 +63,11 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun upBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse {
+      balance: Balance): HmResponse =
     try {
       BalancesDao.upBalance(bsId, balance)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 }

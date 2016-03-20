@@ -54,6 +54,7 @@
           <element id="library" level="project" name="Maven: log4j:log4j:1.2.17" />
           <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.0" />
           <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.0" />
+          <element id="library" level="project" name="Maven: org.joda:joda-money:0.11" />
         </element>
       </element>
       <element id="directory" name="META-INF">

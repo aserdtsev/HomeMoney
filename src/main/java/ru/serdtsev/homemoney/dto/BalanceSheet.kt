@@ -5,6 +5,7 @@ import java.util.*
 
 data class BalanceSheet(
     var id: UUID? = null,
+    var defaultCurrencyCode: String? = null,
     var createdTs: Timestamp? = null,
     var svcRsvId: UUID? = null,
     var uncatCostsId: UUID? = null,

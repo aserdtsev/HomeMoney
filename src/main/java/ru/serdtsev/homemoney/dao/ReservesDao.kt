@@ -67,7 +67,7 @@ object ReservesDao {
 
   @Throws(SQLException::class)
   fun createReserve(conn: Connection, bsId: UUID, reserve: Reserve) {
-    val balance = Balance(reserve.id!!, Account.Type.reserve, reserve.name!!, reserve.value!!)
+    val balance = Balance(reserve.id!!, Account.Type.reserve, reserve.name!!, reserve.currencyCode!!, reserve.value!!)
     BalancesDao.createBalance(conn, bsId, balance)
     QueryRunner().update(conn,
         "insert into reserves(id, target) values (?, ?)",

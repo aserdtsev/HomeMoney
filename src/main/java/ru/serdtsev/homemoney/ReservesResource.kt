@@ -22,16 +22,14 @@ class ReservesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun createReserve(
       @PathParam("bsId") bsId: UUID,
-      reserve: Reserve): HmResponse {
+      reserve: Reserve): HmResponse =
     try {
       reserve.type = Account.Type.reserve
       ReservesDao.createReserve(bsId, reserve)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/update")
@@ -39,15 +37,13 @@ class ReservesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun updateReserve(
       @PathParam("bsId") bsId: UUID,
-      reserve: Reserve): HmResponse {
+      reserve: Reserve): HmResponse =
     try {
       ReservesDao.updateReserve(bsId, reserve)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/delete")
@@ -55,13 +51,11 @@ class ReservesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun deleteReserve(
       @PathParam("bsId") bsId: UUID,
-      reserve: Reserve): HmResponse {
+      reserve: Reserve): HmResponse =
     try {
       ReservesDao.deleteReserve(bsId, reserve.id!!)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 }

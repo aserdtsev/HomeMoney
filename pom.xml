@@ -120,6 +120,11 @@
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.joda</groupId>
+            <artifactId>joda-money</artifactId>
+            <version>0.11</version>
+        </dependency>
     </dependencies>
     <properties>
         <kotlin.version>1.0.0</kotlin.version>

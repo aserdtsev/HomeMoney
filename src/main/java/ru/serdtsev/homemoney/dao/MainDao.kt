@@ -127,7 +127,7 @@ object MainDao {
     run.update(conn, "update balance_sheets set uncat_income_id = ? where id = ?", uncatIncomeId, id)
 
     BalancesDao.createBalance(conn, id,
-        Balance(UUID.randomUUID(), Account.Type.debit, "Наличные", BigDecimal.ZERO))
+        Balance(UUID.randomUUID(), Account.Type.debit, "Наличные", "RUB", BigDecimal.ZERO))
   }
 
   fun deleteBalanceSheet(id: UUID) {

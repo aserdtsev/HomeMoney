@@ -19,10 +19,17 @@ object MoneyTrnTemplsDao {
           "    te.from_acc_id as fromAccId, fa.name as fromAccName," +
           "    te.to_acc_id as toAccId, ta.name as toAccName," +
           "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
-          "    te.amount, te.comment, te.labels " +
-          "  from money_trn_templs te, accounts fa, accounts ta " +
+          "    te.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode," +
+          "    coalesce(te.to_amount, te.amount), coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') as toCurrencyCode," +
+          "    te.comment, te.labels " +
+          "  from money_trn_templs te, " +
+          "    accounts fa " +
+          "      left join balances fb on fb.id = fa.id, " +
+          "    accounts ta" +
+          "      left join balances tb on tb.id = ta.id " +
           "  where te.bs_id = ? " +
-          "    and fa.id = te.from_acc_id and ta.id = te.to_acc_id "
+          "    and fa.id = te.from_acc_id " +
+          "    and ta.id = te.to_acc_id "
 
   fun getMoneyTrnTempls(bsId: UUID, search: String? = null): List<MoneyTrnTempl> {
     val conn = MainDao.getConnection()
@@ -81,6 +88,7 @@ object MoneyTrnTemplsDao {
               "  last_money_trn_id = ?, " +
               "  next_date = ?, " +
               "  amount = ?, " +
+              "  to_amount = ?, " +
               "  from_acc_id = ?, " +
               "  to_acc_id = ?, " +
               "  comment = ?, " +
@@ -91,6 +99,7 @@ object MoneyTrnTemplsDao {
           templ.lastMoneyTrnId,
           templ.nextDate,
           templ.amount,
+          templ.toAmount,
           templ.fromAccId,
           templ.toAccId,
           templ.comment,

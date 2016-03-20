@@ -27,9 +27,15 @@ object MoneyTrnsDao {
           " mt.from_acc_id as fromAccId, fa.name as fromAccName, " +
           " mt.to_acc_id as toAccId, ta.name as toAccName, " +
           " case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
-          " mt.parent_id as parentId, mt.amount, " +
+          " mt.parent_id as parentId, " +
+          " mt.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB')  as currencyCode, " +
+          " coalesce(mt.to_amount, mt.amount) as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') toCurrencyCode, " +
           " mt.comment, mt.labels, mt.period, mt.templ_id as templId " +
-          " from money_trns mt, accounts fa, accounts ta " +
+          " from money_trns mt, " +
+          "   accounts fa " +
+          "     left join balances fb on fb.id = fa.id, " +
+          "   accounts ta" +
+          "     left join balances tb on tb.id = ta.id " +
           " where mt.balance_sheet_id = ? " +
           " and fa.id = mt.from_acc_id " +
           " and ta.id = mt.to_acc_id "
@@ -138,9 +144,15 @@ object MoneyTrnsDao {
               "    tr.from_acc_id as fromAccId, fa.name as fromAccName, " +
               "    tr.to_acc_id as toAccId, ta.name as toAccName, " +
               "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
-              "    null as parentId, te.amount, tr.comment, tr.labels, " +
+              "    null as parentId, te.amount, fb.currency_code as currencyCode, " +
+              "    te.to_amount as toAmount, tb.currency_code as toCurrencyCode, " +
+              "    tr.comment, tr.labels, " +
               "    tr.period, te.id as templId " +
-              "  from money_trn_templs te, money_trns tr, accounts fa, accounts ta " +
+              "  from money_trn_templs te, money_trns tr, " +
+              "    accounts fa " +
+              "      left join balances fb on fb.id = fa.id, " +
+              "    accounts ta " +
+              "      left join balances tb on tb.id = ta.id " +
               "  where te.bs_id = ? and te.status = 'active' " +
               "    and tr.id = te.sample_id and te.next_date < ? " +
               "    and fa.id = tr.from_acc_id and ta.id = tr.to_acc_id ")
@@ -257,17 +269,17 @@ object MoneyTrnsDao {
   }
 
   @Throws(SQLException::class)
-  fun createMoneyTrnInternal(conn: Connection, balanceSheetId: UUID, moneyTrn: MoneyTrn) {
+  fun createMoneyTrnInternal(conn: Connection, bsId: UUID, moneyTrn: MoneyTrn) {
     val run = QueryRunner()
     val createdTs = java.sql.Timestamp(java.util.Date().time)
 
     run.update(conn,
         "insert into money_trns(id, status, balance_sheet_id, created_ts, trn_date, date_num, " +
-            "from_acc_id, to_acc_id, parent_id, amount, comment, labels, period, templ_id) " +
-            "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "from_acc_id, to_acc_id, parent_id, amount, to_amount, comment, labels, period, templ_id) " +
+            "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         moneyTrn.id,
         pending.name,
-        balanceSheetId,
+        bsId,
         createdTs,
         moneyTrn.trnDate,
         0,
@@ -275,6 +287,7 @@ object MoneyTrnsDao {
         moneyTrn.toAccId,
         moneyTrn.parentId,
         moneyTrn.amount,
+        moneyTrn.toAmount,
         moneyTrn.comment,
         moneyTrn.labelsAsString,
         moneyTrn.period!!.name,
@@ -382,6 +395,7 @@ object MoneyTrnsDao {
               " from_acc_id = ?," +
               " to_acc_id = ?," +
               " amount = ?," +
+              " to_amount = ?," +
               " period = ?, " +
               " comment = ?, " +
               " labels = ? " +
@@ -391,6 +405,7 @@ object MoneyTrnsDao {
           trn.fromAccId,
           trn.toAccId,
           trn.amount,
+          trn.toAmount,
           trn.period!!.name,
           trn.comment,
           trn.labelsAsString,

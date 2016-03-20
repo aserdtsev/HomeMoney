@@ -45,7 +45,7 @@ class UserResource {
       @CookieParam("userId") userId: UUID,
       @CookieParam("authToken") authToken: UUID): HmResponse {
     UsersDao.logout(userId, authToken)
-    return HmResponse.ok
+    return HmResponse.getOk()
   }
 
   @POST

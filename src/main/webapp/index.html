@@ -87,7 +87,7 @@
     <div align="center">
       <a href="" ng-click="groupList.expanded = !groupList.expanded">{{groupList.caption}}</a>
     </div>
-    <div ng-repeat="trn in groupList.data" ng-show="groupList.expanded" class="list-item-block">
+    <div ng-repeat="trn in groupList.items" ng-show="groupList.expanded" class="list-item-block">
       <div ng-show="!trn.isEdited">
         <span ng-hide="trn.status == 'done'">{{trn.trnDate}}</span>
         <a href=""
@@ -291,6 +291,7 @@
     <div ng-show="balance.isEdited" class="form">
       <div>
         <input type="text" ng-model="balance.name" placeholder="Название"/>
+        <input type="text" ng-model="balance.currencyCode" placeholder="Код валюты"/>
         <input type="text" class="date" ng-model="balance.createdDate" placeholder="Дата"/>
         <select ng-model="balance.type">
           <option value="debit">Места хранения</option>

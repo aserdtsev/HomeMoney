@@ -19,7 +19,7 @@ class MoneyTrnsResource {
       @QueryParam("search") search: String?,
       @DefaultValue("10") @QueryParam("limit") limit: Int,
       @DefaultValue("0") @QueryParam("offset") offset: Int): HmResponse {
-    try {
+    return try {
       val trns = ArrayList<MoneyTrn>()
 
       if (offset == 0) {
@@ -33,9 +33,10 @@ class MoneyTrnsResource {
       val hasNext = doneTrns.size > limit
       trns.addAll(if (hasNext) doneTrns.subList(0, limit) else doneTrns)
 
-      return HmResponse.getOk(PagedList(trns, limit, offset, hasNext))
+      val pagedList = PagedList(trns, limit, offset, hasNext)
+      HmResponse("OK", pagedList)
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
   }
 
@@ -70,15 +71,13 @@ class MoneyTrnsResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun deleteMoneyTrn(
       @PathParam("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse {
+      moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.deleteMoneyTrn(bsId, moneyTrn.id!!)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/update")
@@ -86,15 +85,13 @@ class MoneyTrnsResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun updateMoneyTrn(
       @PathParam("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse {
+      moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.updateMoneyTrn(bsId, moneyTrn)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/skip")
@@ -102,15 +99,13 @@ class MoneyTrnsResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun skipMoneyTrn(
       @PathParam("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse {
+      moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.skipMoneyTrn(bsId, moneyTrn)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/up")
@@ -118,13 +113,11 @@ class MoneyTrnsResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun upMoneyTrn(
       @PathParam("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse {
+      moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.upMoneyTrn(bsId, moneyTrn.id!!)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 }

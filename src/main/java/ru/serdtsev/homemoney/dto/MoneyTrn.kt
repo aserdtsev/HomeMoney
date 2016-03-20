@@ -29,6 +29,9 @@ class MoneyTrn {
   var type: String? = null
   var parentId: UUID? = null
   var amount: BigDecimal? = null
+  var currencyCode: String? = null
+  var toAmount: BigDecimal? = null
+  var toCurrencyCode: String? = null
   var comment: String? = null
   var createdTs: Timestamp? = null
   var period: Period? = null
@@ -71,7 +74,9 @@ class MoneyTrn {
     }
     return trnDate == other.trnDate
         && fromAccId == other.fromAccId && toAccId == other.toAccId
-        && amount!!.compareTo(other.amount) == 0 && status == other.status
+        && amount!!.compareTo(other.amount) == 0
+        && toAmount!!.compareTo(other.toAmount) == 0
+        && status == other.status
   }
 
   override fun equals(other: Any?): Boolean {

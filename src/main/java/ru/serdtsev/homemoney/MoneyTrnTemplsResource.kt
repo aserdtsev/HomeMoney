@@ -36,7 +36,7 @@ class MoneyTrnTemplsResource {
         moneyTrn.period!!, moneyTrn.fromAccId!!, moneyTrn.toAccId!!, moneyTrn.amount!!,
         moneyTrn.comment, moneyTrn.labels)
     MoneyTrnTemplsDao.createMoneyTrnTempl(bsId, templ)
-    return HmResponse.ok
+    return HmResponse.getOk()
   }
 
   @POST
@@ -48,7 +48,7 @@ class MoneyTrnTemplsResource {
       templ: MoneyTrnTempl): HmResponse {
     templ.nextDate = MoneyTrnTempl.calcNextDate(templ.nextDate!!, templ.period!!)
     MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ)
-    return HmResponse.ok
+    return HmResponse.getOk()
   }
 
   @POST
@@ -57,15 +57,13 @@ class MoneyTrnTemplsResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun delete(
       @PathParam("bsId") bsId: UUID,
-      templ: MoneyTrnTempl): HmResponse {
+      templ: MoneyTrnTempl): HmResponse =
     try {
       MoneyTrnTemplsDao.deleteMoneyTrnTempl(bsId, templ.id!!)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/update")
@@ -73,14 +71,12 @@ class MoneyTrnTemplsResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun updateTempl(
       @PathParam("bsId") bsId: UUID,
-      templ: MoneyTrnTempl): HmResponse {
+      templ: MoneyTrnTempl): HmResponse =
     try {
       MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
 }

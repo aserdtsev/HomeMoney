@@ -19,15 +19,13 @@ class CategoriesResource {
   @Path("/create")
   @Consumes(MediaType.APPLICATION_JSON)
   @Produces(MediaType.APPLICATION_JSON)
-  fun createCategory(@PathParam("bsId") bsId: UUID, category: Category): HmResponse {
+  fun createCategory(@PathParam("bsId") bsId: UUID, category: Category): HmResponse =
     try {
       CategoriesDao.createCategory(bsId, category)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/update")
@@ -35,15 +33,13 @@ class CategoriesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun updateCategory(
       @PathParam("bsId") bsId: String,
-      category: Category): HmResponse {
+      category: Category): HmResponse =
     try {
       CategoriesDao.updateCategory(UUID.fromString(bsId), category)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 
   @POST
   @Path("/delete")
@@ -51,13 +47,11 @@ class CategoriesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun deleteCategory(
       @PathParam("bsId") bsId: UUID,
-      category: Category): HmResponse {
+      category: Category): HmResponse =
     try {
       CategoriesDao.deleteCategory(bsId, category.id!!)
-      return HmResponse.ok
+      HmResponse.getOk()
     } catch (e: HmException) {
-      return HmResponse.getFail(e.getCode())
+      HmResponse.getFail(e.getCode())
     }
-
-  }
 }

@@ -28,6 +28,9 @@ class MoneyTrnTempl {
   var toAccName: String? = null
   var type: String? = null
   var amount: BigDecimal? = null
+  var currencyCode: String? = null
+  var toAmount: BigDecimal? = null
+  var toCurrencyCode: String? = null
   var comment: String? = null
   var labels: List<String>? = null
 
