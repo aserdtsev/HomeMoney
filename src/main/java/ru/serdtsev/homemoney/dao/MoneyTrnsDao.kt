@@ -28,7 +28,7 @@ object MoneyTrnsDao {
           " mt.to_acc_id as toAccId, ta.name as toAccName, " +
           " case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
           " mt.parent_id as parentId, " +
-          " mt.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB')  as currencyCode, " +
+          " mt.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode, " +
           " coalesce(mt.to_amount, mt.amount) as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') toCurrencyCode, " +
           " mt.comment, mt.labels, mt.period, mt.templ_id as templId " +
           " from money_trns mt, " +
@@ -144,8 +144,8 @@ object MoneyTrnsDao {
               "    tr.from_acc_id as fromAccId, fa.name as fromAccName, " +
               "    tr.to_acc_id as toAccId, ta.name as toAccName, " +
               "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
-              "    null as parentId, te.amount, fb.currency_code as currencyCode, " +
-              "    te.to_amount as toAmount, tb.currency_code as toCurrencyCode, " +
+              "    null as parentId, te.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode, " +
+              "    te.to_amount as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') as toCurrencyCode, " +
               "    tr.comment, tr.labels, " +
               "    tr.period, te.id as templId " +
               "  from money_trn_templs te, money_trns tr, " +

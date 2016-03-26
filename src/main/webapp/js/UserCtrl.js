@@ -1,10 +1,9 @@
 'use strict';
 
-hmControllers.controller('UserCtrl', ['$scope', '$rootScope', '$cookies', 'UserSvc', UserCtrl]);
-function UserCtrl($scope, $rootScope, $cookies, UserSvc) {
+hmControllers.controller('UserCtrl', ['$scope', '$rootScope', '$cookies', 'UserSvc', 'ReferencesSvc', UserCtrl]);
+function UserCtrl($scope, $rootScope, $cookies, UserSvc, ReferencesSvc) {
   $rootScope.isLogged = false;
   $scope.email = $cookies.get('email');
-  $scope.pwd;
 
   var response = UserSvc.getBalanceSheetId(function() {
     if (response.status == 'OK') {
@@ -43,9 +42,9 @@ function UserCtrl($scope, $rootScope, $cookies, UserSvc) {
   }
 
   $scope.$on('logout', function() {
-    $scope.pwd = undefined;
     $rootScope.isLogged = false;
     $rootScope.bsId = undefined;
+    $rootScope.currencies = undefined;
     $cookies.remove('userId');
     $cookies.remove('authToken');
   });

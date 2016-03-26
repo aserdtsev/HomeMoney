@@ -88,8 +88,8 @@ function ReservesCtrl($scope, $rootScope, ReservesSvc) {
     });
   };
 
-  $scope.formatMoney = function(amount) {
-    return formatMoney(amount);
+  $scope.formatMoney = function(amount, currencySymbol) {
+    return $rootScope.formatMoney(amount, currencySymbol);
   }
 }
 

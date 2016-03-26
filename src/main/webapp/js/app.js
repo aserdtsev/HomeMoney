@@ -36,25 +36,3 @@ function formatDate(date) {
   var y = date.getFullYear();
   return y + '-' + m + '-' + d;
 }
-
-function formatMoney(amount, spaceChar){
-  if (typeof amount == 'undefined') {
-    return null;
-  }
-  if (typeof spaceChar == 'undefined') {
-    spaceChar = '&nbsp;';
-  }
-  var amountStrBuf = parseFloat(amount).toFixed(2);
-  var sign = '';
-  if (amountStrBuf[0] == '-') {
-    sign = '-';
-    amountStrBuf = amountStrBuf.substr(1, amountStrBuf.length - 1);
-  }
-  var result = spaceChar + 'p.';
-  while (amountStrBuf.length > 3) {
-    result = spaceChar + amountStrBuf.substr(amountStrBuf.length - 3, 3) + result;
-    amountStrBuf = amountStrBuf.substr(0, amountStrBuf.length - 3);
-  }
-  result = sign + amountStrBuf + result;
-  return result;
-};

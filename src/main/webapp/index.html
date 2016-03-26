@@ -13,6 +13,7 @@
   <script src="js/services.js"></script>
   <script src="js/controllers.js"></script>
   <script src="js/UserCtrl.js"></script>
+  <script src="js/InitCtrl.js"></script>
   <script src="js/BalanceSheetCtrl.js"></script>
   <script src="js/CategoriesCtrl.js"></script>
   <script src="js/BalancesCtrl.js"></script>
@@ -37,6 +38,8 @@
     <span ng-bind="errMsg"></span>
   </div>
 </div>
+
+<div ng-controller="InitCtrl" ng-hide="true"></div>
 
 <div ng-controller="BalanceSheetCtrl" class="block">
   <div>
@@ -92,7 +95,7 @@
         <span ng-hide="trn.status == 'done'">{{trn.trnDate}}</span>
         <a href=""
            ng-click="trn.isEdited=true"
-           ng-bind-html="formatMoney(getSignedAmount(trn))"
+           ng-bind-html="formatMoney(getSignedAmount(trn), trn.currencySymbol)"
            class="{{trn.type == 'transfer' ? 'money' : (trn.type == 'income' ? 'positive-money' : 'negative-money')}}">
         </a>
         <span ng-bind="trn[trn.type == 'income' ? 'toAccName' : 'fromAccName']"></span>

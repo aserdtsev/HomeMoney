@@ -5,20 +5,32 @@ hmControllers.controller('MoneyTrnsCtrl',
 function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrnsSvc, MoneyTrnTemplsSvc) {
   $scope.defaultDate;
   $scope.pageSize = 5;
-  $scope.currencies;
   $scope.accounts;
   $scope.search = '';
   $scope.trns;
   $scope.templs;
 
+  $scope.$on('login', function() {
+    $scope.loadTempls();
+    $scope.loadTrnsFirstPage($scope.pageSize);
+    $scope.loadAccounts();
+  });
+
+  $scope.$on('logout', function() {
+    $scope.templs = undefined;
+    $scope.accounts = undefined;
+    $scope.fromAccounts = undefined;
+    $scope.toAccounts = undefined;
+    $scope.trns = undefined;
+    $scope.search = undefined;
+  });
+
+  $scope.$on('refreshAccounts', function() {
+    $scope.loadAccounts();
+  });
+
   $scope.isLogged = function() {
     return $rootScope.isLogged;
-  }
-
-  $scope.loadCurrencies = function() {
-    var response = ReferencesSvc.currencies({bsId: $rootScope.bsId}, function() {
-      $scope.currencies = response.data;
-    });
   }
 
   $scope.find = function(search) {
@@ -27,7 +39,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   }
 
   $scope.refresh = function() {
-    $scope.loadCurrencies();
     $scope.loadTempls();
     $scope.refreshTrns();
     $rootScope.$broadcast('refreshBalanceSheet');
@@ -72,6 +83,9 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   $scope.addToTrns = function(list) {
     var today = $scope.getToday();
     list.forEach(function(trn) {
+      trn.currencySymbol = $rootScope.currencies.filter(function (item) {
+        return item['currencyCode'] == trn['currencyCode'];
+      })[0]['symbol'];
       var groupName = (trn.status == "done") ? trn.trnDate : "Ближайшие";
       var groupList = $scope.getGroupList(groupName);
       groupList.items = groupList.items.concat(trn);
@@ -104,26 +118,13 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
     });
   };
 
-  $scope.$on('login', function() {
-    $scope.loadCurrencies();
-    $scope.loadTempls();
-    $scope.loadTrnsFirstPage($scope.pageSize);
-    $scope.loadAccounts();
-  });
-
-  $scope.$on('logout', function() {
-    $scope.currencies = undefined;
-    $scope.templs = undefined;
-    $scope.accounts = undefined;
-    $scope.fromAccounts = undefined;
-    $scope.toAccounts = undefined;
-    $scope.trns = undefined;
-    $scope.search = undefined;
-  });
-
-  $scope.$on('refreshAccounts', function() {
-    $scope.loadAccounts();
-  });
+  $scope.loadTrnsNextPage = function(search) {
+    var offset = $scope.getTrnsLength();
+    var response = MoneyTrnsSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
+      $scope.addToTrns(response.data.items);
+      $scope.trns.hasNext = response.data.paging.hasNext;
+    });
+  };
 
   // Возвращает количество завершенных операций в $scope.trns.
   $scope.getTrnsLength = function() {
@@ -133,14 +134,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
     });
     return length;
   }
-
-  $scope.loadTrnsNextPage = function(search) {
-    var offset = $scope.getTrnsLength();
-    var response = MoneyTrnsSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
-      $scope.addToTrns(response.data.items);
-      $scope.trns.hasNext = response.data.paging.hasNext;
-    });
-  };
 
   $scope.hasTrnsNextPage = function() {
     if (typeof $scope.trns == 'undefined' || typeof $scope.trns.data == 'undefined') {
@@ -332,8 +325,8 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
         (period == 'single') ? 'Разовая' : '?';
   }
 
-  $scope.formatMoney = function(amount) {
-    return formatMoney(amount);
+  $scope.formatMoney = function(amount, currencySymbol) {
+    return $rootScope.formatMoney(amount, currencySymbol);
   };
 
   $scope.showSearchClick = function() {

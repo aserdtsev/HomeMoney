@@ -32,8 +32,8 @@ function BalanceSheetCtrl($scope, $rootScope, BalanceSheetSvc) {
     $scope.loadBsStat();
   });
 
-  $scope.formatMoney = function(amount, spaceChar) {
-    return formatMoney(amount, spaceChar);
+  $scope.formatMoney = function(amount, currencySymbol, spaceChar) {
+    return $rootScope.formatMoney(amount, currencySymbol, spaceChar);
   };
 
   $scope.options = {
@@ -50,7 +50,7 @@ function BalanceSheetCtrl($scope, $rootScope, BalanceSheetSvc) {
     ],
     lineMode: 'linear',
     tension: 0.7,
-    tooltip: {mode: 'scrubber', formatter: function(x, y) {return $scope.formatMoney(y, ' ');}},
+    tooltip: {mode: 'scrubber', formatter: function(x, y) {return $scope.formatMoney(y, '', ' ');}},
     drawLegend: true,
     drawDots: true,
     columnsHGap: 5
