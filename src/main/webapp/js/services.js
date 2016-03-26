@@ -22,6 +22,15 @@ hmServices.factory('BalanceSheetSvc', ['$resource',
   }
 ]);
 
+hmServices.factory('ReferencesSvc', ['$resource',
+  function($resource) {
+    var baseUrl = 'api/:bsId/references';
+    return $resource(baseUrl, {}, {
+      currencies: { method: 'GET', url: baseUrl + '/currencies' }
+    })
+  }
+]);
+
 hmServices.factory('AccountsSvc', ['$resource',
   function($resource) {
     return $resource('api/:bsId/accounts', {}, {

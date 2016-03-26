@@ -1,10 +1,11 @@
 'use strict';
 
 hmControllers.controller('MoneyTrnsCtrl',
-    ['$scope', '$rootScope', 'MoneyTrnsSvc', 'MoneyTrnTemplsSvc', 'AccountsSvc', MoneyTrnsCtrl]);
-function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, AccountsSvc) {
+    ['$scope', '$rootScope', 'ReferencesSvc', 'AccountsSvc', 'MoneyTrnsSvc', 'MoneyTrnTemplsSvc', MoneyTrnsCtrl]);
+function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrnsSvc, MoneyTrnTemplsSvc) {
   $scope.defaultDate;
   $scope.pageSize = 5;
+  $scope.currencies;
   $scope.accounts;
   $scope.search = '';
   $scope.trns;
@@ -14,12 +15,19 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
     return $rootScope.isLogged;
   }
 
+  $scope.loadCurrencies = function() {
+    var response = ReferencesSvc.currencies({bsId: $rootScope.bsId}, function() {
+      $scope.currencies = response.data;
+    });
+  }
+
   $scope.find = function(search) {
     $scope.search = search;
     $scope.refresh();
   }
 
   $scope.refresh = function() {
+    $scope.loadCurrencies();
     $scope.loadTempls();
     $scope.refreshTrns();
     $rootScope.$broadcast('refreshBalanceSheet');
@@ -42,7 +50,7 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
 
   $scope.getGroupList = function(caption) {
     var result;
-    $scope.trns.items.forEach(function(groupList) {
+    $scope.trns.data.forEach(function(groupList) {
       if (typeof result == 'undefined' && groupList.caption == caption) {
         result = groupList;
       }
@@ -52,8 +60,8 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
       if (caption == 'Ближайшие') {
         result.expanded = false;
       }
-      $scope.trns.items.splice(0, 0, result);
-      $scope.trns.items.sort(function(a, b) {
+      $scope.trns.data.splice(0, 0, result);
+      $scope.trns.data.sort(function(a, b) {
         if (a.caption < b.caption) return 1;
         if (a.caption > b.caption) return -1;
       });
@@ -91,18 +99,20 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
       qLimit = $scope.pageSize;
     }
     var response = MoneyTrnsSvc.query({bsId: $rootScope.bsId, search: $scope.search, limit: qLimit, offset: 0}, function() {
-      $scope.trns = {items: [], hasNext: response.data.paging.hasNext};
+      $scope.trns = {data: [], hasNext: response.data.paging.hasNext};
       $scope.addToTrns(response.data.items);
     });
   };
 
   $scope.$on('login', function() {
+    $scope.loadCurrencies();
     $scope.loadTempls();
     $scope.loadTrnsFirstPage($scope.pageSize);
     $scope.loadAccounts();
   });
 
-  $scope.$on('logout', function(event) {
+  $scope.$on('logout', function() {
+    $scope.currencies = undefined;
     $scope.templs = undefined;
     $scope.accounts = undefined;
     $scope.fromAccounts = undefined;
@@ -118,8 +128,8 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
   // Возвращает количество завершенных операций в $scope.trns.
   $scope.getTrnsLength = function() {
     var length = 0;
-    $scope.trns.items.forEach(function(groupList) {
-      length += groupList.isDone ? groupList.data.length : 0;
+    $scope.trns.data.forEach(function(groupList) {
+      length += groupList.isDone ? groupList.items.length : 0;
     });
     return length;
   }
@@ -127,13 +137,13 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
   $scope.loadTrnsNextPage = function(search) {
     var offset = $scope.getTrnsLength();
     var response = MoneyTrnsSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
-      $scope.addToTrns(response.data.data);
+      $scope.addToTrns(response.data.items);
       $scope.trns.hasNext = response.data.paging.hasNext;
     });
   };
 
   $scope.hasTrnsNextPage = function() {
-    if (typeof $scope.trns == 'undefined' || typeof $scope.trns.items == 'undefined') {
+    if (typeof $scope.trns == 'undefined' || typeof $scope.trns.data == 'undefined') {
       return false;
     }
     return $scope.trns.hasNext;
@@ -224,7 +234,7 @@ function MoneyTrnsCtrl($scope, $rootScope, MoneyTrnsSvc, MoneyTrnTemplsSvc, Acco
     trn.trnDate = formatDate($scope.getDefaultDate());
     trn.isEdited = true;
     var groupList = $scope.getGroupList('Новые');
-    groupList.data.splice(0, 0, trn);
+    groupList.items.splice(0, 0, trn);
   };
 
   $scope.completeTrn = function(trn) {
