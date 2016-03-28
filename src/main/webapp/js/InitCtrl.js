@@ -15,6 +15,12 @@ function InitCtrl($scope, $rootScope, ReferencesSvc) {
     }
   }
 
+  $rootScope.getCurrencySymbol = function(currencyCode) {
+    return $rootScope.currencies.filter(function(item) {
+      return item['currencyCode'] == currencyCode;
+    })[0]['symbol'];
+  }
+
   $rootScope.formatMoney = function(amount, currencySymbol, spaceChar){
     if (typeof amount == 'undefined') {
       return null;

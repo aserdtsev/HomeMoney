@@ -195,7 +195,7 @@
     <div>
       <div ng-hide="templ.isEdited">
         <span>{{templ.nextDate}}</span>
-        <span ng-bind-html="formatMoney(getSignedAmount(templ))"
+        <span ng-bind-html="formatMoney(getSignedAmount(templ), templ.currencySymbol)"
               class="{{templ.type == 'transfer' ? 'money' : (templ.type == 'income' ? 'positive-money' : 'negative-money')}}">
         </span>
         <span ng-bind="templ[templ.type == 'income' ? 'toAccName' : 'fromAccName']"></span>

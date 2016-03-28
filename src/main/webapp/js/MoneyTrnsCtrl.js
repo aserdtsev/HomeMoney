@@ -83,9 +83,7 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   $scope.addToTrns = function(list) {
     var today = $scope.getToday();
     list.forEach(function(trn) {
-      trn.currencySymbol = $rootScope.currencies.filter(function (item) {
-        return item['currencyCode'] == trn['currencyCode'];
-      })[0]['symbol'];
+      trn.currencySymbol = $rootScope.getCurrencySymbol(trn['currencyCode']);
       var groupName = (trn.status == "done") ? trn.trnDate : "Ближайшие";
       var groupList = $scope.getGroupList(groupName);
       groupList.items = groupList.items.concat(trn);
@@ -101,6 +99,9 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
     }
     var response = MoneyTrnTemplsSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
       $scope.templs = response.data;
+      $scope.templs.forEach(function(templ) {
+        templ['currencySymbol'] = $rootScope.getCurrencySymbol(templ['currencyCode']);
+      });
     });
   }
 
