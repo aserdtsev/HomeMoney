@@ -246,6 +246,7 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
 
   $scope.saveTrn = function(trn) {
     delete trn.isEdited;
+    delete trn.currencySymbol;
     if (trn.id == null) {
       $scope.createTrn(trn);
     } else {
@@ -263,6 +264,7 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   };
 
   $scope.updateTrn = function(trn) {
+    delete trn.currencySymbol;
     MoneyTrnsSvc.update({bsId: $rootScope.bsId}, trn, function() {
       $scope.loadTrnsFirstPage($scope.getTrnsLength());
       $rootScope.$broadcast('refreshBalanceSheet');
@@ -278,6 +280,7 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   };
 
   $scope.skipTrn = function(trn) {
+    delete trn.currencySymbol;
     MoneyTrnsSvc.skip({bsId: $rootScope.bsId}, trn, function() {
       $scope.loadTrnsFirstPage($scope.getTrnsLength());
       $scope.loadTempls();
