@@ -30,8 +30,12 @@ class MoneyTrn {
   var parentId: UUID? = null
   var amount: BigDecimal? = null
   var currencyCode: String? = null
+  val currencySymbol: String?
+    get() = Currency.getInstance(currencyCode).symbol
   var toAmount: BigDecimal? = null
   var toCurrencyCode: String? = null
+  val toCurrencySymbol: String?
+    get() = Currency.getInstance(toCurrencyCode).symbol
   var comment: String? = null
   var createdTs: Timestamp? = null
   var period: Period? = null

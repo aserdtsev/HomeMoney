@@ -83,7 +83,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   $scope.addToTrns = function(list) {
     var today = $scope.getToday();
     list.forEach(function(trn) {
-      trn.currencySymbol = $rootScope.getCurrencySymbol(trn['currencyCode']);
       var groupName = (trn.status == "done") ? trn.trnDate : "Ближайшие";
       var groupList = $scope.getGroupList(groupName);
       groupList.items = groupList.items.concat(trn);
@@ -99,9 +98,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
     }
     var response = MoneyTrnTemplsSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
       $scope.templs = response.data;
-      $scope.templs.forEach(function(templ) {
-        templ['currencySymbol'] = $rootScope.getCurrencySymbol(templ['currencyCode']);
-      });
     });
   }
 
@@ -246,7 +242,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
 
   $scope.saveTrn = function(trn) {
     delete trn.isEdited;
-    delete trn.currencySymbol;
     if (trn.id == null) {
       $scope.createTrn(trn);
     } else {
@@ -264,7 +259,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   };
 
   $scope.updateTrn = function(trn) {
-    delete trn.currencySymbol;
     MoneyTrnsSvc.update({bsId: $rootScope.bsId}, trn, function() {
       $scope.loadTrnsFirstPage($scope.getTrnsLength());
       $rootScope.$broadcast('refreshBalanceSheet');
@@ -273,7 +267,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
 
   $scope.deleteTrn = function(trn) {
     delete trn.isEdited;
-    delete trn.currencySymbol;
     MoneyTrnsSvc.delete({bsId: $rootScope.bsId}, trn, function() {
       $scope.loadTrnsFirstPage($scope.getTrnsLength());
       $rootScope.$broadcast('refreshBalanceSheet');
@@ -281,7 +274,6 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   };
 
   $scope.skipTrn = function(trn) {
-    delete trn.currencySymbol;
     MoneyTrnsSvc.skip({bsId: $rootScope.bsId}, trn, function() {
       $scope.loadTrnsFirstPage($scope.getTrnsLength());
       $scope.loadTempls();

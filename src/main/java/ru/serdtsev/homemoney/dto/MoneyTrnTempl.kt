@@ -29,8 +29,12 @@ class MoneyTrnTempl {
   var type: String? = null
   var amount: BigDecimal? = null
   var currencyCode: String? = null
+  val currencySymbol: String?
+    get() = Currency.getInstance(currencyCode).symbol
   var toAmount: BigDecimal? = null
   var toCurrencyCode: String? = null
+  val toCurrencySymbol: String?
+    get() = Currency.getInstance(toCurrencyCode).symbol
   var comment: String? = null
   var labels: List<String>? = null
 
