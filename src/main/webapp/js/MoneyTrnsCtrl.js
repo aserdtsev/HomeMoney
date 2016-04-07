@@ -273,6 +273,7 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
 
   $scope.deleteTrn = function(trn) {
     delete trn.isEdited;
+    delete trn.currencySymbol;
     MoneyTrnsSvc.delete({bsId: $rootScope.bsId}, trn, function() {
       $scope.loadTrnsFirstPage($scope.getTrnsLength());
       $rootScope.$broadcast('refreshBalanceSheet');
