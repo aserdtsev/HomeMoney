@@ -269,20 +269,22 @@
       </div>
       <div class="balance-right-block">
         <div ng-show="balance['creditLimit'] > 0 || balance['minValue'] > 0">Доступные средства:
-          <span ng-bind-html="formatMoney(balance['freeFunds'])"
+          <span ng-bind-html="formatMoney(balance['freeFunds'], balance['currencySymbol'])"
                 class="{{balance['freeFunds'] >= 0 ? 'positive-money' : 'negative-money'}}">
           </span>
         </div>
         <div>Баланс:
-          <span ng-bind-html="formatMoney(balance['value'])"
+          <span ng-bind-html="formatMoney(balance['value'], balance['currencySymbol'])"
                 class="{{balance['value'] >= 0 ? 'positive-money' : 'negative-money'}}">
           </span>
         </div>
         <div ng-show="balance['creditLimit'] > 0">
-          Кредитный лимит: <span ng-bind-html="formatMoney(balance['creditLimit'])"></span>
+          Кредитный лимит:
+          <span ng-bind-html="formatMoney(balance['creditLimit'], balance['currencySymbol'])"></span>
         </div>
         <div ng-show="balance['minValue'] > 0">
-          Минимальный остаток: <span ng-bind-html="formatMoney(balance['minValue'])"></span>
+          Минимальный остаток:
+          <span ng-bind-html="formatMoney(balance['minValue'], balance['currencySymbol'])"></span>
         </div>
         <div>
           <a href="" ng-click="upBalance(balance)">вверх</a>
@@ -337,8 +339,12 @@
         <div>{{reserve.name}}<span ng-show="reserve.isArc == true"> [в архиве]</span></div>
       </div>
       <div class="balance-right-block">
-        <div>Цель: <span ng-bind-html="formatMoney(reserve.target)" class="money"></span></div>
-        <div>Текущее значение: <span ng-bind-html="formatMoney(reserve.value)" class="money"></span></div>
+        <div>Цель:
+          <span ng-bind-html="formatMoney(reserve.target, reserve.currencySymbol)" class="money"></span>
+        </div>
+        <div>Текущее значение:
+          <span ng-bind-html="formatMoney(reserve.value, reserve.currencySymbol)" class="money"></span>
+        </div>
         <div>
           <a href="" ng-click="reserve.isEdited = true">изменить</a>
           <a href="" ng-click="deleteReserve(reserve)">удалить</a>

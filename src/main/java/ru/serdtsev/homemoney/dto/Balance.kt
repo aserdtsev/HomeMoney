@@ -11,8 +11,11 @@ open class Balance : Account {
   var currencyCode: String? = null
     get() = field ?: "RUB"
 
+  val currencySymbol: String?
+    get() = getCurrency().symbol
+
   @XmlTransient
-  fun getCurrency() = java.util.Currency.getInstance(currencyCode)
+  fun getCurrency() = Currency.getInstance(currencyCode)
 
   var value: BigDecimal? = null
     get() = field ?: BigDecimal.ZERO.setScale(getCurrency().defaultFractionDigits)
