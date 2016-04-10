@@ -1,11 +1,12 @@
 'use strict';
 
 hmControllers.controller('MoneyTrnsCtrl',
-    ['$scope', '$rootScope', 'ReferencesSvc', 'AccountsSvc', 'MoneyTrnsSvc', 'MoneyTrnTemplsSvc', MoneyTrnsCtrl]);
-function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrnsSvc, MoneyTrnTemplsSvc) {
+    ['$scope', '$rootScope', 'AccountsSvc', 'BalancesSvc', 'MoneyTrnsSvc', 'MoneyTrnTemplsSvc', MoneyTrnsCtrl]);
+function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSvc, MoneyTrnTemplsSvc) {
   $scope.defaultDate;
   $scope.pageSize = 5;
   $scope.accounts;
+  $scope.balances;
   $scope.search = '';
   $scope.trns;
   $scope.templs;
@@ -14,6 +15,7 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
     $scope.loadTempls();
     $scope.loadTrnsFirstPage($scope.pageSize);
     $scope.loadAccounts();
+    $scope.loadBalances();
   });
 
   $scope.$on('logout', function() {
@@ -27,6 +29,7 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
 
   $scope.$on('refreshAccounts', function() {
     $scope.loadAccounts();
+    $scope.loadBalances();
   });
 
   $scope.isLogged = function() {
@@ -49,15 +52,20 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   }
 
   $scope.loadAccounts = function() {
-    if (!$scope.isLogged()) {
-      return;
-    }
+    if (!$scope.isLogged()) return;
     var response = AccountsSvc.query({bsId: $rootScope.bsId}, function() {
       $scope.accounts = response.data.filter(function(account) {
         return !account['isArc'];
       });
     });
   };
+
+  $scope.loadBalances = function() {
+    if (!$scope.isLogged()) return;
+    var response = BalancesSvc.query({bsId: $rootScope.bsId}, function() {
+      $scope.balances = response.data;
+    })
+  }
 
   $scope.getGroupList = function(caption) {
     var result;
@@ -93,18 +101,14 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
   }
 
   $scope.loadTempls = function() {
-    if (!$scope.isLogged()) {
-      return;
-    }
+    if (!$scope.isLogged()) return;
     var response = MoneyTrnTemplsSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
       $scope.templs = response.data;
     });
   }
 
   $scope.loadTrnsFirstPage = function(limit) {
-    if (!$scope.isLogged()) {
-      return;
-    }
+    if (!$scope.isLogged()) return;
     var qLimit = limit;
     if (typeof limit == 'undefined') {
       qLimit = $scope.pageSize;
@@ -208,6 +212,12 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
     return $scope.accounts.filter(function(account) {
       return account.id == id;
     })[0];
+  }
+
+  $scope.getBalance = function(id) {
+    return $scope.balances.filter(function(balance) {
+      return balance.id == id
+    })[0]
   }
 
   $scope.newTrn = function(param) {
@@ -367,4 +377,27 @@ function MoneyTrnsCtrl($scope, $rootScope, ReferencesSvc, AccountsSvc, MoneyTrns
       $scope.refresh();
     });
   };
+
+  /**
+   * Возвращает true, если счета, заданные идентификаторами @param id1 и @param id2, в разных валютах.
+   * Если хотя бы один из счетов не определен или счета в одной валюте, возвращает false.
+   */
+  $scope.balanceCysIsNotEqual = function(id1, id2) {
+    if (typeof id1 == 'undefined' || typeof id2 == 'undefined') {
+      return false;
+    }
+    var balance1 = $scope.getBalance(id1);
+    var balance2 = $scope.getBalance(id2);
+    if (typeof balance1 == 'undefined' || typeof balance2 == 'undefined') {
+      return false;
+    }
+    return balance1['currencyCode'] != balance2['currencyCode'];
+  }
+
+  $scope.getAmountAsHtml = function(trn) {
+    var result = $scope.formatMoney($scope.getSignedAmount(trn), trn['currencySymbol'])
+    if (trn['currencyCode'] != trn['toCurrencyCode'])
+      result = result + " (" + $scope.formatMoney(trn['toAmount'], trn['toCurrencySymbol']) + ")"
+    return result
+  }
 }

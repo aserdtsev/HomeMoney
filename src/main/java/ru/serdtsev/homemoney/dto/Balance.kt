@@ -11,8 +11,9 @@ open class Balance : Account {
   var currencyCode: String? = null
     get() = field ?: "RUB"
 
-  val currencySymbol: String?
+  var currencySymbol: String?
     get() = getCurrency().symbol
+    set(value: String?) {}
 
   @XmlTransient
   fun getCurrency() = Currency.getInstance(currencyCode)
@@ -47,6 +48,5 @@ open class Balance : Account {
   // Для сериализации класса из JSON.
   @Suppress("unused", "unused_parameter")
   @XmlElement(name = "freeFunds")
-  fun setFreeFunds(value: BigDecimal) {
-  }
+  fun setFreeFunds(value: BigDecimal) {}
 }

@@ -11,9 +11,8 @@ import javax.ws.rs.core.MediaType
 class BalancesResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
-  fun getBalances(@PathParam("bsId") bsId: UUID): HmResponse {
-    return HmResponse.getOk(BalancesDao.getBalances(bsId))
-  }
+  fun getBalances(@PathParam("bsId") bsId: UUID) =
+    HmResponse.getOk(BalancesDao.getBalances(bsId))
 
   @POST
   @Path("/create")
@@ -21,7 +20,7 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun createBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse =
+      balance: Balance) =
     try {
       BalancesDao.createBalance(bsId, balance)
       HmResponse.getOk()
@@ -35,7 +34,7 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun updateBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse =
+      balance: Balance) =
     try {
       BalancesDao.updateBalance(bsId, balance)
       HmResponse.getOk()
@@ -49,7 +48,7 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun deleteBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse =
+      balance: Balance) =
     try {
       BalancesDao.deleteBalance(bsId, balance.id!!)
       HmResponse.getOk()
@@ -63,7 +62,7 @@ class BalancesResource {
   @Produces(MediaType.APPLICATION_JSON)
   fun upBalance(
       @PathParam("bsId") bsId: UUID,
-      balance: Balance): HmResponse =
+      balance: Balance) =
     try {
       BalancesDao.upBalance(bsId, balance)
       HmResponse.getOk()

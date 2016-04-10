@@ -95,7 +95,7 @@
         <span ng-hide="trn.status == 'done'">{{trn.trnDate}}</span>
         <a href=""
            ng-click="trn.isEdited=true"
-           ng-bind-html="formatMoney(getSignedAmount(trn), trn.currencySymbol)"
+           ng-bind-html="getAmountAsHtml(trn)"
            class="{{trn.type == 'transfer' ? 'money' : (trn.type == 'income' ? 'positive-money' : 'negative-money')}}">
         </a>
         <span ng-bind="trn[trn.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
@@ -154,14 +154,19 @@
                 ng-model="trn.fromAccId"
                 ng-options="acc.id as acc.name for acc in getSecondAccounts(trn)">
             </select>
+            <input type="text"
+                   class="amount"
+                   ng-if="trn.type == 'transfer' && balanceCysIsNotEqual(trn.fromAccId, trn.toAccId)"
+                   ng-model="trn.toAmount"
+                   placeholder="Сумма"/>
+          </div>
+          <div>
             <select ng-model="trn.period">
               <option value="month">Месяц</option>
               <option value="quarter">Квартал</option>
               <option value="year">Год</option>
               <option value="single">Разовая</option>
             </select>
-          </div>
-          <div>
             <input type="text" ng-model="trn.comment" placeholder="Комментарий"/>
             <span>
               <span ng-repeat="label in trn['labels']">
@@ -195,7 +200,7 @@
     <div>
       <div ng-hide="templ.isEdited">
         <span>{{templ.nextDate}}</span>
-        <span ng-bind-html="formatMoney(getSignedAmount(templ), templ.currencySymbol)"
+        <span ng-bind-html="getAmountAsHtml(templ)"
               class="{{templ.type == 'transfer' ? 'money' : (templ.type == 'income' ? 'positive-money' : 'negative-money')}}">
         </span>
         <span ng-bind="templ[templ.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
