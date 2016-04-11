@@ -8,18 +8,17 @@ import org.apache.commons.dbutils.handlers.BeanHandler
 import org.apache.commons.dbutils.handlers.BeanListHandler
 import ru.serdtsev.homemoney.HmException
 import ru.serdtsev.homemoney.dto.Account
-import ru.serdtsev.homemoney.dto.Balance
 import ru.serdtsev.homemoney.dto.MoneyTrn
 import ru.serdtsev.homemoney.dto.MoneyTrn.Status
 import ru.serdtsev.homemoney.dto.MoneyTrn.Status.done
 import ru.serdtsev.homemoney.dto.MoneyTrn.Status.pending
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl
+import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.Date
 import java.sql.SQLException
 import java.time.LocalDate
 import java.util.*
-import javax.validation.constraints.NotNull
 
 object MoneyTrnsDao {
   private val baseSelect =
@@ -303,32 +302,38 @@ object MoneyTrnsDao {
   }
 
   @Throws(SQLException::class)
-  private fun setStatus(conn: Connection, bsId: UUID, moneyTrnId: UUID, @NotNull status: Status) {
+  private fun setStatus(conn: Connection, bsId: UUID, moneyTrnId: UUID, status: Status) {
     val trn = getMoneyTrn(conn, bsId, moneyTrnId)
-    if (status == trn.status) {
-      return
-    }
+    if (status == trn.status) return
     var fromAccId: UUID? = null
+    var fromAmount: BigDecimal? = null
     var toAccId: UUID? = null
+    var toAmount: BigDecimal? = null
     when (status) {
-      done -> if (trn.status == Status.pending || trn.status == Status.cancelled) {
-        fromAccId = trn.fromAccId!!
-        toAccId = trn.toAccId!!
-      }
-      MoneyTrn.Status.cancelled, pending -> if (trn.status == Status.done) {
-        fromAccId = trn.toAccId!!
-        toAccId = trn.fromAccId!!
-      }
-      else -> throw HmException(HmException.Code.UnknownMoneyTrnStatus)
+      done ->
+        if (trn.status == Status.pending || trn.status == Status.cancelled) {
+          fromAccId = trn.fromAccId!!
+          fromAmount = trn.amount!!
+          toAccId = trn.toAccId!!
+          toAmount = trn.toAmount!!
+        };
+      MoneyTrn.Status.cancelled, pending ->
+        if (trn.status == Status.done) {
+          fromAccId = trn.toAccId!!
+          fromAmount = trn.toAmount!!
+          toAccId = trn.fromAccId!!
+          toAmount = trn.amount!!
+        };
+      else ->
+        throw HmException(HmException.Code.UnknownMoneyTrnStatus)
     }
 
     if (fromAccId != null) {
       val fromAccount = AccountsDao.getAccount(fromAccId)
       if (!trn.trnDate!!.before(fromAccount.createdDate) && fromAccount.isBalance()) {
-        val fromBalance: Balance
         try {
-          fromBalance = BalancesDao.getBalance(conn, fromAccId)
-          BalancesDao.changeBalanceValue(conn, fromBalance, trn.amount!!.negate())
+          val fromBalance = BalancesDao.getBalance(conn, fromAccId)
+          BalancesDao.changeBalanceValue(conn, fromBalance, fromAmount!!.negate())
         } catch (e: SQLException) {
           throw HmSqlException(e)
         }
@@ -338,10 +343,9 @@ object MoneyTrnsDao {
     if (toAccId != null) {
       val toAccount = AccountsDao.getAccount(toAccId)
       if (!trn.trnDate!!.before(toAccount.createdDate) && toAccount.isBalance()) {
-        val toBalance: Balance
         try {
-          toBalance = BalancesDao.getBalance(conn, toAccId)
-          BalancesDao.changeBalanceValue(conn, toBalance, trn.amount!!)
+          val toBalance = BalancesDao.getBalance(conn, toAccId)
+          BalancesDao.changeBalanceValue(conn, toBalance, toAmount!!)
         } catch (e: SQLException) {
           throw HmSqlException(e)
         }
