@@ -190,9 +190,14 @@ object MainDao {
    */
   @Throws(SQLException::class)
   private fun calcCurrSaldo(conn: Connection, run: QueryRunner, bsStat: BsStat) {
+    // todo Точность округления должна зависеть от базовой валюты.
+    // todo Базовая валюта может быть в id как первой, так и второй.
+    // todo Поиск по exchange_rates.id неиндексированный.
     val aggrAccSaldo = run.query(conn,
-        "select a.type, sum(b.value) as saldo " +
-            "  from accounts a, balances b " +
+        "select a.type, round(sum(b.value * coalesce(er.ask, 1)), 2) as saldo " +
+            "  from " +
+            "    accounts a, " +
+            "    balances b left join exchange_rates er on substring(er.id from 1 for 3) = b.currency_code " +
             "  where a.balance_sheet_id = ? and a.type in ('debit', 'credit', 'reserve', 'asset') and b.id = a.id " +
             "  group by type",
         BeanListHandler(AggrAccSaldo::class.java), bsStat.bsId)
