@@ -3,8 +3,8 @@ package ru.serdtsev.homemoney.dto
 import java.math.BigDecimal
 import java.sql.Date
 
-class Turnover(var trnDate: Date? = null, var fromAccType: Account.Type? = null, var toAccType: Account.Type? = null) {
-  var amount = BigDecimal.ZERO
+class Turnover(var trnDate: Date? = null, var fromAccType: Account.Type? = null, var toAccType: Account.Type? = null,
+    var amount: BigDecimal? = BigDecimal.ZERO) {
 
   override fun equals(other: Any?): Boolean{
     if (this === other) return true

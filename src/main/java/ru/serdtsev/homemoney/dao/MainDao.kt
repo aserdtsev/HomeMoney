@@ -259,8 +259,16 @@ object MainDao {
     try {
       return run.query(conn,
           "select mt.trn_date as trnDate, " +
-              " af.type as fromAccType, at.type as toAccType, sum(mt.amount) as amount " +
-              "  from money_trns mt, accounts af, accounts at " +
+              " af.type as fromAccType, at.type as toAccType, " +
+              " round(sum(mt.amount * coalesce(erf.ask, coalesce(ert.ask, 1))), 2) as amount " +
+              "  from " +
+              "    money_trns mt, " +
+              "    accounts af " +
+              "      left join balances bf on bf.id = af.id " +
+              "      left join exchange_rates erf on substring(erf.id from 1 for 3) = bf.currency_code, " +
+              "    accounts at " +
+              "      left join balances bt on bt.id = at.id " +
+              "      left join exchange_rates ert on substring(ert.id from 1 for 3) = bt.currency_code " +
               "  where mt.balance_sheet_id = ? and status = ? and mt.trn_date between ? and ? " +
               "    and af.id = mt.from_acc_id and at.id = mt.to_acc_id " +
               "  group by mt.trn_date, af.type, at.type ",
@@ -304,7 +312,7 @@ object MainDao {
         } else {
           turnovers.add(turnover)
         }
-        turnover.amount = turnover.amount.add(t.amount)
+        turnover.amount = turnover.amount!!.add(t.amount)
         templNextDate = MoneyTrnTempl.calcNextDate(templNextDate, t.period!!)
       }
     }
