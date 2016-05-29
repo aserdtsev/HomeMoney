@@ -155,7 +155,7 @@ object MainDao {
       val run = QueryRunner()
       val handler = BeanListHandler(Turnover::class.java)
 
-      calcCurrSaldo(conn, run, bsStat)
+      calcCrntSaldo(conn, run, bsStat)
 
       val map = TreeMap<Date, BsDayStat>()
       fillBsDayStatMap(map,
@@ -189,17 +189,12 @@ object MainDao {
    * Вычисляет текущие балансы счетов и резервов.
    */
   @Throws(SQLException::class)
-  private fun calcCurrSaldo(conn: Connection, run: QueryRunner, bsStat: BsStat) {
+  private fun calcCrntSaldo(conn: Connection, run: QueryRunner, bsStat: BsStat) {
     // todo Точность округления должна зависеть от базовой валюты.
     // todo Базовая валюта может быть в id как первой, так и второй.
     // todo Поиск по exchange_rates.id неиндексированный.
     val aggrAccSaldo = run.query(conn,
-        "select a.type, round(sum(b.value * coalesce(er.ask, 1)), 2) as saldo " +
-            "  from " +
-            "    accounts a, " +
-            "    balances b left join exchange_rates er on substring(er.id from 1 for 3) = b.currency_code " +
-            "  where a.balance_sheet_id = ? and a.type in ('debit', 'credit', 'reserve', 'asset') and b.id = a.id " +
-            "  group by type",
+        "select type, sum(saldo) as saldo from v_crnt_saldo_by_base_crnt where bs_id = ? group by type",
         BeanListHandler(AggrAccSaldo::class.java), bsStat.bsId)
     aggrAccSaldo.forEach { saldo -> bsStat.saldoMap.put(saldo.type!!, saldo.saldo!!) }
   }
@@ -258,20 +253,11 @@ object MainDao {
       fromDate: Date, toDate: Date): List<Turnover> {
     try {
       return run.query(conn,
-          "select mt.trn_date as trnDate, " +
-              " af.type as fromAccType, at.type as toAccType, " +
-              " round(sum(mt.amount * coalesce(erf.ask, coalesce(ert.ask, 1))), 2) as amount " +
-              "  from " +
-              "    money_trns mt, " +
-              "    accounts af " +
-              "      left join balances bf on bf.id = af.id " +
-              "      left join exchange_rates erf on substring(erf.id from 1 for 3) = bf.currency_code, " +
-              "    accounts at " +
-              "      left join balances bt on bt.id = at.id " +
-              "      left join exchange_rates ert on substring(ert.id from 1 for 3) = bt.currency_code " +
-              "  where mt.balance_sheet_id = ? and status = ? and mt.trn_date between ? and ? " +
-              "    and af.id = mt.from_acc_id and at.id = mt.to_acc_id " +
-              "  group by mt.trn_date, af.type, at.type ",
+          "select trn_date as trnDate, from_acc_type as fromAccType, to_acc_type as toAccType, " +
+              "sum(amount) as amount " +
+              "from v_trns_by_base_crn " +
+              "where bs_id = ? and status = ? and trn_date between ? and ? " +
+              "group by trn_date, from_acc_type, to_acc_type ",
           handler, bsId, status.name, fromDate, toDate)
     } catch (e: SQLException) {
       throw HmSqlException(e)
@@ -282,13 +268,12 @@ object MainDao {
       handler: ResultSetHandler<List<Turnover>>, bsId: UUID, fromDate: Date, toDate: Date): List<Turnover> {
     try {
       return run.query(conn,
-          "select mt.trn_date + interval '1 months' as trnDate, " +
-              " af.type as fromAccType, at.type as toAccType, " +
-              " sum(case when mt.period = 'single' or not mt.templ_id is null then 0 else mt.amount end) as amount " +
-              "  from money_trns mt, accounts af, accounts at " +
-              "  where mt.balance_sheet_id = ? and status = ? and mt.trn_date between ? and ? " +
-              "    and af.id = mt.from_acc_id and at.id = mt.to_acc_id " +
-              "  group by mt.trn_date, af.type, at.type ",
+          "select trn_date + interval '1 months' as trnDate, " +
+              "from_acc_type as fromAccType, to_acc_type as toAccType, " +
+              "sum(case when period = 'single' or not templ_id is null then 0 else amount end) as amount " +
+              "from v_trns_by_base_crn " +
+              "where bs_id = ? and status = ? and trn_date between ? and ? " +
+              "group by trn_date, from_acc_type, to_acc_type ",
           handler, bsId, MoneyTrn.Status.done.name, fromDate, toDate)
     } catch (e: SQLException) {
       throw HmSqlException(e)
