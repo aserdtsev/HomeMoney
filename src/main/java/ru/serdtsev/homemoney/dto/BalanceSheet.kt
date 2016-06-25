@@ -9,5 +9,5 @@ data class BalanceSheet(
     var createdTs: Timestamp? = null,
     var svcRsvId: UUID? = null,
     var uncatCostsId: UUID? = null,
-    var uncatIncomeId: UUID? = null) {
-}
+    var uncatIncomeId: UUID? = null,
+    var currencyCode: String? = null)

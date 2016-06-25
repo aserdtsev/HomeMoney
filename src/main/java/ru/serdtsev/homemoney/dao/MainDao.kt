@@ -18,10 +18,10 @@ import java.util.*
 
 object MainDao {
   private val cpds: ComboPooledDataSource
-  private val baseBsSelectQuery =
+  private val baseBsSelectQuery = "" +
       "select id, created_ts as createdTs, svc_rsv_id as svcRsvId, " +
-          "uncat_costs_id as uncatCostsId, uncat_income_id as uncatIncomeId " +
-          "from balance_sheets "
+      "    uncat_costs_id as uncatCostsId, uncat_income_id as uncatIncomeId, currency_code as currencyCode " +
+      "  from balance_sheets "
 
   init {
     cpds = ComboPooledDataSource()
@@ -109,7 +109,8 @@ object MainDao {
   internal fun createBalanceSheet(conn: Connection, id: UUID) {
     val run = QueryRunner()
     val now = java.sql.Timestamp(java.util.Date().time)
-    run.update(conn, "insert into balance_sheets(id, created_ts) values (?, ?)", id, now)
+    val currencyCode = "RUB"
+    run.update(conn, "insert into balance_sheets(id, created_ts, currency_code) values (?, ?, ?)", id, now, currencyCode)
 
     val svcRsvId = UUID.randomUUID()
     AccountsDao.createAccount(conn, id,
@@ -127,7 +128,7 @@ object MainDao {
     run.update(conn, "update balance_sheets set uncat_income_id = ? where id = ?", uncatIncomeId, id)
 
     BalancesDao.createBalance(conn, id,
-        Balance(UUID.randomUUID(), Account.Type.debit, "Наличные", "RUB", BigDecimal.ZERO))
+        Balance(UUID.randomUUID(), Account.Type.debit, "Наличные", currencyCode, BigDecimal.ZERO))
   }
 
   fun deleteBalanceSheet(id: UUID) {
@@ -190,11 +191,8 @@ object MainDao {
    */
   @Throws(SQLException::class)
   private fun calcCrntSaldo(conn: Connection, run: QueryRunner, bsStat: BsStat) {
-    // todo Точность округления должна зависеть от базовой валюты.
-    // todo Базовая валюта может быть в id как первой, так и второй.
-    // todo Поиск по exchange_rates.id неиндексированный.
     val aggrAccSaldo = run.query(conn,
-        "select type, sum(saldo) as saldo from v_crnt_saldo_by_base_crnt where bs_id = ? group by type",
+        "select type, sum(saldo) as saldo from v_crnt_saldo_by_base_cry where bs_id = ? group by type",
         BeanListHandler(AggrAccSaldo::class.java), bsStat.bsId)
     aggrAccSaldo.forEach { saldo -> bsStat.saldoMap.put(saldo.type!!, saldo.saldo!!) }
   }
