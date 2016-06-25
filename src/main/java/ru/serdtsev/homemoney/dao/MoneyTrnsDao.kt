@@ -21,23 +21,23 @@ import java.time.LocalDate
 import java.util.*
 
 object MoneyTrnsDao {
-  private val baseSelect =
+  private val baseSelect = "" +
       "select mt.id, mt.status, mt.created_ts as createdTs, mt.trn_date as trnDate, mt.date_num as dateNum," +
-          " mt.from_acc_id as fromAccId, fa.name as fromAccName, " +
-          " mt.to_acc_id as toAccId, ta.name as toAccName, " +
-          " case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
-          " mt.parent_id as parentId, " +
-          " mt.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode, " +
-          " coalesce(mt.to_amount, mt.amount) as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') toCurrencyCode, " +
-          " mt.comment, mt.labels, mt.period, mt.templ_id as templId " +
-          " from money_trns mt, " +
-          "   accounts fa " +
-          "     left join balances fb on fb.id = fa.id, " +
-          "   accounts ta" +
-          "     left join balances tb on tb.id = ta.id " +
-          " where mt.balance_sheet_id = ? " +
-          " and fa.id = mt.from_acc_id " +
-          " and ta.id = mt.to_acc_id "
+      " mt.from_acc_id as fromAccId, fa.name as fromAccName, " +
+      " mt.to_acc_id as toAccId, ta.name as toAccName, " +
+      " case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
+      " mt.parent_id as parentId, " +
+      " mt.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode, " +
+      " coalesce(mt.to_amount, mt.amount) as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') toCurrencyCode, " +
+      " mt.comment, mt.labels, mt.period, mt.templ_id as templId " +
+      " from money_trns mt, " +
+      "   accounts fa " +
+      "     left join balances fb on fb.id = fa.id, " +
+      "   accounts ta" +
+      "     left join balances tb on tb.id = ta.id " +
+      " where mt.balance_sheet_id = ? " +
+      " and fa.id = mt.from_acc_id " +
+      " and ta.id = mt.to_acc_id "
 
   fun getDoneMoneyTrns(bsId: UUID, search: String?, limit: Int, offset: Int): List<MoneyTrn> {
     val trns: List<MoneyTrn>
@@ -138,23 +138,23 @@ object MoneyTrnsDao {
     try {
       val handler = BeanListHandler(MoneyTrn::class.java,
           BasicRowProcessor(MoneyTrnProcessor()))
-      val sql = StringBuilder(
+      val sql = StringBuilder("" +
           "select null as id, 'pending' as status, null as createdTs, te.next_date as trnDate, 0 as dateNum, " +
-              "    tr.from_acc_id as fromAccId, fa.name as fromAccName, " +
-              "    tr.to_acc_id as toAccId, ta.name as toAccName, " +
-              "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
-              "    null as parentId, te.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode, " +
-              "    te.to_amount as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') as toCurrencyCode, " +
-              "    tr.comment, tr.labels, " +
-              "    tr.period, te.id as templId " +
-              "  from money_trn_templs te, money_trns tr, " +
-              "    accounts fa " +
-              "      left join balances fb on fb.id = fa.id, " +
-              "    accounts ta " +
-              "      left join balances tb on tb.id = ta.id " +
-              "  where te.bs_id = ? and te.status = 'active' " +
-              "    and tr.id = te.sample_id and te.next_date < ? " +
-              "    and fa.id = tr.from_acc_id and ta.id = tr.to_acc_id ")
+          "    tr.from_acc_id as fromAccId, fa.name as fromAccName, " +
+          "    tr.to_acc_id as toAccId, ta.name as toAccName, " +
+          "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
+          "    null as parentId, te.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode, " +
+          "    te.to_amount as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') as toCurrencyCode, " +
+          "    tr.comment, tr.labels, " +
+          "    tr.period, te.id as templId " +
+          "  from money_trn_templs te, money_trns tr, " +
+          "    accounts fa " +
+          "      left join balances fb on fb.id = fa.id, " +
+          "    accounts ta " +
+          "      left join balances tb on tb.id = ta.id " +
+          "  where te.bs_id = ? and te.status = 'active' " +
+          "    and tr.id = te.sample_id and te.next_date < ? " +
+          "    and fa.id = tr.from_acc_id and ta.id = tr.to_acc_id ")
       val params = ArrayList<Any>()
       params.add(bsId)
       params.add(beforeDate)
@@ -272,10 +272,10 @@ object MoneyTrnsDao {
     val run = QueryRunner()
     val createdTs = java.sql.Timestamp(java.util.Date().time)
 
-    run.update(conn,
+    run.update(conn, "" +
         "insert into money_trns(id, status, balance_sheet_id, created_ts, trn_date, date_num, " +
-            "from_acc_id, to_acc_id, parent_id, amount, to_amount, comment, labels, period, templ_id) " +
-            "values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "    from_acc_id, to_acc_id, parent_id, amount, to_amount, comment, labels, period, templ_id) " +
+        "  values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         moneyTrn.id,
         pending.name,
         bsId,
@@ -392,18 +392,18 @@ object MoneyTrnsDao {
     } else {
       val origTrnStatus = trn.status!!
       setStatus(conn, bsId, trn.id!!, Status.cancelled)
-      run.update(conn,
+      run.update(conn, "" +
           "update money_trns set " +
-              " trn_date = ?," +
-              " date_num = ?," +
-              " from_acc_id = ?," +
-              " to_acc_id = ?," +
-              " amount = ?," +
-              " to_amount = ?," +
-              " period = ?, " +
-              " comment = ?, " +
-              " labels = ? " +
-              " where id = ?",
+          "    trn_date = ?," +
+          "    date_num = ?," +
+          "    from_acc_id = ?," +
+          "    to_acc_id = ?," +
+          "    amount = ?," +
+          "    to_amount = ?," +
+          "    period = ?, " +
+          "    comment = ?, " +
+          "    labels = ? " +
+          "  where id = ?",
           trn.trnDate,
           trn.dateNum,
           trn.fromAccId,
