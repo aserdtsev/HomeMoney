@@ -19,7 +19,7 @@ import java.util.*
 object UsersDao {
   fun login(email: String, pwd: String): Authentication {
     val SHARE_SALT = "4301"
-    var user: User
+    val user: User
     val authToken: UUID = UUID.randomUUID()
     val pwdHash = Hashing.sha1().hashString(pwd + email + SHARE_SALT, Charsets.UTF_8).toString()
     val conn = MainDao.getConnection()
@@ -102,7 +102,7 @@ object UsersDao {
 
   }
 
-  @Suppress("unchecked")
+  @Suppress("unchecked", "UNCHECKED_CAST")
   @Throws(SQLException::class)
   private fun checkAuthToken(conn: Connection, userId: UUID, authToken: UUID) {
     val tokenNum = QueryRunner().query(conn,
