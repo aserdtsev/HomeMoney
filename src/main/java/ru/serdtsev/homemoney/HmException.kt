@@ -2,11 +2,11 @@ package ru.serdtsev.homemoney
 
 class HmException(private val code: HmException.Code) : RuntimeException() {
   enum class Code {
-    AuthWrong,
+    WrongAuth,
     UnknownAccountTypeCode,
     UnknownMoneyTrnStatus,
     IdentifiersDoNotMatch,
-    AmountWrong
+    WrongAmount
   }
 
   fun getCode(): String {

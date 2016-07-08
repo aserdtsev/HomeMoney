@@ -53,7 +53,7 @@ class MoneyTrn {
       comment: String? = null, labels: List<String>? = null, dateNum: Int? = 0,
       parentId: UUID? = null, templId: UUID? = null, createdTs: Timestamp? = Timestamp.valueOf(LocalDateTime.now())) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
-      throw HmException(HmException.Code.AmountWrong)
+      throw HmException(HmException.Code.WrongAmount)
     }
     this.id = id
     this.status = status
@@ -84,6 +84,9 @@ class MoneyTrn {
         && toAmount!!.compareTo(other.toAmount) == 0
         && status == other.status
   }
+
+  @XmlTransient
+  fun isMonoCurrencies(): Boolean = currencyCode == toCurrencyCode
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true

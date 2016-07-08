@@ -383,6 +383,8 @@ object MoneyTrnsDao {
 
   @Throws(SQLException::class)
   private fun updateMoneyTrn(conn: Connection, bsId: UUID, trn: MoneyTrn) {
+    if (trn.isMonoCurrencies() && trn.amount != trn.toAmount)
+      throw HmException(HmException.Code.WrongAmount)
     val run = QueryRunner()
     val origTrn = getMoneyTrn(conn, bsId, trn.id!!)
     if (trn.crucialEquals(origTrn)) {
@@ -409,7 +411,7 @@ object MoneyTrnsDao {
           trn.fromAccId,
           trn.toAccId,
           trn.amount,
-          trn.toAmount,
+          if (trn.isMonoCurrencies()) null else trn.toAmount,
           trn.period!!.name,
           trn.comment,
           trn.labelsAsString,

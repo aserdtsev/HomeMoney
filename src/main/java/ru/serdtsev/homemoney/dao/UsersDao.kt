@@ -26,7 +26,7 @@ object UsersDao {
     try {
       user = getUser(conn, email) ?: createUser(conn, email, pwdHash)
       if (user.pwdHash != pwdHash)
-        throw HmException(HmException.Code.AuthWrong)
+        throw HmException(HmException.Code.WrongAuth)
       saveAuthToken(conn, user.userId!!, authToken)
       DbUtils.commitAndClose(conn)
     } catch (e: SQLException) {
@@ -109,7 +109,7 @@ object UsersDao {
         "select count(1) from auth_tokens where user_id = ? and token = ?",
         ScalarHandler<Long>(1), userId, authToken)
     if (tokenNum == 0L) {
-      throw HmException(HmException.Code.AuthWrong)
+      throw HmException(HmException.Code.WrongAuth)
     }
 
     val element = authTokensCache.get(userId) ?: Element(userId, HashSet<UUID>())

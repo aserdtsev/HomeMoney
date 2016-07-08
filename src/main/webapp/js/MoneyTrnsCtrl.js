@@ -269,6 +269,9 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
   };
 
   $scope.updateTrn = function(trn) {
+    if (trn.currencyCode == trn.toCurrencyCode) {
+      trn.toAmount = trn.amount
+    }
     MoneyTrnsSvc.update({bsId: $rootScope.bsId}, trn, function() {
       $scope.loadTrnsFirstPage($scope.getTrnsLength());
       $rootScope.$broadcast('refreshBalanceSheet');

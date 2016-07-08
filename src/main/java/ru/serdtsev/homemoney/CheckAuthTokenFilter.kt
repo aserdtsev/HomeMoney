@@ -20,7 +20,7 @@ class CheckAuthTokenFilter : ContainerRequestFilter {
         val userIdCookie = cookieMap["userId"]
         val authTokenCookie = cookieMap["authToken"]
         if (userIdCookie == null || authTokenCookie == null)
-          throw HmException(HmException.Code.AuthWrong)
+          throw HmException(HmException.Code.WrongAuth)
         UsersDao.checkAuthToken(
             UUID.fromString(userIdCookie.value),
             UUID.fromString(authTokenCookie.value))
