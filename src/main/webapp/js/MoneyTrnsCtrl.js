@@ -162,16 +162,15 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     }
     return $scope.accounts.filter(function(account) {
       if (trn.type == 'transfer') {
-        var result = account.type == 'debit' || account.type == 'credit'
-            || account == 'asset' || account.type == 'reserve' || account.type == 'service';
-        if (result && typeof trn.toAccId != 'undefined') {
-          result = result && account.id != trn.toAccId;
+        var result = true;
+        if (typeof trn.toAccId != 'undefined') {
+          result = account.id != trn.toAccId;
           if (result) {
             var toAccount = $scope.getAccount(trn.toAccId);
             if (toAccount.type == 'reserve' || toAccount.type == 'service') {
-              result = result && (account.type == 'reserve' || account.type == 'service');
+              result = account.type == 'reserve' || account.type == 'service';
             } else {
-              result = result && account.type != 'reserve' && account.type != 'service';
+              result = account.type != 'reserve' && account.type != 'service';
             }
           }
         }
@@ -188,16 +187,15 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     }
     return $scope.accounts.filter(function(account) {
       if (trn.type == 'transfer') {
-        var result = account.type == 'debit' || account.type == 'credit'
-            || account == 'asset' || account.type == 'reserve';
-        if (result && typeof trn.fromAccId != 'undefined') {
-          result = result && account.id != trn.fromAccId;
+        var result = true;
+        if (typeof trn.fromAccId != 'undefined') {
+          result = account.id != trn.fromAccId;
           if (result) {
             var fromAccount = $scope.getAccount(trn.fromAccId);
             if (fromAccount.type == 'reserve' || fromAccount.type == 'service') {
-              result = result && (account.type == 'reserve' || account.type == 'service');
+              result = account.type == 'reserve' || account.type == 'service';
             } else {
-              result = result && account.type != 'reserve' && account.type != 'service';
+              result = account.type != 'reserve' && account.type != 'service';
             }
           }
         }
