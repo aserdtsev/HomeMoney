@@ -195,7 +195,7 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
             if (fromAccount.type == 'reserve' || fromAccount.type == 'service') {
               result = account.type == 'reserve' || account.type == 'service';
             } else {
-              result = account.type != 'reserve' && account.type != 'service';
+              result = account.type == 'debit' || account.type == 'credit';
             }
           }
         }
