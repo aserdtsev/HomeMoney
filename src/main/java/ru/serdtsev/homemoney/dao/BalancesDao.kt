@@ -4,6 +4,7 @@ import org.apache.commons.dbutils.DbUtils
 import org.apache.commons.dbutils.QueryRunner
 import org.apache.commons.dbutils.handlers.BeanHandler
 import org.apache.commons.dbutils.handlers.BeanListHandler
+import org.slf4j.LoggerFactory
 import ru.serdtsev.homemoney.dto.Balance
 import ru.serdtsev.homemoney.dto.MoneyTrn
 import java.awt.IllegalComponentStateException
@@ -14,6 +15,7 @@ import java.time.LocalDate
 import java.util.*
 
 object BalancesDao {
+  private val log = LoggerFactory.getLogger(javaClass)
   fun getBalances(bsId: UUID): List<Balance> {
     val conn = MainDao.getConnection()
     return try {
@@ -107,7 +109,7 @@ object BalancesDao {
     val currBalance = getBalance(conn, balance.id!!)
     if (balance.value!!.compareTo(currBalance.value) != 0) {
       val bs = MainDao.getBalanceSheet(bsId)
-      val more = balance.value!!.compareTo(currBalance.value) > 0
+      val more = balance.value!! > currBalance.value
       val fromAccId = if (more) bs.uncatIncomeId else balance.id
       val toAccId = if (more) balance.id else bs.uncatCostsId
       val amount = balance.value!!.subtract(currBalance.value).abs()
@@ -149,11 +151,17 @@ object BalancesDao {
   }
 
   @Throws(SQLException::class)
-  fun changeBalanceValue(conn: Connection, balance: Balance, amount: BigDecimal) {
+  fun changeBalanceValue(conn: Connection, balance: Balance, amount: BigDecimal, trnId: UUID, status: MoneyTrn.Status) {
     val run = QueryRunner()
     val rows = run.update(conn, "update balances set value = value + ? where id = ?", amount, balance.id)
     if (rows == 0) {
       throw IllegalComponentStateException(String.format("Баланс счета {%s} не был изменен в БД.", balance.id))
     }
+    log.info("Balance value changed; " +
+        "accId:${balance.id}, " +
+        "trnId:$trnId, " +
+        "status:${status.name}, " +
+        "before:${balance.value}, " +
+        "after:${getBalance(conn, balance.id!!).value}.")
   }
 }

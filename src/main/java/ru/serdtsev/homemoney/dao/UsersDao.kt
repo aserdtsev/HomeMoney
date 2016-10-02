@@ -17,6 +17,7 @@ import java.sql.SQLException
 import java.util.*
 
 object UsersDao {
+  private val log = org.slf4j.LoggerFactory.getLogger(javaClass)
   fun login(email: String, pwd: String): Authentication {
     val SHARE_SALT = "4301"
     val user: User
@@ -28,6 +29,7 @@ object UsersDao {
       if (user.pwdHash != pwdHash)
         throw HmException(HmException.Code.WrongAuth)
       saveAuthToken(conn, user.userId!!, authToken)
+      log.info("User is logged; userId:${user.userId}.")
       DbUtils.commitAndClose(conn)
     } catch (e: SQLException) {
       throw HmSqlException(e)

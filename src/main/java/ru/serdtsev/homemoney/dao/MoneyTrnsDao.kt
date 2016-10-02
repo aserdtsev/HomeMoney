@@ -295,14 +295,14 @@ object MoneyTrnsDao {
 
   private fun completeMoneyTrn(conn: Connection, bsId: UUID, moneyTrnId: UUID) {
     try {
-      setStatus(conn, bsId, moneyTrnId, done)
+      setStatusNChangeBalanceValues(conn, bsId, moneyTrnId, done)
     } catch (e: SQLException) {
       throw HmSqlException(e)
     }
   }
 
   @Throws(SQLException::class)
-  private fun setStatus(conn: Connection, bsId: UUID, moneyTrnId: UUID, status: Status) {
+  private fun setStatusNChangeBalanceValues(conn: Connection, bsId: UUID, moneyTrnId: UUID, status: Status) {
     val trn = getMoneyTrn(conn, bsId, moneyTrnId)
     if (status == trn.status) return
     var fromAccId: UUID? = null
@@ -310,20 +310,19 @@ object MoneyTrnsDao {
     var toAccId: UUID? = null
     var toAmount: BigDecimal? = null
     when (status) {
-      done ->
-        if (trn.status == Status.pending || trn.status == Status.cancelled) {
-          fromAccId = trn.fromAccId!!
-          fromAmount = trn.amount!!
-          toAccId = trn.toAccId!!
-          toAmount = trn.toAmount!!
-        };
+      done -> if (trn.status == Status.pending || trn.status == Status.cancelled) {
+        fromAccId = trn.fromAccId!!
+        fromAmount = trn.amount!!
+        toAccId = trn.toAccId!!
+        toAmount = trn.toAmount!!
+      }
       MoneyTrn.Status.cancelled, pending ->
         if (trn.status == Status.done) {
           fromAccId = trn.toAccId!!
           fromAmount = trn.toAmount!!
           toAccId = trn.fromAccId!!
           toAmount = trn.amount!!
-        };
+        }
       else ->
         throw HmException(HmException.Code.UnknownMoneyTrnStatus)
     }
@@ -333,7 +332,7 @@ object MoneyTrnsDao {
       if (!trn.trnDate!!.before(fromAccount.createdDate) && fromAccount.isBalance()) {
         try {
           val fromBalance = BalancesDao.getBalance(conn, fromAccId)
-          BalancesDao.changeBalanceValue(conn, fromBalance, fromAmount!!.negate())
+          BalancesDao.changeBalanceValue(conn, fromBalance, fromAmount!!.negate(), trn.id!!, status)
         } catch (e: SQLException) {
           throw HmSqlException(e)
         }
@@ -345,7 +344,7 @@ object MoneyTrnsDao {
       if (!trn.trnDate!!.before(toAccount.createdDate) && toAccount.isBalance()) {
         try {
           val toBalance = BalancesDao.getBalance(conn, toAccId)
-          BalancesDao.changeBalanceValue(conn, toBalance, toAmount!!)
+          BalancesDao.changeBalanceValue(conn, toBalance, toAmount!!, trn.id!!, status)
         } catch (e: SQLException) {
           throw HmSqlException(e)
         }
@@ -358,7 +357,7 @@ object MoneyTrnsDao {
   fun deleteMoneyTrn(bsId: UUID, id: UUID) {
     val conn = MainDao.getConnection()
     try {
-      setStatus(conn, bsId, id, Status.cancelled)
+      setStatusNChangeBalanceValues(conn, bsId, id)
       DbUtils.commitAndClose(conn)
     } catch (e: SQLException) {
       throw HmSqlException(e)
@@ -367,6 +366,8 @@ object MoneyTrnsDao {
     }
 
   }
+
+
 
   fun updateMoneyTrn(bsId: UUID, moneyTrn: MoneyTrn) {
     val conn = MainDao.getConnection()
@@ -393,7 +394,7 @@ object MoneyTrnsDao {
           trn.dateNum, trn.period!!.name, trn.comment, trn.labelsAsString, trn.id)
     } else {
       val origTrnStatus = trn.status!!
-      setStatus(conn, bsId, trn.id!!, Status.cancelled)
+      setStatusNChangeBalanceValues(conn, bsId, trn.id!!, Status.cancelled)
       run.update(conn, "" +
           "update money_trns set " +
           "    trn_date = ?," +
@@ -416,7 +417,7 @@ object MoneyTrnsDao {
           trn.comment,
           trn.labelsAsString,
           trn.id)
-      setStatus(conn, bsId, trn.id!!, origTrnStatus)
+      setStatusNChangeBalanceValues(conn, bsId, trn.id!!, origTrnStatus)
     }
   }
 
@@ -424,7 +425,7 @@ object MoneyTrnsDao {
     val conn = MainDao.getConnection()
     try {
       if (trn.id != null) {
-        setStatus(conn, bsId, trn.id!!, Status.cancelled)
+        setStatusNChangeBalanceValues(conn, bsId, trn.id!!, Status.cancelled)
       }
       if (trn.templId != null) {
         val templ = MoneyTrnTemplsDao.getMoneyTrnTempl(conn, bsId, trn.templId!!)
@@ -438,6 +439,10 @@ object MoneyTrnsDao {
       DbUtils.close(conn)
     }
 
+  }
+
+  private fun setStatusNChangeBalanceValues(conn: Connection, bsId: UUID, id: UUID) {
+    setStatusNChangeBalanceValues(conn, bsId, id, Status.cancelled)
   }
 
   fun upMoneyTrn(bsId: UUID, id: UUID) {

@@ -119,6 +119,11 @@
             <artifactId>kotlin-stdlib</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjrt</artifactId>
+            <version>1.8.9</version>
+        </dependency>
     </dependencies>
     <properties>
         <kotlin.version>1.0.2-1</kotlin.version>
