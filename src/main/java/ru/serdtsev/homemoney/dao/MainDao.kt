@@ -177,6 +177,7 @@ object MainDao {
 
       map.putAll(trendMap)
       bsStat.dayStats = ArrayList(map.values)
+      bsStat.categories = getCategoies(conn, run, bsId, fromDate, toDate)
     } catch (e: SQLException) {
       throw HmSqlException(e)
     } finally {
@@ -184,6 +185,29 @@ object MainDao {
     }
 
     return bsStat
+  }
+
+  private fun getCategoies(conn: Connection, run: QueryRunner, bsId: UUID, fromDate: Date, toDate: Date): List<CategoryStat> {
+    var list = run.query(conn, "" +
+        "SELECT" +
+        "  c.id," +
+        "  c.root_id AS rootId," +
+        "  a.name," +
+        "  sum(t.amount) as amount " +
+        "FROM" +
+        "  accounts a," +
+        "  categories c" +
+        "    LEFT JOIN v_trns_by_base_crn t ON t.to_acc_id = c.id AND t.trn_date between ? AND ? " +
+        "WHERE a.balance_sheet_id = ? " +
+        "  AND a.id = c.id AND a.type = 'expense' AND t.status = 'done' " +
+        "GROUP BY c.id, a.name, coalesce(c.root_id, c.id)",
+        BeanListHandler(CategoryStat::class.java), fromDate, toDate, bsId)
+    list.filter{cs -> cs.rootId == null}
+        .forEach {root ->
+          val sum = list.filter{ cs -> cs.rootId == root.id}.sumByDouble { cs -> cs.amount!!.toDouble() }
+          root.amount = root.amount!!.plus(BigDecimal(sum))
+        }
+    return list.filter { it.rootId == null }.sortedByDescending { it.amount }
   }
 
   /**

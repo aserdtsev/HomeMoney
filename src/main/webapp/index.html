@@ -68,6 +68,20 @@
   <div>
     <linechart data="bsStat.dayStats" options="options" mode="" width="800" height="200"></linechart>
   </div>
+  <div>
+    Расходы по категориям
+    <a href="" ng-click="showCharges=!showCharges" ng-bind="showCharges ? 'скрыть' : 'показать'"></a>
+    <div ng-hide="!showCharges" ng-repeat="category in bsStat.categories" class="list-item-block">
+      <div>
+        <div class="balance-left-block">
+          <span ng-bind="category.name"></span>
+        </div>
+        <div class="balance-right-block">
+          <span ng-bind-html="formatMoney(category.amount)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div ng-controller="MoneyTrnsCtrl" class="block">

@@ -10,6 +10,7 @@ class BsStat(val bsId: UUID, private val fromDate: Date, private val toDate: Dat
   var incomeAmount = BigDecimal.ZERO
   var chargesAmount = BigDecimal.ZERO
   var dayStats: List<BsDayStat>? = null
+  var categories: List<CategoryStat>? = null
 
   @XmlTransient
   val saldoMap = HashMap<Account.Type, BigDecimal>()

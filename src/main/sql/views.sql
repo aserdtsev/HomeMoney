@@ -28,7 +28,9 @@ create or replace view public.v_trns_by_base_crn AS
     mt.trn_date,
     mt.period,
     mt.templ_id,
+    af.id as from_acc_id,
     af.type as from_acc_type,
+    at.id as to_acc_id,
     at.type as to_acc_type,
     round(mt.amount * coalesce(erf.ask, coalesce(ert.ask, 1)), 2) as amount
   from
