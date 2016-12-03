@@ -31,8 +31,10 @@ object MainDao {
       cpds.user = "postgres"
       cpds.password = "manager"
       cpds.minPoolSize = 5
+      cpds.maxPoolSize = 10
+      cpds.initialPoolSize = 5
       cpds.acquireIncrement = 5
-      cpds.maxPoolSize = 5
+      cpds.preferredTestQuery = "select 'x' from dual"
     } catch (e: PropertyVetoException) {
       e.printStackTrace()
     }
