@@ -55,6 +55,7 @@
           <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.5-2" />
           <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.5-2" />
           <element id="library" level="project" name="Maven: org.aspectj:aspectjrt:1.8.9" />
+          <element id="library" level="project" name="Maven: org.jetbrains:annotations:15.0" />
         </element>
       </element>
       <element id="directory" name="META-INF">

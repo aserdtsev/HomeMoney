@@ -124,6 +124,11 @@
             <artifactId>aspectjrt</artifactId>
             <version>1.8.9</version>
         </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>RELEASE</version>
+        </dependency>
     </dependencies>
     <properties>
         <kotlin.version>1.0.5-2</kotlin.version>
