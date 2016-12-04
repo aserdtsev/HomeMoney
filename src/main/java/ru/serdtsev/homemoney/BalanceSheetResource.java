@@ -4,8 +4,6 @@ import ru.serdtsev.homemoney.dao.MainDao;
 import ru.serdtsev.homemoney.dto.HmResponse;
 
 import javax.ws.rs.*;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
@@ -14,7 +12,6 @@ public class BalanceSheetResource {
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public HmResponse getBalanceSheetInfo(
-      @Suspended AsyncResponse asyncResponse,
       @PathParam("bsId") UUID bsId,
       @DefaultValue("30") @QueryParam("interval") Long interval) {
     try {

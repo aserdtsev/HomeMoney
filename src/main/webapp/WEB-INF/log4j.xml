@@ -26,6 +26,10 @@
         <appender-ref ref="FileAppender"/>
     </logger>
 
+    <logger name="net.sf.ehcache.config">
+        <level value="info"/>
+    </logger>
+
     <root>
         <priority value="INFO"/>
         <appender-ref ref="ConsoleAppender" />
