@@ -7,35 +7,35 @@
           <element id="module-output" name="HomeMoney" />
         </element>
         <element id="directory" name="lib">
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.containers:jersey-container-servlet:2.24.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.containers:jersey-container-servlet-core:2.24.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.hk2.external:javax.inject:2.5.0-b05" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-common:2.24.1" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.containers:jersey-container-servlet:2.25" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.containers:jersey-container-servlet-core:2.25" />
+          <element id="library" level="project" name="Maven: org.glassfish.hk2.external:javax.inject:2.5.0-b30" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-common:2.25" />
           <element id="library" level="project" name="Maven: javax.annotation:javax.annotation-api:1.2" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.bundles.repackaged:jersey-guava:2.24.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.hk2:hk2-api:2.5.0-b05" />
-          <element id="library" level="project" name="Maven: org.glassfish.hk2:hk2-utils:2.5.0-b05" />
-          <element id="library" level="project" name="Maven: org.glassfish.hk2.external:aopalliance-repackaged:2.5.0-b05" />
-          <element id="library" level="project" name="Maven: org.glassfish.hk2:hk2-locator:2.5.0-b05" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.bundles.repackaged:jersey-guava:2.25" />
+          <element id="library" level="project" name="Maven: org.glassfish.hk2:hk2-api:2.5.0-b30" />
+          <element id="library" level="project" name="Maven: org.glassfish.hk2:hk2-utils:2.5.0-b30" />
+          <element id="library" level="project" name="Maven: org.glassfish.hk2.external:aopalliance-repackaged:2.5.0-b30" />
+          <element id="library" level="project" name="Maven: org.glassfish.hk2:hk2-locator:2.5.0-b30" />
           <element id="library" level="project" name="Maven: org.javassist:javassist:3.20.0-GA" />
           <element id="library" level="project" name="Maven: org.glassfish.hk2:osgi-resource-locator:1.0.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-server:2.24.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-client:2.24.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.media:jersey-media-jaxb:2.24.1" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-server:2.25" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.core:jersey-client:2.25" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.media:jersey-media-jaxb:2.25" />
           <element id="library" level="project" name="Maven: javax.validation:validation-api:1.1.0.Final" />
           <element id="library" level="project" name="Maven: javax.ws.rs:javax.ws.rs-api:2.0.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.media:jersey-media-json-jackson:2.24.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.ext:jersey-entity-filtering:2.24.1" />
-          <element id="library" level="project" name="Maven: com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.5.4" />
-          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.5.4" />
-          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.5.4" />
-          <element id="library" level="project" name="Maven: com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.5.4" />
-          <element id="library" level="project" name="Maven: com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.5.4" />
-          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.5.4" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jetty:2.24.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.test-framework:jersey-test-framework-core:2.24.1" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.media:jersey-media-json-jackson:2.25" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.ext:jersey-entity-filtering:2.25" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:2.8.4" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-core:2.8.4" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-databind:2.8.4" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:2.8.4" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.module:jackson-module-jaxb-annotations:2.8.4" />
+          <element id="library" level="project" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.8.4" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.test-framework.providers:jersey-test-framework-provider-jetty:2.25" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.test-framework:jersey-test-framework-core:2.25" />
           <element id="library" level="project" name="Maven: javax.servlet:javax.servlet-api:3.0.1" />
-          <element id="library" level="project" name="Maven: org.glassfish.jersey.containers:jersey-container-jetty-http:2.24.1" />
+          <element id="library" level="project" name="Maven: org.glassfish.jersey.containers:jersey-container-jetty-http:2.25" />
           <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-server:9.2.14.v20151106" />
           <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-http:9.2.14.v20151106" />
           <element id="library" level="project" name="Maven: org.eclipse.jetty:jetty-io:9.2.14.v20151106" />
@@ -54,7 +54,6 @@
           <element id="library" level="project" name="Maven: log4j:log4j:1.2.17" />
           <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.5-2" />
           <element id="library" level="project" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.5-2" />
-          <element id="library" level="project" name="Maven: org.aspectj:aspectjrt:1.8.9" />
           <element id="library" level="project" name="Maven: org.jetbrains:annotations:15.0" />
         </element>
       </element>

@@ -17,7 +17,12 @@
             <param-name>javax.ws.rs.Application</param-name>
             <param-value>ru.serdtsev.homemoney.HmApplication</param-value>
         </init-param>
+        <init-param>
+            <param-name>threads.num</param-name>
+            <param-value>1</param-value>
+        </init-param>
         <load-on-startup>1</load-on-startup>
+        <async-supported>true</async-supported>
     </servlet>
     <servlet-mapping>
         <servlet-name>HmApplication</servlet-name>

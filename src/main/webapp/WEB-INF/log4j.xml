@@ -22,7 +22,7 @@
     </appender>
 
     <logger name="ru.serdtsev">
-        <level value="INFO"/>
+        <level value="debug"/>
         <appender-ref ref="FileAppender"/>
     </logger>
 

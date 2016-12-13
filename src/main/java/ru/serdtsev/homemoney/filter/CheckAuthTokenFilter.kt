@@ -1,6 +1,7 @@
-package ru.serdtsev.homemoney
+package ru.serdtsev.homemoney.filter
 
 import org.glassfish.jersey.server.ContainerRequest
+import ru.serdtsev.homemoney.HmException
 import ru.serdtsev.homemoney.dao.UsersDao
 import java.io.IOException
 import java.util.*
