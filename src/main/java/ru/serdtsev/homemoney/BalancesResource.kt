@@ -1,25 +1,23 @@
 package ru.serdtsev.homemoney
 
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.dao.BalancesDao
 import ru.serdtsev.homemoney.dto.Balance
 import ru.serdtsev.homemoney.dto.HmResponse
 import java.util.*
-import javax.ws.rs.*
-import javax.ws.rs.core.MediaType
 
-@Path("/{bsId}/balances")
+@RestController
+@RequestMapping("/api/{bsId}/balances")
 class BalancesResource {
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  fun getBalances(@PathParam("bsId") bsId: UUID) =
+  @RequestMapping
+  fun getBalances(@PathVariable("bsId") bsId: UUID) =
     HmResponse.getOk(BalancesDao.getBalances(bsId))
 
-  @POST
-  @Path("/create")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/create")
   fun createBalance(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       balance: Balance) =
     try {
       BalancesDao.createBalance(bsId, balance)
@@ -28,12 +26,9 @@ class BalancesResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/update")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/update")
   fun updateBalance(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       balance: Balance) =
     try {
       BalancesDao.updateBalance(bsId, balance)
@@ -42,12 +37,9 @@ class BalancesResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/delete")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/delete")
   fun deleteBalance(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       balance: Balance) =
     try {
       BalancesDao.deleteBalance(bsId, balance.id!!)
@@ -56,12 +48,9 @@ class BalancesResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/up")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/up")
   fun upBalance(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       balance: Balance) =
     try {
       BalancesDao.upBalance(bsId, balance)

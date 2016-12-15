@@ -45,7 +45,7 @@ object UsersDao {
         "select user_id as userId, email, pwd_hash as pwdHash, bs_id as bsId from users where email = ?",
         BeanHandler(User::class.java), email)
 
-  fun logout(userId: UUID, authToken: UUID) {
+  fun logout(userId: UUID, authToken: UUID?) {
     val conn = MainDao.getConnection()
     try {
       QueryRunner().update(conn, "delete from auth_tokens where user_id = ? and token = ?", userId, authToken)

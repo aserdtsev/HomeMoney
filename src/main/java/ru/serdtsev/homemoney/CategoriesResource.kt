@@ -1,25 +1,23 @@
 package ru.serdtsev.homemoney
 
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.dao.CategoriesDao
 import ru.serdtsev.homemoney.dto.Category
 import ru.serdtsev.homemoney.dto.HmResponse
 import java.util.*
-import javax.ws.rs.*
-import javax.ws.rs.core.MediaType
 
-@Path("/{bsId}/categories")
+@RestController
+@RequestMapping("/api/{bsId}/categories")
 class CategoriesResource {
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  fun getCategoryList(@PathParam("bsId") bsId: UUID): HmResponse {
+  @RequestMapping
+  fun getCategoryList(@PathVariable("bsId") bsId: UUID): HmResponse {
     return HmResponse.getOk(CategoriesDao.getCategories(bsId))
   }
 
-  @POST
-  @Path("/create")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
-  fun createCategory(@PathParam("bsId") bsId: UUID, category: Category): HmResponse =
+  @RequestMapping("/create")
+  fun createCategory(@PathVariable("bsId") bsId: UUID, category: Category): HmResponse =
     try {
       CategoriesDao.createCategory(bsId, category)
       HmResponse.getOk()
@@ -27,12 +25,9 @@ class CategoriesResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/update")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/update")
   fun updateCategory(
-      @PathParam("bsId") bsId: String,
+      @PathVariable("bsId") bsId: String,
       category: Category): HmResponse =
     try {
       CategoriesDao.updateCategory(UUID.fromString(bsId), category)
@@ -41,12 +36,9 @@ class CategoriesResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/delete")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/delete")
   fun deleteCategory(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       category: Category): HmResponse =
     try {
       CategoriesDao.deleteCategory(bsId, category.id!!)

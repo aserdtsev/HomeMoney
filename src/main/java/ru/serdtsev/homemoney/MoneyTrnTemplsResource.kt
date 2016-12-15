@@ -1,20 +1,22 @@
 package ru.serdtsev.homemoney
 
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao
 import ru.serdtsev.homemoney.dto.HmResponse
 import ru.serdtsev.homemoney.dto.MoneyTrn
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl
 import java.util.*
-import javax.ws.rs.*
-import javax.ws.rs.core.MediaType
 
-@Path("/{bsId}/money-trn-templs")
+@RestController
+@RequestMapping("/api/{bsId}/money-trn-templs")
 class MoneyTrnTemplsResource {
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping
   fun getList(
-      @PathParam("bsId") bsId: UUID,
-      @QueryParam("search") search: String?): HmResponse {
+      @PathVariable("bsId") bsId: UUID,
+      @RequestParam("search") search: String?): HmResponse {
     try {
       val list = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, search)
       return HmResponse.getOk(list)
@@ -24,12 +26,9 @@ class MoneyTrnTemplsResource {
 
   }
 
-  @POST
-  @Path("/create")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/create")
   fun create(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       moneyTrn: MoneyTrn): HmResponse {
     val nextDate = MoneyTrnTempl.calcNextDate(moneyTrn.trnDate!!, moneyTrn.period!!)
     val templ = MoneyTrnTempl(UUID.randomUUID(), moneyTrn.id!!, moneyTrn.id!!, nextDate,
@@ -39,24 +38,18 @@ class MoneyTrnTemplsResource {
     return HmResponse.getOk()
   }
 
-  @POST
-  @Path("/skip")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/skip")
   fun skip(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       templ: MoneyTrnTempl): HmResponse {
     templ.nextDate = MoneyTrnTempl.calcNextDate(templ.nextDate!!, templ.period!!)
     MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ)
     return HmResponse.getOk()
   }
 
-  @POST
-  @Path("/delete")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/delete")
   fun delete(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       templ: MoneyTrnTempl): HmResponse =
     try {
       MoneyTrnTemplsDao.deleteMoneyTrnTempl(bsId, templ.id!!)
@@ -65,12 +58,9 @@ class MoneyTrnTemplsResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/update")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/update")
   fun updateTempl(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       templ: MoneyTrnTempl): HmResponse =
     try {
       MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ)

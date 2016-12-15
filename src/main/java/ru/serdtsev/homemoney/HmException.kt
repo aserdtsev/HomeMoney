@@ -6,7 +6,8 @@ class HmException(private val code: HmException.Code) : RuntimeException() {
     UnknownAccountTypeCode,
     UnknownMoneyTrnStatus,
     IdentifiersDoNotMatch,
-    WrongAmount
+    WrongAmount,
+    UserIdCookieIsEmpty
   }
 
   fun getCode(): String {

@@ -1,5 +1,9 @@
 package ru.serdtsev.homemoney
 
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao
 import ru.serdtsev.homemoney.dto.HmResponse
 import ru.serdtsev.homemoney.dto.MoneyTrn
@@ -7,18 +11,16 @@ import ru.serdtsev.homemoney.dto.PagedList
 import java.sql.Date
 import java.time.LocalDate
 import java.util.*
-import javax.ws.rs.*
-import javax.ws.rs.core.MediaType
 
-@Path("/{bsId}/money-trns")
+@RestController
+@RequestMapping("/api/{bsId}/money-trns")
 class MoneyTrnsResource {
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping
   fun getMoneyTrns(
-      @PathParam("bsId") bsId: UUID,
-      @QueryParam("search") search: String?,
-      @DefaultValue("10") @QueryParam("limit") limit: Int,
-      @DefaultValue("0") @QueryParam("offset") offset: Int): HmResponse {
+      @PathVariable("bsId") bsId: UUID,
+      @RequestParam("search") search: String?,
+      @RequestParam(name = "limit", defaultValue = "10") limit: Int,
+      @RequestParam(name = "offset", defaultValue = "0") offset: Int): HmResponse {
     return try {
       val trns = ArrayList<MoneyTrn>()
 
@@ -40,12 +42,10 @@ class MoneyTrnsResource {
     }
   }
 
-  @GET
-  @Path("item")
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/item")
   fun getMoneyTrn(
-      @PathParam("bsId") bsId: UUID,
-      @QueryParam("id") id: UUID): HmResponse {
+      @PathVariable("bsId") bsId: UUID,
+      @RequestParam("id") id: UUID): HmResponse {
     try {
       val moneyTrn = MoneyTrnsDao.getMoneyTrn(bsId, id)
       return HmResponse.getOk(moneyTrn)
@@ -55,22 +55,16 @@ class MoneyTrnsResource {
 
   }
 
-  @POST
-  @Path("/create")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/create")
   fun createMoneyTrn(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       moneyTrn: MoneyTrn): HmResponse {
     return HmResponse.getOk(MoneyTrnsDao.createMoneyTrn(bsId, moneyTrn))
   }
 
-  @POST
-  @Path("/delete")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/delete")
   fun deleteMoneyTrn(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.deleteMoneyTrn(bsId, moneyTrn.id!!)
@@ -79,12 +73,9 @@ class MoneyTrnsResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/update")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/update")
   fun updateMoneyTrn(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.updateMoneyTrn(bsId, moneyTrn)
@@ -93,12 +84,9 @@ class MoneyTrnsResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/skip")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/skip")
   fun skipMoneyTrn(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.skipMoneyTrn(bsId, moneyTrn)
@@ -107,12 +95,9 @@ class MoneyTrnsResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/up")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/up")
   fun upMoneyTrn(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.upMoneyTrn(bsId, moneyTrn.id!!)

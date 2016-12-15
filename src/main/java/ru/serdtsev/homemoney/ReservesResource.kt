@@ -1,27 +1,25 @@
 package ru.serdtsev.homemoney
 
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.dao.ReservesDao
 import ru.serdtsev.homemoney.dto.Account
 import ru.serdtsev.homemoney.dto.HmResponse
 import ru.serdtsev.homemoney.dto.Reserve
 import java.util.*
-import javax.ws.rs.*
-import javax.ws.rs.core.MediaType
 
-@Path("/{bsId}/reserves")
+@RestController
+@RequestMapping("/api/{bsId}/reserves")
 class ReservesResource {
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  fun getReserveList(@PathParam("bsId") bsId: UUID): HmResponse {
+  @RequestMapping
+  fun getReserveList(@PathVariable("bsId") bsId: UUID): HmResponse {
     return HmResponse.getOk(ReservesDao.getReserves(bsId))
   }
 
-  @POST
-  @Path("/create")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/create")
   fun createReserve(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       reserve: Reserve): HmResponse =
     try {
       reserve.type = Account.Type.reserve
@@ -31,12 +29,9 @@ class ReservesResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/update")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/update")
   fun updateReserve(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       reserve: Reserve): HmResponse =
     try {
       ReservesDao.updateReserve(bsId, reserve)
@@ -45,12 +40,9 @@ class ReservesResource {
       HmResponse.getFail(e.getCode())
     }
 
-  @POST
-  @Path("/delete")
-  @Consumes(MediaType.APPLICATION_JSON)
-  @Produces(MediaType.APPLICATION_JSON)
+  @RequestMapping("/delete")
   fun deleteReserve(
-      @PathParam("bsId") bsId: UUID,
+      @PathVariable("bsId") bsId: UUID,
       reserve: Reserve): HmResponse =
     try {
       ReservesDao.deleteReserve(bsId, reserve.id!!)
