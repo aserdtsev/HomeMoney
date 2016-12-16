@@ -1,9 +1,6 @@
 package ru.serdtsev.homemoney
 
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao
 import ru.serdtsev.homemoney.dto.HmResponse
 import ru.serdtsev.homemoney.dto.MoneyTrn
@@ -17,10 +14,10 @@ import java.util.*
 class MoneyTrnsResource {
   @RequestMapping
   fun getMoneyTrns(
-      @PathVariable("bsId") bsId: UUID,
-      @RequestParam("search") search: String?,
-      @RequestParam(name = "limit", defaultValue = "10") limit: Int,
-      @RequestParam(name = "offset", defaultValue = "0") offset: Int): HmResponse {
+      @PathVariable bsId: UUID,
+      @RequestParam search: String?,
+      @RequestParam(defaultValue = "10") limit: Int,
+      @RequestParam(defaultValue = "0") offset: Int): HmResponse {
     return try {
       val trns = ArrayList<MoneyTrn>()
 
@@ -44,8 +41,8 @@ class MoneyTrnsResource {
 
   @RequestMapping("/item")
   fun getMoneyTrn(
-      @PathVariable("bsId") bsId: UUID,
-      @RequestParam("id") id: UUID): HmResponse {
+      @PathVariable bsId: UUID,
+      @RequestParam id: UUID): HmResponse {
     try {
       val moneyTrn = MoneyTrnsDao.getMoneyTrn(bsId, id)
       return HmResponse.getOk(moneyTrn)
@@ -57,15 +54,15 @@ class MoneyTrnsResource {
 
   @RequestMapping("/create")
   fun createMoneyTrn(
-      @PathVariable("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse {
+      @PathVariable bsId: UUID,
+      @RequestBody moneyTrn: MoneyTrn): HmResponse {
     return HmResponse.getOk(MoneyTrnsDao.createMoneyTrn(bsId, moneyTrn))
   }
 
   @RequestMapping("/delete")
   fun deleteMoneyTrn(
-      @PathVariable("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse =
+      @PathVariable bsId: UUID,
+      @RequestBody moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.deleteMoneyTrn(bsId, moneyTrn.id!!)
       HmResponse.getOk()
@@ -75,8 +72,8 @@ class MoneyTrnsResource {
 
   @RequestMapping("/update")
   fun updateMoneyTrn(
-      @PathVariable("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse =
+      @PathVariable bsId: UUID,
+      @RequestBody moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.updateMoneyTrn(bsId, moneyTrn)
       HmResponse.getOk()
@@ -86,8 +83,8 @@ class MoneyTrnsResource {
 
   @RequestMapping("/skip")
   fun skipMoneyTrn(
-      @PathVariable("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse =
+      @PathVariable bsId: UUID,
+      @RequestBody moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.skipMoneyTrn(bsId, moneyTrn)
       HmResponse.getOk()
@@ -97,8 +94,8 @@ class MoneyTrnsResource {
 
   @RequestMapping("/up")
   fun upMoneyTrn(
-      @PathVariable("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse =
+      @PathVariable bsId: UUID,
+      @RequestBody moneyTrn: MoneyTrn): HmResponse =
     try {
       MoneyTrnsDao.upMoneyTrn(bsId, moneyTrn.id!!)
       HmResponse.getOk()

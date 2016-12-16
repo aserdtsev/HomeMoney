@@ -1,9 +1,6 @@
 package ru.serdtsev.homemoney
 
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao
 import ru.serdtsev.homemoney.dto.HmResponse
 import ru.serdtsev.homemoney.dto.MoneyTrn
@@ -15,8 +12,8 @@ import java.util.*
 class MoneyTrnTemplsResource {
   @RequestMapping
   fun getList(
-      @PathVariable("bsId") bsId: UUID,
-      @RequestParam("search") search: String?): HmResponse {
+      @PathVariable bsId: UUID,
+      @RequestParam search: String?): HmResponse {
     try {
       val list = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, search)
       return HmResponse.getOk(list)
@@ -28,8 +25,8 @@ class MoneyTrnTemplsResource {
 
   @RequestMapping("/create")
   fun create(
-      @PathVariable("bsId") bsId: UUID,
-      moneyTrn: MoneyTrn): HmResponse {
+      @PathVariable bsId: UUID,
+      @RequestBody moneyTrn: MoneyTrn): HmResponse {
     val nextDate = MoneyTrnTempl.calcNextDate(moneyTrn.trnDate!!, moneyTrn.period!!)
     val templ = MoneyTrnTempl(UUID.randomUUID(), moneyTrn.id!!, moneyTrn.id!!, nextDate,
         moneyTrn.period!!, moneyTrn.fromAccId!!, moneyTrn.toAccId!!, moneyTrn.amount!!,
@@ -40,8 +37,8 @@ class MoneyTrnTemplsResource {
 
   @RequestMapping("/skip")
   fun skip(
-      @PathVariable("bsId") bsId: UUID,
-      templ: MoneyTrnTempl): HmResponse {
+      @PathVariable bsId: UUID,
+      @RequestBody templ: MoneyTrnTempl): HmResponse {
     templ.nextDate = MoneyTrnTempl.calcNextDate(templ.nextDate!!, templ.period!!)
     MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ)
     return HmResponse.getOk()
@@ -49,8 +46,8 @@ class MoneyTrnTemplsResource {
 
   @RequestMapping("/delete")
   fun delete(
-      @PathVariable("bsId") bsId: UUID,
-      templ: MoneyTrnTempl): HmResponse =
+      @PathVariable bsId: UUID,
+      @RequestBody templ: MoneyTrnTempl): HmResponse =
     try {
       MoneyTrnTemplsDao.deleteMoneyTrnTempl(bsId, templ.id!!)
       HmResponse.getOk()
@@ -60,8 +57,8 @@ class MoneyTrnTemplsResource {
 
   @RequestMapping("/update")
   fun updateTempl(
-      @PathVariable("bsId") bsId: UUID,
-      templ: MoneyTrnTempl): HmResponse =
+      @PathVariable bsId: UUID,
+      @RequestBody templ: MoneyTrnTempl): HmResponse =
     try {
       MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ)
       HmResponse.getOk()

@@ -11,7 +11,7 @@ public class BalanceSheetResource {
   @RequestMapping("/api/{bsId}/bs-stat")
   public HmResponse getBalanceSheetInfo(
       @PathVariable UUID bsId,
-      @RequestParam(value = "interval", defaultValue = "30") Long interval) {
+      @RequestParam(defaultValue = "30") Long interval) {
     HmResponse response;
     try {
       response = HmResponse.getOk(MainDao.INSTANCE.getBsStat(bsId, interval));

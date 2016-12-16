@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney
 
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.dao.CategoriesDao
@@ -12,12 +13,14 @@ import java.util.*
 @RequestMapping("/api/{bsId}/categories")
 class CategoriesResource {
   @RequestMapping
-  fun getCategoryList(@PathVariable("bsId") bsId: UUID): HmResponse {
+  fun getCategoryList(@PathVariable bsId: UUID): HmResponse {
     return HmResponse.getOk(CategoriesDao.getCategories(bsId))
   }
 
   @RequestMapping("/create")
-  fun createCategory(@PathVariable("bsId") bsId: UUID, category: Category): HmResponse =
+  fun createCategory(
+      @PathVariable bsId: UUID,
+      @RequestBody category: Category): HmResponse =
     try {
       CategoriesDao.createCategory(bsId, category)
       HmResponse.getOk()
@@ -28,7 +31,7 @@ class CategoriesResource {
   @RequestMapping("/update")
   fun updateCategory(
       @PathVariable("bsId") bsId: String,
-      category: Category): HmResponse =
+      @RequestBody category: Category): HmResponse =
     try {
       CategoriesDao.updateCategory(UUID.fromString(bsId), category)
       HmResponse.getOk()
@@ -39,7 +42,7 @@ class CategoriesResource {
   @RequestMapping("/delete")
   fun deleteCategory(
       @PathVariable("bsId") bsId: UUID,
-      category: Category): HmResponse =
+      @RequestBody category: Category): HmResponse =
     try {
       CategoriesDao.deleteCategory(bsId, category.id!!)
       HmResponse.getOk()

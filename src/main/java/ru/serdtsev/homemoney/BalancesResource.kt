@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney
 
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.dao.BalancesDao
@@ -17,8 +18,8 @@ class BalancesResource {
 
   @RequestMapping("/create")
   fun createBalance(
-      @PathVariable("bsId") bsId: UUID,
-      balance: Balance) =
+      @PathVariable bsId: UUID,
+      @RequestBody balance: Balance) =
     try {
       BalancesDao.createBalance(bsId, balance)
       HmResponse.getOk()
@@ -28,8 +29,8 @@ class BalancesResource {
 
   @RequestMapping("/update")
   fun updateBalance(
-      @PathVariable("bsId") bsId: UUID,
-      balance: Balance) =
+      @PathVariable bsId: UUID,
+      @RequestBody balance: Balance) =
     try {
       BalancesDao.updateBalance(bsId, balance)
       HmResponse.getOk()
@@ -39,8 +40,8 @@ class BalancesResource {
 
   @RequestMapping("/delete")
   fun deleteBalance(
-      @PathVariable("bsId") bsId: UUID,
-      balance: Balance) =
+      @PathVariable bsId: UUID,
+      @RequestBody balance: Balance) =
     try {
       BalancesDao.deleteBalance(bsId, balance.id!!)
       HmResponse.getOk()
@@ -50,8 +51,8 @@ class BalancesResource {
 
   @RequestMapping("/up")
   fun upBalance(
-      @PathVariable("bsId") bsId: UUID,
-      balance: Balance) =
+      @PathVariable bsId: UUID,
+      @RequestBody balance: Balance) =
     try {
       BalancesDao.upBalance(bsId, balance)
       HmResponse.getOk()
