@@ -1,9 +1,9 @@
 package ru.serdtsev.homemoney.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.sql.Date
 import java.time.LocalDate
 import java.util.*
-import javax.xml.bind.annotation.XmlElement
 import javax.xml.bind.annotation.XmlTransient
 
 open class Account(var id: UUID?, var type: Type?, var name: String?) {
@@ -13,7 +13,7 @@ open class Account(var id: UUID?, var type: Type?, var name: String?) {
 
   var createdDate: Date = Date.valueOf(LocalDate.now())
 
-  @XmlElement(name = "isArc")
+  @JsonProperty("isArc")
   var arc: Boolean = false
   fun isArc() = arc
 
