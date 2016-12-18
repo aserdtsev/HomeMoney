@@ -7,11 +7,6 @@ public class Reserve extends Balance {
   private BigDecimal target;
 
   public Reserve() {
-    this(null);
-  }
-
-  public Reserve(BigDecimal target) {
-    this.target = target;
   }
 
   public BigDecimal getTarget() {

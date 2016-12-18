@@ -12,13 +12,6 @@ public class CategoryStat {
   public CategoryStat() {
   }
 
-  public CategoryStat(UUID id, UUID rootId, String name, BigDecimal amount) {
-    this.id = id;
-    this.rootId = rootId;
-    this.name = name;
-    this.amount = amount;
-  }
-
   public UUID getId() {
     return id;
   }
@@ -31,6 +24,7 @@ public class CategoryStat {
     return rootId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setRootId(UUID rootId) {
     this.rootId = rootId;
   }

@@ -33,6 +33,7 @@ public class MoneyTrn {
   private String toAccName;
   private String type;
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public MoneyTrn() {}
 
   public MoneyTrn(UUID id, Status status, Date trnDate, UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
@@ -81,6 +82,7 @@ public class MoneyTrn {
     return trnDate;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setTrnDate(Date trnDate) {
     this.trnDate = trnDate;
   }
@@ -89,6 +91,7 @@ public class MoneyTrn {
     return dateNum;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setDateNum(Integer dateNum) {
     this.dateNum = dateNum;
   }
@@ -97,6 +100,7 @@ public class MoneyTrn {
     return fromAccId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setFromAccId(UUID fromAccId) {
     this.fromAccId = fromAccId;
   }
@@ -105,6 +109,7 @@ public class MoneyTrn {
     return toAccId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToAccId(UUID toAccId) {
     this.toAccId = toAccId;
   }
@@ -113,6 +118,7 @@ public class MoneyTrn {
     return parentId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setParentId(UUID parentId) {
     this.parentId = parentId;
   }
@@ -137,14 +143,17 @@ public class MoneyTrn {
     return toAmount;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToAmount(BigDecimal toAmount) {
     this.toAmount = toAmount;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToCurrencyCode() {
     return toCurrencyCode;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToCurrencyCode(String toCurrencyCode) {
     this.toCurrencyCode = toCurrencyCode;
   }
@@ -161,6 +170,7 @@ public class MoneyTrn {
     return createdTs;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setCreatedTs(Timestamp createdTs) {
     this.createdTs = createdTs;
   }
@@ -185,22 +195,27 @@ public class MoneyTrn {
     return templId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setTemplId(UUID templId) {
     this.templId = templId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getFromAccName() {
     return fromAccName;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setFromAccName(String fromAccName) {
     this.fromAccName = fromAccName;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToAccName() {
     return toAccName;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToAccName(String toAccName) {
     this.toAccName = toAccName;
   }
@@ -217,6 +232,7 @@ public class MoneyTrn {
     return Currency.getInstance(currencyCode).getSymbol();
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToCurrencySymbol() {
     return Currency.getInstance(toCurrencyCode).getSymbol();
   }
@@ -256,15 +272,24 @@ public class MoneyTrn {
   }
 
   public enum Status {
+    /**
+     * в ожидании
+     */
     pending,
+    /**
+     * выполнен
+     */
     done,
-    cancelled;
+    /**
+     * отменен
+     */
+    cancelled
   }
 
   public enum Period {
     month,
     quarter,
     year,
-    single;
+    single
   }
 }

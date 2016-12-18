@@ -29,6 +29,7 @@ public class MoneyTrnTempl {
   private String toAccName;
   private String type;
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public MoneyTrnTempl() {
   }
 
@@ -66,6 +67,7 @@ public class MoneyTrnTempl {
     return sampleId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setSampleId(UUID sampleId) {
     this.sampleId = sampleId;
   }
@@ -74,6 +76,7 @@ public class MoneyTrnTempl {
     return lastMoneyTrnId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setLastMoneyTrnId(UUID lastMoneyTrnId) {
     this.lastMoneyTrnId = lastMoneyTrnId;
   }
@@ -98,6 +101,7 @@ public class MoneyTrnTempl {
     return fromAccId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setFromAccId(UUID fromAccId) {
     this.fromAccId = fromAccId;
   }
@@ -106,6 +110,7 @@ public class MoneyTrnTempl {
     return toAccId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToAccId(UUID toAccId) {
     this.toAccId = toAccId;
   }
@@ -130,7 +135,7 @@ public class MoneyTrnTempl {
     return labels;
   }
 
-  public void setLabels(List labels) {
+  public void setLabels(List<String> labels) {
     this.labels = labels;
   }
 
@@ -146,30 +151,37 @@ public class MoneyTrnTempl {
     return toAmount;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToAmount(BigDecimal toAmount) {
     this.toAmount = toAmount;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToCurrencyCode() {
     return toCurrencyCode;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToCurrencyCode(String toCurrencyCode) {
     this.toCurrencyCode = toCurrencyCode;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getFromAccName() {
     return fromAccName;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setFromAccName(String fromAccName) {
     this.fromAccName = fromAccName;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToAccName() {
     return toAccName;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setToAccName(String toAccName) {
     this.toAccName = toAccName;
   }
@@ -186,6 +198,7 @@ public class MoneyTrnTempl {
     return Currency.getInstance(currencyCode).getSymbol();
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToCurrencySymbol() {
     return Currency.getInstance(toCurrencyCode).getSymbol();
   }
@@ -215,6 +228,6 @@ public class MoneyTrnTempl {
 
   public enum Status {
     active,
-    deleted;
+    deleted
   }
 }

@@ -5,18 +5,15 @@ import java.util.UUID;
 public class Category extends Account {
   private UUID rootId;
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public Category() {
-    this(null);
-  }
-
-  public Category(UUID rootId) {
-    this.rootId = rootId;
   }
 
   public UUID getRootId() {
     return rootId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setRootId(UUID rootId) {
     this.rootId = rootId;
   }

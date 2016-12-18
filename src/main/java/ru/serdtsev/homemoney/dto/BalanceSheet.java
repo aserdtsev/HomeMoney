@@ -12,18 +12,8 @@ public class BalanceSheet {
   private UUID uncatIncomeId;
   private String currencyCode;
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public BalanceSheet() {
-  }
-
-  public BalanceSheet(UUID id, String defaultCurrencyCode, Timestamp createdTs, UUID svcRsvId, UUID uncatCostsId,
-      UUID uncatIncomeId, String currencyCode) {
-    this.id = id;
-    this.defaultCurrencyCode = defaultCurrencyCode;
-    this.createdTs = createdTs;
-    this.svcRsvId = svcRsvId;
-    this.uncatCostsId = uncatCostsId;
-    this.uncatIncomeId = uncatIncomeId;
-    this.currencyCode = currencyCode;
   }
 
   public UUID getId() {
@@ -34,18 +24,22 @@ public class BalanceSheet {
     this.id = id;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getDefaultCurrencyCode() {
     return defaultCurrencyCode;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setDefaultCurrencyCode(String defaultCurrencyCode) {
     this.defaultCurrencyCode = defaultCurrencyCode;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public Timestamp getCreatedTs() {
     return createdTs;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setCreatedTs(Timestamp createdTs) {
     this.createdTs = createdTs;
   }
@@ -54,6 +48,7 @@ public class BalanceSheet {
     return svcRsvId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setSvcRsvId(UUID svcRsvId) {
     this.svcRsvId = svcRsvId;
   }
@@ -62,6 +57,7 @@ public class BalanceSheet {
     return uncatCostsId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setUncatCostsId(UUID uncatCostsId) {
     this.uncatCostsId = uncatCostsId;
   }
@@ -70,6 +66,7 @@ public class BalanceSheet {
     return uncatIncomeId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setUncatIncomeId(UUID uncatIncomeId) {
     this.uncatIncomeId = uncatIncomeId;
   }

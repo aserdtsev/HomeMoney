@@ -25,10 +25,12 @@ public class PagedList<T> {
     this.items = items;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public Integer getLimit() {
     return limit;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setLimit(Integer limit) {
     this.limit = limit;
   }
@@ -41,18 +43,22 @@ public class PagedList<T> {
     this.offset = offset;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public Boolean getHasNext() {
     return hasNext;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setHasNext(Boolean hasNext) {
     this.hasNext = hasNext;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public Paging getPaging() {
     return paging;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setPaging(Paging paging) {
     this.paging = paging;
   }
@@ -62,16 +68,18 @@ public class PagedList<T> {
     Integer offset;
     Boolean hasNext;
 
-    public Paging(Integer limit, Integer offset, Boolean hasNext) {
+    Paging(Integer limit, Integer offset, Boolean hasNext) {
       this.limit = limit;
       this.offset = offset;
       this.hasNext = hasNext;
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public Integer getLimit() {
       return limit;
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public void setLimit(Integer limit) {
       this.limit = limit;
     }
@@ -84,10 +92,12 @@ public class PagedList<T> {
       this.offset = offset;
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public Boolean getHasNext() {
       return hasNext;
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public void setHasNext(Boolean hasNext) {
       this.hasNext = hasNext;
     }

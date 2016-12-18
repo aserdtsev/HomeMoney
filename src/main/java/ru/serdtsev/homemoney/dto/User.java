@@ -8,10 +8,14 @@ public class User {
   private String pwdHash;
   private UUID bsId;
 
+  public User() {
+  }
+
   public UUID getUserId() {
     return userId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setUserId(UUID userId) {
     this.userId = userId;
   }
@@ -28,6 +32,7 @@ public class User {
     return pwdHash;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setPwdHash(String pwdHash) {
     this.pwdHash = pwdHash;
   }

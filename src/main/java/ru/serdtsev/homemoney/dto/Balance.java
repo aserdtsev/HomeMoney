@@ -24,17 +24,6 @@ public class Balance extends Account {
     this.value = value;
   }
 
-  public Balance(UUID id, Type type, String name, String currencyCode, BigDecimal value, UUID reserveId,
-      BigDecimal creditLimit, BigDecimal minValue, Long num) {
-    super(id, type, name);
-    this.currencyCode = currencyCode;
-    this.value = value;
-    this.reserveId = reserveId;
-    this.minValue = minValue;
-    this.creditLimit = creditLimit;
-    this.num = num;
-  }
-
   public String getCurrencyCode() {
     return currencyCode != null ?  currencyCode : "RUB";
   }
@@ -43,10 +32,12 @@ public class Balance extends Account {
     this.currencyCode = currencyCode;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public String getCurrencySymbol() {
     return currencySymbol;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setCurrencySymbol(String currencySymbol) {
     this.currencySymbol = currencySymbol;
   }
@@ -57,7 +48,7 @@ public class Balance extends Account {
   }
 
   public BigDecimal getValue() {
-    return value != null ? value : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits());
+    return value != null ? value : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0);
   }
 
   public void setValue(BigDecimal value) {
@@ -68,30 +59,35 @@ public class Balance extends Account {
     return reserveId;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setReserveId(UUID reserveId) {
     this.reserveId = reserveId;
   }
 
   public BigDecimal getCreditLimit() {
-    return creditLimit != null ? creditLimit : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits());
+    return creditLimit != null ? creditLimit : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0);
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setCreditLimit(BigDecimal creditLimit) {
     this.creditLimit = creditLimit;
   }
 
   public BigDecimal getMinValue() {
-    return minValue != null ? minValue : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits());
+    return minValue != null ? minValue : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0);
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setMinValue(BigDecimal minValue) {
     this.minValue = minValue;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public Long getNum() {
     return num != null ? num : 0L;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   public void setNum(Long num) {
     this.num = num;
   }

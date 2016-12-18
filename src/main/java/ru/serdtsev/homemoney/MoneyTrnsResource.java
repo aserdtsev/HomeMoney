@@ -35,8 +35,8 @@ public class MoneyTrnsResource {
       List<MoneyTrn> doneTrns = MoneyTrnsDao.INSTANCE.getDoneMoneyTrns(bsId, search, limit + 1, offset);
       boolean hasNext = doneTrns.size() > limit;
       trns.addAll(hasNext ? doneTrns.subList(0, limit) : doneTrns);
-      PagedList<MoneyTrn> pagedList = new PagedList(trns, limit, offset, hasNext);
-      return new HmResponse("OK", pagedList);
+      PagedList<MoneyTrn> pagedList = new PagedList<>(trns, limit, offset, hasNext);
+      return getOk(pagedList);
     } catch (HmException e) {
       return getFail(e.getCode());
     }
