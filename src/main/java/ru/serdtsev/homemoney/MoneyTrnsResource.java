@@ -21,9 +21,9 @@ public class MoneyTrnsResource {
   @RequestMapping
   public HmResponse getMoneyTrns(
       @PathVariable UUID bsId,
-      @RequestParam String search,
-      @RequestParam(defaultValue = "10") int limit,
-      @RequestParam(defaultValue = "0") int offset) {
+      @RequestParam(required = false, defaultValue = "") String search,
+      @RequestParam(required = false, defaultValue = "10") int limit,
+      @RequestParam(required = false, defaultValue = "0") int offset) {
     try {
       ArrayList<MoneyTrn> trns = new ArrayList<>();
       if (offset == 0) {

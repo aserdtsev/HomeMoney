@@ -14,7 +14,7 @@ object CategoriesDao {
     val conn = MainDao.getConnection()
     try {
       return QueryRunner().query(conn,
-          "select a.id, a.name, a.type, a.is_arc as arc, c.root_id as rootId, " +
+          "select a.id, a.name, a.type, a.is_arc as isArc, c.root_id as rootId, " +
               "case when c.root_id is null then a.name " +
               "else (select name from accounts where id = c.root_id) || '#' || a.name end as sort " +
               "from accounts a, categories c " +
@@ -45,7 +45,7 @@ object CategoriesDao {
   fun createCategory(balanceSheetId: UUID, category: Category) {
     val conn = MainDao.getConnection()
     try {
-      val account = Account(category)
+      val account = Account(category.getId(), category.getType(), category.getName())
       AccountsDao.createAccount(conn, balanceSheetId, account)
       QueryRunner().update(conn,
           "insert into categories (id, root_id) values (?, ?)",

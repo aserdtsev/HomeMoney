@@ -16,7 +16,7 @@ public class MoneyTrnTemplsResource {
   @RequestMapping
   public HmResponse getList(
       @PathVariable UUID bsId,
-      @RequestParam String search) {
+      @RequestParam(required = false, defaultValue = "") String search) {
     try {
       List<MoneyTrnTempl> list = MoneyTrnTemplsDao.INSTANCE.getMoneyTrnTempls(bsId, search);
       return HmResponse.getOk(list);
@@ -29,7 +29,7 @@ public class MoneyTrnTemplsResource {
   public HmResponse create(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
-    Date nextDate = MoneyTrnTempl.Companion.calcNextDate(moneyTrn.getTrnDate(), moneyTrn.getPeriod());
+    Date nextDate = MoneyTrnTempl.calcNextDate(moneyTrn.getTrnDate(), moneyTrn.getPeriod());
     MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(), nextDate,
         moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
         moneyTrn.getComment(), moneyTrn.getLabels());
@@ -41,7 +41,7 @@ public class MoneyTrnTemplsResource {
   public HmResponse skip(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
-    templ.setNextDate(MoneyTrnTempl.Companion.calcNextDate(templ.getNextDate(), templ.getPeriod()));
+    templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
     MoneyTrnTemplsDao.INSTANCE.updateMoneyTrnTempl(bsId, templ);
     return HmResponse.getOk();
   }

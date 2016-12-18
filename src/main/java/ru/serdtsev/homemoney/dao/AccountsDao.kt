@@ -15,7 +15,7 @@ object AccountsDao {
     val conn = MainDao.getConnection()
     try {
       return QueryRunner().query(conn,
-          "select a.id, a.type, a.name, a.created_date as createdDate, a.is_arc as arc, " +
+          "select a.id, a.type, a.name, a.created_date as createdDate, a.is_arc as isArc, " +
               " case when c.root_id is null then a.name " +
               " else (select name from accounts where id = c.root_id) || '#' || a.name end as sort " +
               "from accounts a left join categories c on c.id = a.id " +
@@ -33,7 +33,7 @@ object AccountsDao {
     val conn = MainDao.getConnection()
     try {
       return QueryRunner().query(conn,
-          "select id, name, type, created_date as createdDate, is_arc as arc " + " from accounts where id = ?",
+          "select id, name, type, created_date as createdDate, is_arc as isArc " + " from accounts where id = ?",
           BeanHandler(Account::class.java), id)
     } catch (e: SQLException) {
       throw HmSqlException(e)
@@ -47,7 +47,7 @@ object AccountsDao {
     val run = QueryRunner()
     run.update(conn,
         "insert into accounts(id, balance_sheet_id, name, type, created_date, is_arc) values (?, ?, ?, ?, ?, ?)",
-        account.id, bsId, account.name, account.type!!.name, account.createdDate, account.isArc())
+        account.id, bsId, account.name, account.type!!.name, account.createdDate, account.getIsArc())
   }
 
   @Throws(SQLException::class)
@@ -69,7 +69,7 @@ object AccountsDao {
   fun updateAccount(conn: Connection, bsId: UUID, account: Account) {
     val rows = QueryRunner().update(conn,
         "update accounts set type = ?, name = ?, created_date = ?, is_arc = ? where balance_sheet_id = ? and id = ?",
-        account.type!!.name, account.name, account.createdDate, account.isArc(), bsId, account.id)
+        account.type!!.name, account.name, account.createdDate, account.getIsArc(), bsId, account.id)
     if (rows == 0) {
       throw IllegalArgumentException("Запись не найдена.")
     }

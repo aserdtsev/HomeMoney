@@ -31,7 +31,7 @@ object BalancesDao {
   private fun getBalances(conn: Connection, bsId: UUID): MutableList<Balance> =
     QueryRunner().query(conn,
         "select a.id, a.type, a.name, b.currency_code as currencyCode, b.value, a.created_date as createdDate, " +
-            " a.is_arc as arc, b.reserve_id as reserveId," +
+            " a.is_arc as isArc, b.reserve_id as reserveId," +
             " coalesce(b.credit_limit, 0) as creditLimit, coalesce(b.min_value, 0) as minValue, b.num" +
             " from accounts a, balances b " +
             " where a.balance_sheet_id = ? and a.type in ('debit', 'credit', 'asset') and b.id = a.id " +
@@ -42,7 +42,7 @@ object BalancesDao {
   fun getBalance(conn: Connection, id: UUID): Balance =
     QueryRunner().query(conn,
         "select a.id, a.type, a.name, b.currency_code as currencyCode, b.value, a.created_date as createdDate, " +
-            " a.is_arc as arc, b.reserve_id as reserveId," +
+            " a.is_arc as isArc, b.reserve_id as reserveId," +
             " coalesce(b.credit_limit, 0) as creditLimit, coalesce(b.min_value, 0) as minValue" +
             " from accounts a, balances b" +
             " where a.id = ? and b.id = a.id",

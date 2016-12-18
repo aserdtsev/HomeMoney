@@ -37,7 +37,7 @@ public class UserResource {
       @RequestParam("email") String email,
       @RequestParam("pwd") String pwd) {
     try {
-      log.info("User login; email:$email.");
+      log.info("User login; email:" + email);
       Authentication auth = UsersDao.INSTANCE.login(email, pwd);
       return HmResponse.getOk(auth);
     } catch (HmException e) {
@@ -50,7 +50,7 @@ public class UserResource {
       @CookieValue(value="userId", required=false) UUID userId,
       @CookieValue(value="authToken", required=false) UUID authToken) {
     UsersDao.INSTANCE.logout(userId, authToken);
-    log.info("User logout.");
+    log.info("User logout");
     return HmResponse.getOk();
   }
 
@@ -60,7 +60,7 @@ public class UserResource {
   }
 
   @RequestMapping(method = RequestMethod.DELETE)
-  public void deleteBalanceSheet(@RequestParam("id") UUID id) {
+  public void deleteBalanceSheet(@RequestParam UUID id) {
     MainDao.INSTANCE.deleteBalanceSheet(id);
   }
 }

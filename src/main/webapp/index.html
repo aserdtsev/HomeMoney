@@ -44,7 +44,7 @@
 <div ng-controller="BalanceSheetCtrl" class="block">
   <div>
     Свободные деньги:
-    <span ng-bind-html="formatMoney(bsStat.debitSaldo - bsStat.reserveSaldo)"
+    <span ng-bind-html="formatMoney(bsStat.freeAmount)"
           class="{{bsStat.debitSaldo - bsStat.reserveSaldo >= 0 ? 'positive-money' : 'negative-money'}}">
     </span>
     Баланс:
