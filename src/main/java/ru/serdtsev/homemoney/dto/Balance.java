@@ -92,6 +92,11 @@ public class Balance extends Account {
     this.num = num;
   }
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
+  public BigDecimal getFreeFunds() {
+    return value.add(creditLimit.subtract(minValue));
+  }
+
   @Override
   public String toString() {
     return "Balance{" +
