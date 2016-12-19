@@ -24,7 +24,7 @@ public class UserResource {
       if (userId == null) {
         throw new HmException(HmException.Code.UserIdCookieIsEmpty);
       }
-      UUID bsId = UsersDao.INSTANCE.getBsId(userId);
+      UUID bsId = UsersDao.getBsId(userId);
       response = HmResponse.getOk(bsId);
     } catch (HmException e) {
       response = HmResponse.getFail(e.getCode());
@@ -38,7 +38,7 @@ public class UserResource {
       @RequestParam("pwd") String pwd) {
     try {
       log.info("User login; email:" + email);
-      Authentication auth = UsersDao.INSTANCE.login(email, pwd);
+      Authentication auth = UsersDao.login(email, pwd);
       return HmResponse.getOk(auth);
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -49,7 +49,7 @@ public class UserResource {
   public HmResponse logout(
       @CookieValue(value="userId", required=false) UUID userId,
       @CookieValue(value="authToken", required=false) UUID authToken) {
-    UsersDao.INSTANCE.logout(userId, authToken);
+    UsersDao.logout(userId, authToken);
     log.info("User logout");
     return HmResponse.getOk();
   }

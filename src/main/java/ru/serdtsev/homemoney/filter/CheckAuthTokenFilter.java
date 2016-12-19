@@ -31,7 +31,7 @@ public class CheckAuthTokenFilter implements Filter {
       if (!userIdCookie.isPresent() || !authTokenCookie.isPresent()) {
         throw new HmException(HmException.Code.WrongAuth);
       }
-      UsersDao.INSTANCE.checkAuthToken(
+      UsersDao.checkAuthToken(
           UUID.fromString(userIdCookie.get().getValue()),
           UUID.fromString(authTokenCookie.get().getValue()));
     }

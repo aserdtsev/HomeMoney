@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.UUID;
 
+import static ru.serdtsev.homemoney.utils.Utils.nvl;
+
 public class Balance extends Account {
   private String currencyCode;
   private String currencySymbol;
@@ -48,7 +50,7 @@ public class Balance extends Account {
   }
 
   public BigDecimal getValue() {
-    return value != null ? value : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0);
+    return nvl(value, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
   public void setValue(BigDecimal value) {
@@ -65,7 +67,7 @@ public class Balance extends Account {
   }
 
   public BigDecimal getCreditLimit() {
-    return creditLimit != null ? creditLimit : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0);
+    return nvl(creditLimit, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
@@ -74,7 +76,7 @@ public class Balance extends Account {
   }
 
   public BigDecimal getMinValue() {
-    return minValue != null ? minValue : BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0);
+    return nvl(minValue, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
@@ -94,7 +96,7 @@ public class Balance extends Account {
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BigDecimal getFreeFunds() {
-    return value.add(creditLimit.subtract(minValue));
+    return getValue().add(getCreditLimit().subtract(getMinValue()));
   }
 
   @Override

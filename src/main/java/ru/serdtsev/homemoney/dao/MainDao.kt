@@ -108,7 +108,7 @@ object MainDao {
   }
 
   @Throws(SQLException::class)
-  internal fun createBalanceSheet(conn: Connection, id: UUID) {
+  fun createBalanceSheet(conn: Connection, id: UUID) {
     val run = QueryRunner()
     val now = java.sql.Timestamp(java.util.Date().time)
     val currencyCode = "RUB"
