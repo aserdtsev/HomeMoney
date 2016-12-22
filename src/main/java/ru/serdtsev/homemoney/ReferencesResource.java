@@ -13,6 +13,6 @@ import java.util.UUID;
 public final class ReferencesResource {
   @RequestMapping("currencies")
   public final HmResponse getCurrencies(@PathVariable UUID bsId) {
-    return HmResponse.getOk(ReferencesDao.INSTANCE.getCurrencies(bsId));
+    return HmResponse.getOk(ReferencesDao.getCurrencies(bsId));
   }
 }
