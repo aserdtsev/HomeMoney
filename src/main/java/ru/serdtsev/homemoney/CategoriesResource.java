@@ -15,7 +15,7 @@ import java.util.UUID;
 public class CategoriesResource {
   @RequestMapping
   public HmResponse getCategoryList(@PathVariable UUID bsId) {
-    return HmResponse.getOk(CategoriesDao.INSTANCE.getCategories(bsId));
+    return HmResponse.getOk(CategoriesDao.getCategories(bsId));
   }
 
   @RequestMapping({"/create"})
@@ -23,7 +23,7 @@ public class CategoriesResource {
       @PathVariable UUID bsId,
       @RequestBody Category category) {
     try {
-      CategoriesDao.INSTANCE.createCategory(bsId, category);
+      CategoriesDao.createCategory(bsId, category);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -35,7 +35,7 @@ public class CategoriesResource {
       @PathVariable UUID bsId,
       @RequestBody Category category) {
     try {
-      CategoriesDao.INSTANCE.updateCategory(bsId, category);
+      CategoriesDao.updateCategory(bsId, category);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -47,7 +47,7 @@ public class CategoriesResource {
       @PathVariable UUID bsId,
       @RequestBody Category category) {
     try {
-      CategoriesDao.INSTANCE.deleteCategory(bsId, category.getId());
+      CategoriesDao.deleteCategory(bsId, category.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
