@@ -13,7 +13,7 @@ import java.util.UUID;
 public final class AccountsResource {
   @RequestMapping("/api/{bsId}/accounts")
   public final HmResponse getAccountList(@PathVariable UUID bsId) {
-    List allAccounts = AccountsDao.INSTANCE.getAccounts(bsId);
+    List allAccounts = AccountsDao.getAccounts(bsId);
     return HmResponse.getOk(allAccounts);
   }
 }

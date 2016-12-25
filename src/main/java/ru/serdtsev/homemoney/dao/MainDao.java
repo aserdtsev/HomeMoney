@@ -113,15 +113,15 @@ public class MainDao {
         now, currencyCode);
 
     UUID svcRsvId = UUID.randomUUID();
-    AccountsDao.INSTANCE.createAccount(conn, id, new Account(svcRsvId, Account.Type.service, "Service reserve"));
+    AccountsDao.createAccount(conn, id, new Account(svcRsvId, Account.Type.service, "Service reserve"));
     run.update(conn, "update balance_sheets set svc_rsv_id = ? where id = ?", svcRsvId, id);
 
     UUID uncatCostsId = UUID.randomUUID();
-    AccountsDao.INSTANCE.createAccount(conn, id, new Account(uncatCostsId, Account.Type.expense, "<Без категории>"));
+    AccountsDao.createAccount(conn, id, new Account(uncatCostsId, Account.Type.expense, "<Без категории>"));
     run.update(conn, "update balance_sheets set uncat_costs_id = ? where id = ?", uncatCostsId, id);
 
     UUID uncatIncomeId = UUID.randomUUID();
-    AccountsDao.INSTANCE.createAccount(conn, id, new Account(uncatIncomeId, Account.Type.income, "<Без категории>"));
+    AccountsDao.createAccount(conn, id, new Account(uncatIncomeId, Account.Type.income, "<Без категории>"));
     run.update(conn, "update balance_sheets set uncat_income_id = ? where id = ?", uncatIncomeId, id);
 
     BalancesDao.INSTANCE.createBalance(conn, id,
@@ -302,8 +302,8 @@ public class MainDao {
     templs.forEach(t -> {
       Date templNextDate = t.getNextDate();
       while (templNextDate.compareTo(toDate) <= 0) {
-        Account fromAcc = AccountsDao.INSTANCE.getAccount(t.getFromAccId());
-        Account toAcc = AccountsDao.INSTANCE.getAccount(t.getToAccId());
+        Account fromAcc = AccountsDao.getAccount(t.getFromAccId());
+        Account toAcc = AccountsDao.getAccount(t.getToAccId());
         Date nextDate = (templNextDate.before(today)) ? today : templNextDate;
         Turnover newTurnover = new Turnover(nextDate, fromAcc.getType(), toAcc.getType());
         Optional<Turnover> turnover = turnovers.stream()
