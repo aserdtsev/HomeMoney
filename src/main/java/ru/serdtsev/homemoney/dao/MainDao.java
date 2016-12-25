@@ -124,7 +124,7 @@ public class MainDao {
     AccountsDao.createAccount(conn, id, new Account(uncatIncomeId, Account.Type.income, "<Без категории>"));
     run.update(conn, "update balance_sheets set uncat_income_id = ? where id = ?", uncatIncomeId, id);
 
-    BalancesDao.INSTANCE.createBalance(conn, id,
+    BalancesDao.createBalance(conn, id,
         new Balance(UUID.randomUUID(), Account.Type.debit, "Наличные", currencyCode, BigDecimal.ZERO));
   }
 

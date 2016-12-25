@@ -15,7 +15,7 @@ import java.util.UUID;
 public final class BalancesResource {
   @RequestMapping
   public final HmResponse getBalances(@PathVariable UUID bsId) {
-    return HmResponse.getOk(BalancesDao.INSTANCE.getBalances(bsId));
+    return HmResponse.getOk(BalancesDao.getBalances(bsId));
   }
 
   @RequestMapping("/create")
@@ -23,7 +23,7 @@ public final class BalancesResource {
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
-      BalancesDao.INSTANCE.createBalance(bsId, balance);
+      BalancesDao.createBalance(bsId, balance);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -35,7 +35,7 @@ public final class BalancesResource {
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
-      BalancesDao.INSTANCE.updateBalance(bsId, balance);
+      BalancesDao.updateBalance(bsId, balance);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -47,7 +47,7 @@ public final class BalancesResource {
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
-      BalancesDao.INSTANCE.deleteBalance(bsId, balance.getId());
+      BalancesDao.deleteBalance(bsId, balance.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -59,7 +59,7 @@ public final class BalancesResource {
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
-      BalancesDao.INSTANCE.upBalance(bsId, balance);
+      BalancesDao.upBalance(bsId, balance);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
