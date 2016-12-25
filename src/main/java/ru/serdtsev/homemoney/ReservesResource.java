@@ -16,7 +16,7 @@ import java.util.UUID;
 public final class ReservesResource {
   @RequestMapping
   public final HmResponse getReserveList(@PathVariable UUID bsId) {
-    return HmResponse.getOk(ReservesDao.INSTANCE.getReserves(bsId));
+    return HmResponse.getOk(ReservesDao.getReserves(bsId));
   }
 
   @RequestMapping("/create")
@@ -25,7 +25,7 @@ public final class ReservesResource {
       @RequestBody Reserve reserve) {
     try {
       reserve.setType(Type.reserve);
-      ReservesDao.INSTANCE.createReserve(bsId, reserve);
+      ReservesDao.createReserve(bsId, reserve);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -37,7 +37,7 @@ public final class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      ReservesDao.INSTANCE.updateReserve(bsId, reserve);
+      ReservesDao.updateReserve(bsId, reserve);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -49,7 +49,7 @@ public final class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      ReservesDao.INSTANCE.deleteReserve(bsId, reserve.getId());
+      ReservesDao.deleteReserve(bsId, reserve.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
