@@ -12,8 +12,9 @@ import java.util.UUID;
 public class DatabaseResource {
   @RequestMapping("/clear-n-create-balance-sheet")
   public final BalanceSheet clearDatabaseNCreateBalanceSheet() {
-    MainDao.INSTANCE.clearDatabase();
-    MainDao.INSTANCE.createBalanceSheet(UUID.randomUUID());
-    return MainDao.INSTANCE.getBalanceSheets().get(0);
+    MainDao.clearDatabase();
+    UUID bsId = UUID.randomUUID();
+    MainDao.createBalanceSheet(bsId);
+    return MainDao.getBalanceSheet(bsId);
   }
 }

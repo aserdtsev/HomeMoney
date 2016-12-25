@@ -14,7 +14,7 @@ public class BalanceSheetResource {
       @RequestParam(defaultValue = "30") Long interval) {
     HmResponse response;
     try {
-      response = HmResponse.getOk(MainDao.INSTANCE.getBsStat(bsId, interval));
+      response = HmResponse.getOk(MainDao.getBsStat(bsId, interval));
     } catch (HmException e) {
       response = HmResponse.getFail("INCORRECT_AUTH_TOKEN");
     }

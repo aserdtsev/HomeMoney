@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class ReferencesDao {
   public static List<HmCurrency> getCurrencies(UUID bsId) {
     assert Objects.nonNull(bsId);
-    try (Connection conn = MainDao.INSTANCE.getConnection()) {
+    try (Connection conn = MainDao.getConnection()) {
       return (new QueryRunner()).query(conn,
           "select b.currency_code " +
               " from accounts a, balances b " +

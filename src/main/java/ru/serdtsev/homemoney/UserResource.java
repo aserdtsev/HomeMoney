@@ -56,11 +56,11 @@ public class UserResource {
 
   @RequestMapping(method = RequestMethod.POST)
   public void createBalanceSheet(BalanceSheet bs) {
-    MainDao.INSTANCE.createBalanceSheet(bs.getId());
+    MainDao.createBalanceSheet(bs.getId());
   }
 
   @RequestMapping(method = RequestMethod.DELETE)
   public void deleteBalanceSheet(@RequestParam UUID id) {
-    MainDao.INSTANCE.deleteBalanceSheet(id);
+    MainDao.deleteBalanceSheet(id);
   }
 }

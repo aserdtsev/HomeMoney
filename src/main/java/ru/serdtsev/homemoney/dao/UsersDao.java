@@ -28,7 +28,7 @@ public class UsersDao {
     User user;
     UUID authToken = UUID.randomUUID();
     String pwdHash = Hashing.sha1().hashString(pwd + email + SHARE_SALT, Charsets.UTF_8).toString();
-    try (Connection conn = MainDao.INSTANCE.getConnection()) {
+    try (Connection conn = MainDao.getConnection()) {
       user = getUser(conn, email);
       if (user == null) {
         user =createUser(conn, email, pwdHash);
@@ -51,7 +51,7 @@ public class UsersDao {
   }
 
   public static void logout(UUID userId, UUID authToken) {
-    try (Connection conn = MainDao.INSTANCE.getConnection()) {
+    try (Connection conn = MainDao.getConnection()) {
       (new QueryRunner()).update(conn, "delete from auth_tokens where user_id = ? and token = ?", userId, authToken);
       DbUtils.commitAndClose(conn);
 
@@ -73,7 +73,7 @@ public class UsersDao {
 
   private static User createUser(Connection conn, String email, String pwdHash) throws SQLException {
     UUID bsId = UUID.randomUUID();
-    MainDao.INSTANCE.createBalanceSheet(conn, bsId);
+    MainDao.createBalanceSheet(conn, bsId);
     (new QueryRunner()).update(conn, "insert into users(user_id, email, pwd_hash, bs_id) values (?, ?, ?, ?)",
         UUID.randomUUID(), email, pwdHash, bsId);
     return getUser(conn, email);
@@ -93,7 +93,7 @@ public class UsersDao {
       }
     }
 
-    try (Connection conn = MainDao.INSTANCE.getConnection()) {
+    try (Connection conn = MainDao.getConnection()) {
       checkAuthToken(conn, userId, authToken);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
@@ -122,7 +122,7 @@ public class UsersDao {
   }
 
   public static UUID getBsId(UUID userId) {
-    try (Connection conn = MainDao.INSTANCE.getConnection()) {
+    try (Connection conn = MainDao.getConnection()) {
       return getBsId(conn, userId);
     } catch (SQLException e) {
       throw new HmSqlException(e);
