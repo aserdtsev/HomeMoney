@@ -68,48 +68,43 @@ public class MoneyTrnsDao {
   private static List<MoneyTrn> getMoneyTrns(Connection conn, UUID bsId, MoneyTrn.Status status, String search,
       Integer limit, Integer offset, Date beforeDate) throws SQLException {
     List<MoneyTrn> moneyTrnList;
-    try {
-      QueryRunner run = new QueryRunner();
 
-      StringBuilder sql = new StringBuilder(baseSelect);
-      List<Object> params = new ArrayList<>();
-      params.add(bsId);
+    StringBuilder sql = new StringBuilder(baseSelect);
+    List<Object> params = new ArrayList<>();
+    params.add(bsId);
 
-      sql.append(" and status = ? ");
-      params.add(status.name());
+    sql.append(" and status = ? ");
+    params.add(status.name());
 
-      if (beforeDate != null) {
-        sql.append(" and mt.trn_date < ? ");
-        params.add(beforeDate);
-      }
-
-      if (!Strings.isNullOrEmpty(search)) {
-        String condition = " and (mt.comment ilike ? or mt.labels ilike ? or fa.name ilike ? or ta.name ilike ?)";
-        sql.append(condition);
-        long paramNum = condition.chars().filter(ch -> ch == '?').count();
-        for (long i = 0; i < paramNum; i++) {
-          params.add("%" + search + "%");
-        }
-      }
-
-      sql.append(" order by trn_date desc, date_num, created_ts desc ");
-
-      if (limit != null) {
-        sql.append(" limit ? ");
-        params.add(limit);
-      }
-
-      if (offset != null) {
-        sql.append(" offset ? ");
-        params.add(offset);
-      }
-
-      moneyTrnList = run.query(conn, sql.toString(),
-          new BeanListHandler<>(MoneyTrn.class, new BasicRowProcessor(new MoneyTrnProcessor())),
-          params.toArray());
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
+    if (beforeDate != null) {
+      sql.append(" and mt.trn_date < ? ");
+      params.add(beforeDate);
     }
+
+    if (!Strings.isNullOrEmpty(search)) {
+      String condition = " and (mt.comment ilike ? or mt.labels ilike ? or fa.name ilike ? or ta.name ilike ?)";
+      sql.append(condition);
+      long paramNum = condition.chars().filter(ch -> ch == '?').count();
+      for (long i = 0; i < paramNum; i++) {
+        params.add("%" + search + "%");
+      }
+    }
+
+    sql.append(" order by trn_date desc, date_num, created_ts desc ");
+
+    if (limit != null) {
+      sql.append(" limit ? ");
+      params.add(limit);
+    }
+
+    if (offset != null) {
+      sql.append(" offset ? ");
+      params.add(offset);
+    }
+
+    moneyTrnList = new QueryRunner().query(conn, sql.toString(),
+        new BeanListHandler<>(MoneyTrn.class, new BasicRowProcessor(new MoneyTrnProcessor())),
+        params.toArray());
 
     return moneyTrnList;
   }
