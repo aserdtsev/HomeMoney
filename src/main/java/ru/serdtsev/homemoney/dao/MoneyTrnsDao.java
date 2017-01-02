@@ -171,9 +171,9 @@ public class MoneyTrnsDao {
     try (Connection conn = MainDao.getConnection()) {
       createMoneyTrn(conn, bsId, moneyTrn, result);
       if (moneyTrn.getTemplId() != null) {
-        MoneyTrnTempl templ = MoneyTrnTemplsDao.INSTANCE.getMoneyTrnTempl(conn, bsId, moneyTrn.getTemplId());
+        MoneyTrnTempl templ = MoneyTrnTemplsDao.getMoneyTrnTempl(conn, bsId, moneyTrn.getTemplId());
         templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
-        MoneyTrnTemplsDao.INSTANCE.updateMoneyTrnTempl(bsId, templ);
+        MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
       }
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
@@ -377,9 +377,9 @@ public class MoneyTrnsDao {
         setStatusNChangeBalanceValues(conn, bsId, trn.getId(), MoneyTrn.Status.cancelled);
       }
       if (trn.getTemplId() != null) {
-        MoneyTrnTempl templ = MoneyTrnTemplsDao.INSTANCE.getMoneyTrnTempl(conn, bsId, trn.getTemplId());
+        MoneyTrnTempl templ = MoneyTrnTemplsDao.getMoneyTrnTempl(conn, bsId, trn.getTemplId());
         templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
-        MoneyTrnTemplsDao.INSTANCE.updateMoneyTrnTempl(bsId, templ);
+        MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
       }
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {

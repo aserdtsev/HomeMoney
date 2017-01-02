@@ -18,7 +18,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestParam(required = false, defaultValue = "") String search) {
     try {
-      List<MoneyTrnTempl> list = MoneyTrnTemplsDao.INSTANCE.getMoneyTrnTempls(bsId, search);
+      List<MoneyTrnTempl> list = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, search);
       return HmResponse.getOk(list);
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -33,7 +33,7 @@ public class MoneyTrnTemplsResource {
     MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(), nextDate,
         moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
         moneyTrn.getComment(), moneyTrn.getLabels());
-    MoneyTrnTemplsDao.INSTANCE.createMoneyTrnTempl(bsId, templ);
+    MoneyTrnTemplsDao.createMoneyTrnTempl(bsId, templ);
     return HmResponse.getOk();
   }
 
@@ -42,7 +42,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
     templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
-    MoneyTrnTemplsDao.INSTANCE.updateMoneyTrnTempl(bsId, templ);
+    MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
     return HmResponse.getOk();
   }
 
@@ -51,7 +51,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
     try {
-      MoneyTrnTemplsDao.INSTANCE.deleteMoneyTrnTempl(bsId, templ.getId());
+      MoneyTrnTemplsDao.deleteMoneyTrnTempl(bsId, templ.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -63,7 +63,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
     try {
-      MoneyTrnTemplsDao.INSTANCE.updateMoneyTrnTempl(bsId, templ);
+      MoneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

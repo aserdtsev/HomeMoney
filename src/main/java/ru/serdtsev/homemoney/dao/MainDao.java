@@ -296,7 +296,7 @@ public class MainDao {
   }
 
   private static List<Turnover> getTemplTurnovers(UUID bsId, Date toDate) {
-    List<MoneyTrnTempl> templs = MoneyTrnTemplsDao.INSTANCE.getMoneyTrnTempls(bsId, "");
+    List<MoneyTrnTempl> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, "");
     Set<Turnover> turnovers = new HashSet<>();
     Date today = Date.valueOf(LocalDate.now());
     templs.forEach(t -> {

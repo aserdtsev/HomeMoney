@@ -77,7 +77,7 @@ public class BalancesDao {
   }
 
   static void deleteBalance(Connection conn, UUID bsId, UUID id) throws SQLException {
-    if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.INSTANCE.isTrnTemplExists(conn, id)) {
+    if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
       int rows = (new QueryRunner()).update(conn, "delete from balances where id = ?", id);
       if (rows == 0) {
         throw new IllegalArgumentException("Неверные параметры запроса.");

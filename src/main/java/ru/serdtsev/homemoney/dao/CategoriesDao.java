@@ -55,7 +55,7 @@ public class CategoriesDao {
 
   public static void deleteCategory(UUID bsId, UUID id) {
     try (Connection conn = MainDao.getConnection()) {
-      if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.INSTANCE.isTrnTemplExists(conn, id)) {
+      if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
         (new QueryRunner()).update(conn, "delete from categories where id = ?", id);
       }
       AccountsDao.deleteAccount(conn, bsId, id);

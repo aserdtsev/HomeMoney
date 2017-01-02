@@ -46,7 +46,7 @@ public class AccountsDao {
   public static void deleteAccount(Connection conn, UUID bsId, UUID id) throws SQLException {
     QueryRunner run = new QueryRunner();
     int rows;
-    if (isTrnExists(conn, id) || MoneyTrnTemplsDao.INSTANCE.isTrnTemplExists(conn, id)) {
+    if (isTrnExists(conn, id) || MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
       rows = run.update(conn, "update accounts set is_arc = true where balance_sheet_id = ? and id = ?",
           bsId, id);
     } else {

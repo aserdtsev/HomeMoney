@@ -64,7 +64,7 @@ public class ReservesDao {
 
   public static void deleteReserve(UUID bsId, UUID id) {
     try (Connection conn = MainDao.getConnection()) {
-      if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.INSTANCE.isTrnTemplExists(conn, id)) {
+      if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
         int rows = (new QueryRunner()).update(conn, "delete from reserves where id = ?", id);
         if (rows == 0) {
           throw new IllegalArgumentException("Неверные параметры запроса.");
