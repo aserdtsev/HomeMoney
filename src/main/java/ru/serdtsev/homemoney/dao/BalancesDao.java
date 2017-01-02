@@ -106,7 +106,7 @@ public class BalancesDao {
       BigDecimal amount = balance.getValue().subtract(currBalance.getValue()).abs();
       MoneyTrn moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyTrn.Status.done, java.sql.Date.valueOf(LocalDate.now()),
           fromAccId, toAccId, amount, MoneyTrn.Period.single, "корректировка остатка");
-      MoneyTrnsDao.INSTANCE.createMoneyTrn(conn, bsId, moneyTrn);
+      MoneyTrnsDao.createMoneyTrn(conn, bsId, moneyTrn);
     }
 
     (new QueryRunner()).update(conn,

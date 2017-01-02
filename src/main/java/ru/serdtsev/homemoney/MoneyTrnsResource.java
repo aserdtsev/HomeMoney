@@ -28,11 +28,11 @@ public class MoneyTrnsResource {
       ArrayList<MoneyTrn> trns = new ArrayList<>();
       if (offset == 0) {
         LocalDate beforeDate = LocalDate.now().plusDays(14L);
-        List<MoneyTrn> pendingTrns = MoneyTrnsDao.INSTANCE.getPendingMoneyTrns(bsId, search, Date.valueOf(beforeDate));
+        List<MoneyTrn> pendingTrns = MoneyTrnsDao.getPendingMoneyTrns(bsId, search, Date.valueOf(beforeDate));
         trns.addAll(pendingTrns);
       }
 
-      List<MoneyTrn> doneTrns = MoneyTrnsDao.INSTANCE.getDoneMoneyTrns(bsId, search, limit + 1, offset);
+      List<MoneyTrn> doneTrns = MoneyTrnsDao.getDoneMoneyTrns(bsId, search, limit + 1, offset);
       boolean hasNext = doneTrns.size() > limit;
       trns.addAll(hasNext ? doneTrns.subList(0, limit) : doneTrns);
       PagedList<MoneyTrn> pagedList = new PagedList<>(trns, limit, offset, hasNext);
@@ -47,7 +47,7 @@ public class MoneyTrnsResource {
       @PathVariable UUID bsId,
       @RequestParam UUID id) {
     try {
-      return getOk(MoneyTrnsDao.INSTANCE.getMoneyTrn(bsId, id));
+      return getOk(MoneyTrnsDao.getMoneyTrn(bsId, id));
     } catch (HmException e) {
       return getFail(e.getCode());
     }
@@ -57,7 +57,7 @@ public class MoneyTrnsResource {
   public HmResponse createMoneyTrn(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
-    return getOk(MoneyTrnsDao.INSTANCE.createMoneyTrn(bsId, moneyTrn));
+    return getOk(MoneyTrnsDao.createMoneyTrn(bsId, moneyTrn));
   }
 
   @RequestMapping("/delete")
@@ -65,7 +65,7 @@ public class MoneyTrnsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
     try {
-      MoneyTrnsDao.INSTANCE.deleteMoneyTrn(bsId, moneyTrn.getId());
+      MoneyTrnsDao.deleteMoneyTrn(bsId, moneyTrn.getId());
       return getOk();
     } catch (HmException e) {
       return getFail(e.getCode());
@@ -77,7 +77,7 @@ public class MoneyTrnsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
     try {
-      MoneyTrnsDao.INSTANCE.updateMoneyTrn(bsId, moneyTrn);
+      MoneyTrnsDao.updateMoneyTrn(bsId, moneyTrn);
       return getOk();
     } catch (HmException e) {
       return getFail(e.getCode());
@@ -89,7 +89,7 @@ public class MoneyTrnsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
     try {
-      MoneyTrnsDao.INSTANCE.skipMoneyTrn(bsId, moneyTrn);
+      MoneyTrnsDao.skipMoneyTrn(bsId, moneyTrn);
       return getOk();
     } catch (HmException e) {
       return getFail(e.getCode());
@@ -101,7 +101,7 @@ public class MoneyTrnsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
     try {
-      MoneyTrnsDao.INSTANCE.upMoneyTrn(bsId, moneyTrn.getId());
+      MoneyTrnsDao.upMoneyTrn(bsId, moneyTrn.getId());
       return getOk();
     } catch (HmException e) {
       return getFail(e.getCode());
