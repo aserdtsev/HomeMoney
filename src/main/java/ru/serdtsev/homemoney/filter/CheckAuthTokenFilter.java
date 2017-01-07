@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@SuppressWarnings("unused")
 @WebFilter("/api/*")
 public class CheckAuthTokenFilter implements Filter {
 

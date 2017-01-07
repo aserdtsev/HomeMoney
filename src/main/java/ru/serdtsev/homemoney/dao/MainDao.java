@@ -59,10 +59,9 @@ public class MainDao {
   }
 
   @SuppressWarnings("unused")
-  public static List<BalanceSheet> balanceSheets() {
+  public static List<BalanceSheet> getBalanceSheets() {
     try (Connection conn = getConnection()) {
-      return newQueryRunner().query(conn, baseBsSelectQuery + "order by created_ts desc",
-              new BeanListHandler<>(BalanceSheet.class));
+      return getBalanceSheets(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
@@ -81,6 +80,11 @@ public class MainDao {
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
+  }
+
+  public static List<BalanceSheet> getBalanceSheets(Connection conn) throws SQLException {
+    return new QueryRunner().query(conn, baseBsSelectQuery + "order by created_ts desc",
+        new BeanListHandler<>(BalanceSheet.class));
   }
 
   public static BalanceSheet getBalanceSheet(UUID id) {

@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class MoneyTrn {
   private UUID id;
@@ -237,19 +236,18 @@ public class MoneyTrn {
     return Currency.getInstance(toCurrencyCode).getSymbol();
   }
 
-  public String getLabelsAsString() {
-    return labels.stream().collect(Collectors.joining(","));
-  }
-
   public Boolean isMonoCurrencies() {
     return currencyCode.equals(toCurrencyCode);
   }
 
-  public Boolean crucialEquals(MoneyTrn other) {
+  /**
+   * Возвращает true, поля операции, которые влияют на остатки в разрезе дат, одинаковые.
+   */
+  public Boolean essentialEquals(MoneyTrn other) {
     if (!equals(other)) {
       throw new HmException(HmException.Code.IdentifiersDoNotMatch);
     }
-    return trnDate.equals(other.trnDate)
+    return trnDate.toLocalDate().equals(other.trnDate.toLocalDate())
         && fromAccId.equals(other.fromAccId) && toAccId.equals(other.toAccId)
         && amount.compareTo(other.amount) == 0
         && toAmount.compareTo(other.toAmount) == 0

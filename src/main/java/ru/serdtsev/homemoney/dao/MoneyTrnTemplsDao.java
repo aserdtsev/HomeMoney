@@ -11,6 +11,8 @@ import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class MoneyTrnTemplsDao {
   private static final String baseSelect =
@@ -21,7 +23,7 @@ public class MoneyTrnTemplsDao {
           "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
           "    te.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode," +
           "    coalesce(te.to_amount, te.amount), coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') as toCurrencyCode," +
-          "    te.comment, te.labels " +
+          "    te.comment " +
           "  from money_trn_templs te, " +
           "    accounts fa " +
           "      left join balances fb on fb.id = fa.id, " +
@@ -44,17 +46,23 @@ public class MoneyTrnTemplsDao {
     List<Object> params = new ArrayList<>();
     params.add(bsId);
     if (!Strings.isNullOrEmpty(search)) {
-      final String condition = " and (te.comment ilike ? or te.labels ilike ? or fa.name ilike ? or ta.name ilike ?) ";
+      final String condition = " and (te.comment ilike ? or fa.name ilike ? or ta.name ilike ? " +
+          " or exists (select null from labels2objs l2o, labels l where l2o.obj_id = te.id and l.id = l2o.label_id and l.name ilike ?)) ";
       sql.append(condition);
-      String searchTempl = "%" + search + "%";
       long paramNum = condition.chars().filter(ch -> ch == '?').count();
-      for (long i = 0; i < paramNum; i++) {
-        params.add(searchTempl);
-      }
+      IntStream.range(0, ((int) paramNum)).forEach(i -> params.add("%" + search + "%"));
     }
     sql.append(" order by nextDate desc ");
     return new QueryRunner().query(conn, sql.toString(),
-        new BeanListHandler<>(MoneyTrnTempl.class, new BasicRowProcessor(new MoneyTrnProcessor())), params.toArray());
+        new BeanListHandler<>(MoneyTrnTempl.class, new BasicRowProcessor(new MoneyTrnProcessor())), params.toArray()).stream()
+        .peek(templ -> {
+          try {
+            templ.setLabels(LabelsDao.getLabelNames(conn, templ.getId()));
+          } catch (SQLException e) {
+            throw new HmSqlException(e);
+          }
+        })
+        .collect(Collectors.toList());
   }
 
   static MoneyTrnTempl getMoneyTrnTempl(Connection conn, UUID bsId, UUID id) throws SQLException {
@@ -62,6 +70,7 @@ public class MoneyTrnTemplsDao {
       String sql = baseSelect + " and te.id = ? ";
       templ = new QueryRunner().query(conn, sql,
           new BeanHandler<>(MoneyTrnTempl.class, new BasicRowProcessor(new MoneyTrnProcessor())), bsId, id);
+      templ.setLabels(LabelsDao.getLabelNames(conn, id));
     return templ;
   }
 
@@ -77,7 +86,6 @@ public class MoneyTrnTemplsDao {
               "  from_acc_id = ?, " +
               "  to_acc_id = ?, " +
               "  comment = ?, " +
-              "  labels = ?, " +
               "  period = ? " +
               " where bs_id = ? and id = ?",
           templ.getSampleId(),
@@ -88,7 +96,6 @@ public class MoneyTrnTemplsDao {
           templ.getFromAccId(),
           templ.getToAccId(),
           templ.getComment(),
-          templ.getLabelsAsString(),
           templ.getPeriod().name(),
           bsId,
           templ.getId());
@@ -96,6 +103,7 @@ public class MoneyTrnTemplsDao {
         throw new IllegalArgumentException(String.format("Обновляемый шаблон %s не найден.",
             templ.getId()));
       }
+      LabelsDao.saveLabels(conn, bsId, templ.getId(), "template", templ.getLabels());
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
@@ -106,11 +114,12 @@ public class MoneyTrnTemplsDao {
     try (Connection conn = MainDao.getConnection()) {
       new QueryRunner().update(conn,
           "insert into money_trn_templs(id, status, bs_id, sample_id, last_money_trn_id, " +
-              "next_date, amount, from_acc_id, to_acc_id, comment, labels, period) " +
-              "  values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              "next_date, amount, from_acc_id, to_acc_id, comment, period) " +
+              "  values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           templ.getId(), templ.getStatus().name(), bsId, templ.getSampleId(), templ.getLastMoneyTrnId(),
           templ.getNextDate(), templ.getAmount(), templ.getFromAccId(), templ.getToAccId(), templ.getComment(),
-          templ.getLabelsAsString(), templ.getPeriod().name());
+          templ.getPeriod().name());
+      LabelsDao.saveLabels(conn, bsId, templ.getId(), "template", templ.getLabels());
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);

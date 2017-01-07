@@ -8,7 +8,6 @@ import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class MoneyTrnTempl {
   private UUID id;
@@ -131,7 +130,7 @@ public class MoneyTrnTempl {
     this.comment = comment;
   }
 
-  public List getLabels() {
+  public List<String> getLabels() {
     return labels;
   }
 
@@ -201,10 +200,6 @@ public class MoneyTrnTempl {
   @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToCurrencySymbol() {
     return Currency.getInstance(toCurrencyCode).getSymbol();
-  }
-
-  public String getLabelsAsString() {
-    return labels.stream().collect(Collectors.joining(","));
   }
 
   public static java.sql.Date calcNextDate(java.sql.Date origDate, Period period) {

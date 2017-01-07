@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="war" name="HomeMoney:war">
-    <output-path>$PROJECT_DIR$/target</output-path>
-    <root id="archive" name="HomeMoney.war">
-      <element id="artifact" artifact-name="HomeMoney:war exploded" />
-    </root>
-  </artifact>
-</component>
