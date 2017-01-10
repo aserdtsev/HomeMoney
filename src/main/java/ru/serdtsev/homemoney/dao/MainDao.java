@@ -202,7 +202,7 @@ public class MainDao {
         .filter(cs -> cs.getRootId() == null)
         .forEach(root -> {
            Double sum = list.stream()
-               .filter(cs -> cs.getRootId() == root.getId())
+               .filter(cs -> Objects.equals(cs.getRootId(), root.getId()))
                .mapToDouble(cs -> cs.getAmount().doubleValue())
                .reduce(0d, (s, d) -> s += d);
            root.setAmount(root.getAmount().add(new BigDecimal(sum)));
