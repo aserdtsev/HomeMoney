@@ -29,6 +29,7 @@ import static java.util.Objects.nonNull;
 import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.done;
 import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.pending;
 import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
+import static ru.serdtsev.homemoney.utils.Utils.nvl;
 
 public class MoneyTrnsDao {
   private static final String baseSelect = "" +
@@ -362,7 +363,7 @@ public class MoneyTrnsDao {
 
     createBalanceChange(conn, trn.getId(), trn.getFromAccId(), trn.getAmount().negate(), trn.getTrnDate(), 0);
 
-    BigDecimal toAmount = trn.getToAmount() != null ? trn.getToAmount() : trn.getToAmount();
+    BigDecimal toAmount = nvl(trn.getToAmount(), trn.getAmount());
     createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
 
     Account fromAcc = AccountsDao.getAccount(trn.getFromAccId());
