@@ -142,10 +142,10 @@ public class BalancesDao {
       throw new IllegalComponentStateException(String.format("Баланс счета {%s} не был изменен в БД.", balance.getId()));
     }
     log.info("Balance value changed; " +
-        "accId:" + balance.getId() + ", " +
-        "trnId:" + trnId + ", " +
-        "status:" + status.name() + ", " +
-        "before:" + balance.getValue() + ", " +
-        "after:" + getBalance(conn, balance.getId()).getValue() + ".");
+        "accId: " + balance.getId() + ", " +
+        "trnId: " + trnId + ", " +
+        "status: " + status.name() + ", " +
+        "before: " + balance.getValue() + ", " +
+        "after: " + getBalance(conn, balance.getId()).getValue() + ".");
   }
 }

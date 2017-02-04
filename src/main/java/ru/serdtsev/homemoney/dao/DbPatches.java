@@ -3,17 +3,20 @@ package ru.serdtsev.homemoney.dao;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
-import ru.serdtsev.homemoney.dto.BalanceSheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ru.serdtsev.homemoney.dto.*;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
+
 public class DbPatches {
+  private static Logger log = LoggerFactory.getLogger(DbPatches.class);
 
   private static void doPatch1() {
     try(Connection conn = MainDao.getConnection()) {
@@ -95,4 +98,102 @@ public class DbPatches {
       return Arrays.asList(labels.split(","));
     }
   }
+
+  public static void doPatch2() {
+    try (Connection conn = MainDao.getConnection()) {
+      List<BalanceSheet> bsList = MainDao.getBalanceSheets(conn);
+      bsList.forEach(bs -> handleBs(conn, bs));
+//      DbUtils.commitAndClose(conn);
+      DbUtils.rollbackAndClose(conn);
+    } catch (SQLException e) {
+      throw new HmSqlException(e);
+    }
+
+  }
+
+  private static void handleBs(Connection conn, BalanceSheet bs) {
+    try {
+      splitMoneyTrns(conn, bs);
+    } catch (SQLException e) {
+      throw new HmSqlException(e);
+    }
+
+    List<Category> categories = CategoriesDao.getCategories(bs.getId());
+    categories.stream()
+        .filter(category -> category.getRootId() == null)
+        .forEach(category -> saveCategoryAsLabel(conn, bs, category));
+    categories.stream()
+        .filter(category -> category.getRootId() != null)
+        .forEach(category -> saveCategoryAsLabel(conn, bs, category));
+  }
+
+  private static void saveCategoryAsLabel(Connection conn, BalanceSheet bs, Category category) {
+    Optional<Label> labelOpt;
+    try {
+      labelOpt = LabelsDao.findLabel(conn, bs.getId(), category.getName());
+      UUID rootId = (category.getRootId() != null)
+          ? LabelsDao.findLabel(conn, bs.getId(),CategoriesDao.getCategory(conn, category.getRootId()).getName()).get().getId()
+          : null;
+      Label label = labelOpt.isPresent()
+          ? labelOpt.get()
+          : LabelsDao.createLabel(conn, bs.getId(), category.getName(), rootId, true, category.getIsArc());
+      List<MoneyTrn> trns = MoneyTrnsDao.getMoneyTrns(conn, bs.getId(), category);
+      trns.forEach(trn -> {
+        try {
+          addLabelToMoneyTrn(conn, bs, label, trn);
+        } catch (SQLException e) {
+          throw new HmSqlException(e);
+        }
+      });
+    } catch (SQLException e) {
+      throw new HmSqlException(e);
+    }
+  }
+
+  private static void splitMoneyTrns(Connection conn, BalanceSheet bs) throws SQLException {
+    log.trace(">> splitMoneyTrns");
+    List<MoneyTrn> trns = MoneyTrnsDao.getMoneyTrns(conn, bs.getId());
+    trns.forEach(trn -> {
+      try {
+        updateTrnAmountsIfNeed(conn, bs, trn);
+        splitMoneyTrn(conn, trn);
+      } catch (SQLException e) {
+        throw new HmSqlException(e);
+      }
+    });
+    log.trace("<< splitMoneyTrns");
+  }
+
+  private static void addLabelToMoneyTrn(Connection conn, BalanceSheet bs, Label label, MoneyTrn trn) throws SQLException {
+    if (trn.getLabels().contains(label.getName())) {
+      return;
+    }
+    trn.getLabels().add(label.getName());
+    MoneyTrnsDao.updateMoneyTrn(conn, bs.getId(), trn);
+  }
+
+  private static MoneyTrn updateTrnAmountsIfNeed(Connection conn, BalanceSheet bs, MoneyTrn trn) throws SQLException {
+    QueryRunner run = new QueryRunner();
+    if (trn.isMonoCurrencies() && !Objects.equals(trn.getAmount(), trn.getToAmount())) {
+      log.info("Updating MoneyTrn.toAmount ({}): expected {}, found {}, {}", trn.getType(), trn.getAmount(), trn.getToAmount(), trn);
+      run.update(conn, "" +
+          "update money_trns set to_amount = ? where id = ?", trn.getAmount(), trn.getId()
+      );
+      return MoneyTrnsDao.getMoneyTrn(conn, bs.getId(), trn.getId());
+    }
+    return trn;
+  }
+
+  private static void splitMoneyTrn(Connection conn, MoneyTrn trn) throws SQLException {
+    assertNonNulls(conn, trn);
+    List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, trn);
+    if (!balanceChanges.isEmpty()) return;
+
+    MoneyTrnsDao.createBalanceChange(conn, trn.getId(), trn.getFromAccId(), trn.getAmount().negate(), trn.getTrnDate(), 0);
+
+    BigDecimal toAmount = trn.getToAmount() != null ? trn.getToAmount() : trn.getAmount();
+    MoneyTrnsDao.createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
+  }
+
+
 }

@@ -269,6 +269,31 @@ public class MoneyTrn {
     return getId() != null ? getId().hashCode() : 0;
   }
 
+  @Override
+  public String toString() {
+    return "MoneyTrn{" +
+        "id=" + id +
+        ", status=" + status +
+        ", trnDate=" + trnDate +
+        ", dateNum=" + dateNum +
+        ", fromAccId=" + fromAccId +
+        ", toAccId=" + toAccId +
+        ", parentId=" + parentId +
+        ", amount=" + amount +
+        ", currencyCode='" + currencyCode + '\'' +
+        ", toAmount=" + toAmount +
+        ", toCurrencyCode='" + toCurrencyCode + '\'' +
+        ", comment='" + comment + '\'' +
+        ", createdTs=" + createdTs +
+        ", period=" + period +
+        ", labels=" + labels +
+        ", templId=" + templId +
+        ", fromAccName='" + fromAccName + '\'' +
+        ", toAccName='" + toAccName + '\'' +
+        ", type='" + type + '\'' +
+        '}';
+  }
+
   public enum Status {
     /**
      * в ожидании

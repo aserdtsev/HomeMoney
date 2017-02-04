@@ -23,7 +23,9 @@ class LabelsDao {
     labels.forEach(name -> {
       try {
         Optional<Label> labelOpt = findLabel(conn, bsId, name);
-        Label label = labelOpt.isPresent() ? labelOpt.get() : createLabel(conn, bsId, name);
+        Label label = labelOpt.isPresent()
+            ? labelOpt.get()
+            : createLabel(conn, bsId, name, null, false, false);
         run.update(conn, "insert into labels2objs(label_id, obj_id, obj_type) values(?, ?, ?)", label.getId(), objId, objType);
       } catch (SQLException e) {
         throw new HmSqlException(e);
@@ -33,16 +35,17 @@ class LabelsDao {
     deleteUnusedLabels(conn, oldLabels);
   }
 
-  private static Label createLabel(Connection conn, UUID bsId, String name) throws SQLException {
-    Label label = new Label(UUID.randomUUID(), name);
-    new QueryRunner().update(conn, "insert into labels(id, bs_id, name) values (?, ?, ?)",
-        label.getId(), bsId, label.getName());
+  static Label createLabel(Connection conn, UUID bsId, String name, UUID rootId, Boolean isCategory, Boolean isArc) throws SQLException {
+    Label label = new Label(UUID.randomUUID(), name, rootId, isCategory, isArc);
+    new QueryRunner().update(conn,
+        "insert into labels(id, bs_id, name, root_id, is_category, is_arc) values (?, ?, ?, ?, ?, ?)",
+        label.getId(), bsId, label.getName(), rootId, label.getIsCategory(), isArc);
     return label;
   }
 
-  private static Optional<Label> findLabel(Connection conn, UUID bsId, String name) throws SQLException {
+  static Optional<Label> findLabel(Connection conn, UUID bsId, String name) throws SQLException {
     Label label = new QueryRunner().query(conn, "" +
-        "select id, name from labels where bs_id = ? and name = ?",
+        "select id, name, root_id as rootId, is_category as isCategory, is_arc as isArc from labels where bs_id = ? and name = ?",
         new BeanHandler<>(Label.class), bsId, name);
     return Optional.ofNullable(label);
   }
@@ -72,7 +75,9 @@ class LabelsDao {
 
   private static List<Label> getLabels(Connection conn, UUID objId) throws SQLException {
     return new QueryRunner().query(conn, "" +
-            "select l.id, l.name from labels2objs l2o, labels l where l2o.obj_id = ? and l.id = l2o.label_id",
+            "select l.id, l.name, root_id as rootId, is_category as isCategory, is_arc as isArc " +
+            "  from labels2objs l2o, labels l " +
+            "  where l2o.obj_id = ? and l.id = l2o.label_id",
         new BeanListHandler<>(Label.class), objId
     );
   }

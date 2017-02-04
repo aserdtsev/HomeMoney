@@ -12,6 +12,11 @@ public class HmException extends RuntimeException {
     this.code = code;
   }
 
+  public HmException(HmException.Code code, String message) {
+    super(message);
+    this.code = code;
+  }
+
   public enum Code {
     WrongAuth,
     UnknownAccountTypeCode,
@@ -19,5 +24,12 @@ public class HmException extends RuntimeException {
     IdentifiersDoNotMatch,
     WrongAmount,
     UserIdCookieIsEmpty
+  }
+
+  @Override
+  public String toString() {
+    return "HmException{" +
+        "code=" + code +
+        "} " + super.toString();
   }
 }

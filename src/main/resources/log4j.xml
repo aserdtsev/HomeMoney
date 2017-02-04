@@ -22,12 +22,12 @@
     </appender>
 
     <logger name="ru.serdtsev">
-        <level value="debug"/>
-        <appender-ref ref="FileAppender"/>
+        <level value="TRACE"/>
+        <!--appender-ref ref="FileAppender"/-->
     </logger>
 
     <logger name="net.sf.ehcache.config">
-        <level value="info"/>
+        <level value="INFO"/>
     </logger>
 
     <root>

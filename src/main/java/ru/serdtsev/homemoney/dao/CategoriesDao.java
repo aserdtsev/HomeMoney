@@ -32,12 +32,16 @@ public class CategoriesDao {
   @SuppressWarnings("unused")
   public static Category getCategory(UUID id) {
     try (Connection conn = MainDao.getConnection()) {
-      return (new QueryRunner()).query(conn,
-          "select a.id, a.name, a.type, c.root_id as rootId " + "from accounts a, categories c where id = ? and c.id = a.id",
-          new BeanHandler<>(Category.class), id);
+      return getCategory(conn, id);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
+  }
+
+  static Category getCategory(Connection conn, UUID id) throws SQLException {
+    return (new QueryRunner()).query(conn,
+        "select a.id, a.name, a.type, c.root_id as rootId " + "from accounts a, categories c where a.id = ? and c.id = a.id",
+        new BeanHandler<>(Category.class), id);
   }
 
   public static void createCategory(UUID bsId, Category category) {
