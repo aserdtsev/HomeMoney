@@ -16,6 +16,7 @@ public class MoneyTrn {
   private MoneyTrn.Status status;
   private Date trnDate;
   private Integer dateNum;
+  private List<BalanceChange> balanceChanges;
   private UUID fromAccId;
   private UUID toAccId;
   private UUID parentId;
@@ -41,7 +42,8 @@ public class MoneyTrn {
         null, null, null, null, null);
   }
 
-  public MoneyTrn(UUID id, Status status, Date trnDate, UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
+  public MoneyTrn(UUID id, Status status, Date trnDate,
+      UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
       String comment, List<String> labels, Integer dateNum, UUID parentId, UUID templId, Timestamp createdTs) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
       throw new HmException(HmException.Code.WrongAmount);
@@ -59,6 +61,10 @@ public class MoneyTrn {
     this.period = period;
     this.labels = labels;
     this.templId = templId;
+
+    this.balanceChanges = new ArrayList<>();
+    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, fromAccId, amount.negate(), trnDate, 0));
+    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, toAccId, toAmount, trnDate, 1));
   }
 
   public UUID getId() {
@@ -240,6 +246,14 @@ public class MoneyTrn {
     return currencyCode.equals(toCurrencyCode);
   }
 
+  public List<BalanceChange> getBalanceChanges() {
+    return balanceChanges;
+  }
+
+  public void setBalanceChanges(List<BalanceChange> balanceChanges) {
+    this.balanceChanges = balanceChanges;
+  }
+
   /**
    * Возвращает true, поля операции, которые влияют на остатки в разрезе дат, одинаковые.
    */
@@ -247,7 +261,11 @@ public class MoneyTrn {
     if (!equals(other)) {
       throw new HmException(HmException.Code.IdentifiersDoNotMatch);
     }
-    return trnDate.toLocalDate().equals(other.trnDate.toLocalDate())
+//    return trnDate.toLocalDate().equals(other.trnDate.toLocalDate())
+//        && balanceChanges.stream().anyMatch(change -> other.balanceChanges.contains(change))
+//        && other.balanceChanges.stream().anyMatch(change -> balanceChanges.contains(change))
+//        && status == other.status;
+    return trnDate.equals(other.trnDate)
         && fromAccId.equals(other.fromAccId) && toAccId.equals(other.toAccId)
         && amount.compareTo(other.amount) == 0
         && toAmount.compareTo(other.toAmount) == 0
@@ -275,6 +293,7 @@ public class MoneyTrn {
         "id=" + id +
         ", status=" + status +
         ", trnDate=" + trnDate +
+        ", balanceChanges=" + balanceChanges +
         ", dateNum=" + dateNum +
         ", fromAccId=" + fromAccId +
         ", toAccId=" + toAccId +
@@ -300,9 +319,17 @@ public class MoneyTrn {
      */
     pending,
     /**
+     * ожидает повтора
+     */
+    recurrence,
+    /**
      * выполнен
      */
     done,
+    /**
+     * выполнен (новый)
+     */
+    doneNew,
     /**
      * отменен
      */

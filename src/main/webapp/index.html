@@ -127,13 +127,13 @@
                ng-show="trn.status == 'done' && trn.period != 'SINGLE'"
                ng-click="createTemplByTrn(trn)">шаблон</a>
             <a href=""
-               ng-show="trn.status == 'pending'"
+               ng-show="trn.status == 'pending' || trn.status == 'recurrence'"
                ng-click="completeTrn(trn)">выполнить</a>
             <a href=""
-               ng-hide="trn.status == 'pending' && trn.templId != null"
+               ng-hide="(trn.status == 'pending'  || trn.status == 'recurrence') && trn.templId != null"
                ng-click="deleteTrn(trn)">удалить</a>
             <a href=""
-               ng-show="trn.status == 'pending' && trn.templId != null"
+               ng-show="trn.status == 'recurrence' && trn.templId != null"
                ng-click="skipTrn(trn)">пропустить</a>
           </span>
         </div>
@@ -236,13 +236,13 @@
             <input type="text" class="date" ng-model="templ.nextDate" placeholder="Дата"/>
             <select
                 ng-model="templ.fromAccId"
-                ng-options="acc.id as acc.name for acc in fromAccounts"
+                ng-options="acc.id as acc.name for acc in getFirstAccounts(templ)"
                 ng-click="refreshToAccounts(templ.fromAccId)">
             </select>
             <input type="text" class="amount" ng-model="templ.amount" placeholder="Сумма"/>
             <select
                 ng-model="templ.toAccId"
-                ng-options="acc.id as acc.name for acc in toAccounts"
+                ng-options="acc.id as acc.name for acc in getSecondAccounts(templ)"
                 ng-click="refreshFromAccounts(templ.toAccId)">
             </select>
             <select ng-model="templ.period">

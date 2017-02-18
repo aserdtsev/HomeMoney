@@ -240,7 +240,7 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     if (trn.trnDate > today) {
       trn.trnDate = today;
     }
-    trn.status = 'done';
+    trn.status = trn.status == 'recurrence' ? 'doneNew' : 'done';
     trn.isEdited = true;
   }
 
@@ -250,7 +250,7 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
 
   $scope.saveTrn = function(trn) {
     delete trn.isEdited;
-    if (trn.id == null) {
+    if (trn.status == 'doneNew') {
       $scope.createTrn(trn);
     } else {
       $scope.updateTrn(trn);

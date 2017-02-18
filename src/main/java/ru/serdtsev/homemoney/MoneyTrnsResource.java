@@ -28,7 +28,7 @@ public class MoneyTrnsResource {
       ArrayList<MoneyTrn> trns = new ArrayList<>();
       if (offset == 0) {
         LocalDate beforeDate = LocalDate.now().plusDays(14L);
-        List<MoneyTrn> pendingTrns = MoneyTrnsDao.getPendingMoneyTrns(bsId, search, Date.valueOf(beforeDate));
+        List<MoneyTrn> pendingTrns = MoneyTrnsDao.getPendingAndRecurrenceMoneyTrns(bsId, search, Date.valueOf(beforeDate));
         trns.addAll(pendingTrns);
       }
 

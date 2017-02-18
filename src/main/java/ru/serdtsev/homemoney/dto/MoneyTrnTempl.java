@@ -16,6 +16,7 @@ public class MoneyTrnTempl {
   private UUID lastMoneyTrnId;
   private Date nextDate;
   private Period period;
+  private List<BalanceChange> balanceChanges;
   private UUID fromAccId;
   private UUID toAccId;
   private BigDecimal amount;
@@ -94,6 +95,14 @@ public class MoneyTrnTempl {
 
   public void setPeriod(Period period) {
     this.period = period;
+  }
+
+  public List<BalanceChange> getBalanceChanges() {
+    return balanceChanges;
+  }
+
+  public void setBalanceChanges(List<BalanceChange> balanceChanges) {
+    this.balanceChanges = balanceChanges;
   }
 
   public UUID getFromAccId() {

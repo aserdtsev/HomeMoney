@@ -25,8 +25,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.Objects.nonNull;
 import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.done;
+import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.doneNew;
 import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.pending;
 import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
 import static ru.serdtsev.homemoney.utils.Utils.nvl;
@@ -64,9 +64,10 @@ public class MoneyTrnsDao {
   }
 
   @NotNull
-  public static List<MoneyTrn> getPendingMoneyTrns(UUID bsId, String search, Date beforeDate) {
+  public static List<MoneyTrn> getPendingAndRecurrenceMoneyTrns(UUID bsId, String search, Date beforeDate) {
     List<MoneyTrn> trns;
     try (Connection conn = MainDao.getConnection()) {
+      // todo Применить CallableFuture.
       trns = getMoneyTrns(conn, bsId, pending, search, null, null, beforeDate);
       trns.addAll(getTemplMoneyTrns(conn, bsId, search, beforeDate));
       trns.sort((t1, t2) -> t2.getTrnDate().compareTo(t1.getTrnDate()));
@@ -83,6 +84,7 @@ public class MoneyTrnsDao {
         new BeanListHandler<>(MoneyTrn.class, new BasicRowProcessor(new MoneyTrnProcessor())), bsId)
         .stream().peek(trn -> {
       try {
+        trn.setBalanceChanges(getBalanceChanges(conn, trn.getId()));
         trn.setLabels(LabelsDao.getLabelNames(conn, trn.getId()));
       } catch (SQLException e) {
         throw new HmSqlException(e);
@@ -148,6 +150,7 @@ public class MoneyTrnsDao {
         new BeanListHandler<>(MoneyTrn.class, new BasicRowProcessor(new MoneyTrnProcessor())),
         params.toArray()).stream().peek(trn -> {
       try {
+        trn.setBalanceChanges(getBalanceChanges(conn, trn.getId()));
         trn.setLabels(LabelsDao.getLabelNames(conn, trn.getId()));
       } catch (SQLException e) {
         throw new HmSqlException(e);
@@ -166,9 +169,10 @@ public class MoneyTrnsDao {
             " order by date_num, created_ts desc",
         new BeanListHandler<>(MoneyTrn.class, new BasicRowProcessor(new MoneyTrnProcessor())), bsId, trnDate)
         .stream()
-        .peek(t -> {
+        .peek(trn -> {
           try {
-            t.setLabels(LabelsDao.getLabelNames(conn, t.getId()));
+            trn.setBalanceChanges(getBalanceChanges(conn, trn.getId()));
+            trn.setLabels(LabelsDao.getLabelNames(conn, trn.getId()));
           } catch (SQLException e) {
             e.printStackTrace();
           }
@@ -184,9 +188,10 @@ public class MoneyTrnsDao {
         baseSelect + " and (mt.from_acc_id = ? or mt.to_acc_id = ?)",
         new BeanListHandler<>(MoneyTrn.class, new BasicRowProcessor(new MoneyTrnProcessor())), bsId, category.getId(), category.getId())
         .stream()
-        .peek(t -> {
+        .peek(trn -> {
           try {
-            t.setLabels(LabelsDao.getLabelNames(conn, t.getId()));
+            trn.setBalanceChanges(getBalanceChanges(conn, trn.getId()));
+            trn.setLabels(LabelsDao.getLabelNames(conn, trn.getId()));
           } catch (SQLException e) {
             e.printStackTrace();
           }
@@ -197,14 +202,12 @@ public class MoneyTrnsDao {
   @NotNull
   private static List<MoneyTrn> getTemplMoneyTrns(Connection conn, UUID bsId,
       @Nullable String search, Date beforeDate) throws SQLException {
-    assert nonNull(conn);
-    assert nonNull(bsId);
-    assert nonNull(beforeDate);
+    assertNonNulls(conn, bsId, beforeDate);
 
     BeanListHandler<MoneyTrn> handler = new BeanListHandler<>(MoneyTrn.class,
         new BasicRowProcessor(new MoneyTrnProcessor()));
     StringBuilder sql = new StringBuilder("" +
-        "select null as id, 'pending' as status, null as createdTs, te.next_date as trnDate, 0 as dateNum, " +
+        "select null as id, 'recurrence' as status, null as createdTs, te.next_date as trnDate, 0 as dateNum, " +
         "    tr.from_acc_id as fromAccId, fa.name as fromAccName, " +
         "    tr.to_acc_id as toAccId, ta.name as toAccName, " +
         "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
@@ -233,9 +236,11 @@ public class MoneyTrnsDao {
     return new QueryRunner()
         .query(conn, sql.toString(), handler, params.toArray())
         .stream()
-        .peek(templ -> {
+        .peek(trn -> {
           try {
-            templ.setLabels(LabelsDao.getLabelNames(conn, templ.getTemplId()));
+            trn.setId(UUID.randomUUID());
+            trn.setBalanceChanges(getBalanceChanges(conn, trn.getId()));
+            trn.setLabels(LabelsDao.getLabelNames(conn, trn.getTemplId()));
           } catch (SQLException e) {
             throw new HmSqlException(e);
           }
@@ -256,8 +261,11 @@ public class MoneyTrnsDao {
   static MoneyTrn getMoneyTrn(Connection conn, UUID bsId, UUID id) throws SQLException {
     assertNonNulls(conn, bsId, id);
     BeanHandler<MoneyTrn> mtHandler = new BeanHandler<>(MoneyTrn.class, new BasicRowProcessor(new MoneyTrnProcessor()));
-    MoneyTrn trn = new QueryRunner().query(conn, baseSelect + " and mt.id = ?", mtHandler, bsId, id);
-    trn.setLabels(LabelsDao.getLabelNames(conn, id));
+    MoneyTrn trn = new QueryRunner().query(conn, baseSelect + " and mt.id = ? ", mtHandler, bsId, id);
+    if (trn != null) {
+      trn.setBalanceChanges(getBalanceChanges(conn, trn.getId()));
+      trn.setLabels(LabelsDao.getLabelNames(conn, id));
+    }
     return trn;
   }
 
@@ -293,7 +301,8 @@ public class MoneyTrnsDao {
     if (trn2 != null) {
       result.add(trn2);
     }
-    if (done == moneyTrn.getStatus() && !moneyTrn.getTrnDate().toLocalDate().isAfter(LocalDate.now())) {
+    if ((moneyTrn.getStatus() == done || moneyTrn.getStatus() == doneNew) &&
+        !moneyTrn.getTrnDate().toLocalDate().isAfter(LocalDate.now())) {
       result.forEach(t -> {
         try {
           completeMoneyTrn(conn, bsId, t.getId());
@@ -340,6 +349,7 @@ public class MoneyTrnsDao {
   private static void createMoneyTrnInternal(Connection conn, UUID bsId, MoneyTrn trn) throws SQLException {
     assertNonNulls(conn, bsId, trn);
     Timestamp createdTs = new Timestamp(new java.util.Date().getTime());
+    List<String> labels = trn.getLabels();
 
     QueryRunner run = new QueryRunner();
     run.update(conn, "" +
@@ -361,39 +371,57 @@ public class MoneyTrnsDao {
         trn.getPeriod().name(),
         trn.getTemplId());
 
-    createBalanceChange(conn, trn.getId(), trn.getFromAccId(), trn.getAmount().negate(), trn.getTrnDate(), 0);
 
-    BigDecimal toAmount = nvl(trn.getToAmount(), trn.getAmount());
-    createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
+    trn = MoneyTrnsDao.getMoneyTrn(conn, bsId, trn.getId());
+
+    if (trn.getType().equals("expense") || trn.getType().equals("transfer")) {
+      createBalanceChange(conn, trn.getId(), trn.getFromAccId(), trn.getAmount().negate(), trn.getTrnDate(), 0);
+    }
+
+    if (trn.getType().equals("income") || trn.getType().equals("transfer")) {
+      BigDecimal toAmount = nvl(trn.getToAmount(), trn.getAmount());
+      createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
+    }
 
     Account fromAcc = AccountsDao.getAccount(trn.getFromAccId());
     if (fromAcc.getType() == Account.Type.income) {
-      trn.getLabels().add(fromAcc.getName());
+      labels.add(fromAcc.getName());
     }
 
     Account toAcc = AccountsDao.getAccount(trn.getToAccId());
     if (toAcc.getType() == Account.Type.expense) {
-      trn.getLabels().add(toAcc.getName());
+      labels.add(toAcc.getName());
     }
 
-    LabelsDao.saveLabels(conn, bsId, trn.getId(), "operation", trn.getLabels());
+    labels.remove("<Без категории>");
+
+    LabelsDao.saveLabels(conn, bsId, trn.getId(), "operation", labels);
   }
 
-  static void createBalanceChange(Connection conn, UUID operId, UUID balanceId, BigDecimal value, Date made,
+  static void createBalanceChange(Connection conn, UUID operId, UUID balanceId, BigDecimal value, @Nullable Date performed,
       int index) throws SQLException {
-    assertNonNulls(conn, operId, balanceId, value, made);
+    assertNonNulls(conn, operId, balanceId, value);
     new QueryRunner().update(conn, "" +
             "insert into balance_changes (id, oper_id, balance_id, value, made, index) " +
             "  values (?, ?, ?, ?, ?, ?)",
-        UUID.randomUUID(), operId, balanceId, value, made, index);
+        UUID.randomUUID(), operId, balanceId, value, performed, index);
   }
 
-  private static void updateBalanceChange(Connection conn, UUID id, UUID balanceId, BigDecimal value, Date made, int index) {
-    assertNonNulls(id, balanceId, value, made);
+  static void updateBalanceChange(Connection conn, UUID id, UUID balanceId, BigDecimal value, @Nullable Date performed, int index) {
+    assertNonNulls(id, balanceId, value);
     try {
       new QueryRunner().update(conn, "" +
           "update balance_changes set balance_id = ?, value = ?, made = ?, index = ? where id = ?",
-          balanceId, value, made, index, id);
+          balanceId, value, performed, index, id);
+    } catch (SQLException e) {
+      throw new HmSqlException(e);
+    }
+  }
+
+  static void deleteBalanceChange(Connection conn, UUID id) {
+    assertNonNulls(conn, id);
+    try {
+      new QueryRunner().update(conn, "delete from balance_changes where id = ?", id);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
@@ -407,6 +435,8 @@ public class MoneyTrnsDao {
   private static void setStatusNChangeBalanceValues(Connection conn, UUID bsId, UUID moneyTrnId, MoneyTrn.Status status)
       throws SQLException {
     assertNonNulls(conn, bsId, moneyTrnId, status);
+    assert status != MoneyTrn.Status.doneNew && status != MoneyTrn.Status.doneNew : status.name();
+
     MoneyTrn trn = getMoneyTrn(conn, bsId, moneyTrnId);
     if (status == trn.getStatus()) return;
     UUID fromAccId = null;
@@ -456,7 +486,7 @@ public class MoneyTrnsDao {
   public static void deleteMoneyTrn(UUID bsId, UUID id) {
     assertNonNulls(bsId, id);
     try (Connection conn = MainDao.getConnection()) {
-      setStatusNChangeBalanceValues(conn, bsId, id);
+      setStatusNChangeBalanceValues(conn, bsId, id, MoneyTrn.Status.cancelled);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
@@ -466,7 +496,12 @@ public class MoneyTrnsDao {
   public static void updateMoneyTrn(UUID bsId, MoneyTrn moneyTrn) {
     assertNonNulls(bsId, moneyTrn);
     try (Connection conn = MainDao.getConnection()) {
-      updateMoneyTrn(conn, bsId, moneyTrn);
+      MoneyTrn trnFromDb = getMoneyTrn(conn, bsId, moneyTrn.getId());
+      if (trnFromDb != null) {
+        updateMoneyTrn(conn, bsId, moneyTrn);
+      } else {
+        createMoneyTrn(conn, bsId, moneyTrn);
+      }
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
@@ -508,7 +543,7 @@ public class MoneyTrnsDao {
           trn.getPeriod().name(),
           trn.getComment(),
           trn.getId());
-      List<BalanceChange> balanceChanges = getBalanceChanges(conn, trn);
+      List<BalanceChange> balanceChanges = getBalanceChanges(conn, trn.getId());
       balanceChanges.stream()
           .filter(balanceChange -> balanceChange.getValue().compareTo(BigDecimal.ZERO) < 0)
           .findFirst()
@@ -528,20 +563,22 @@ public class MoneyTrnsDao {
     }
   }
 
-  static List<BalanceChange> getBalanceChanges(Connection conn, MoneyTrn trn) throws SQLException {
-    assertNonNulls(conn, trn);
+
+
+  static List<BalanceChange> getBalanceChanges(Connection conn, UUID operId) throws SQLException {
+    assertNonNulls(conn, operId);
     return new QueryRunner().query(conn, "" +
         "select id, oper_id as operId, balance_id as balanceId, value, made, index " +
             "from balance_changes " +
             "where oper_id = ? " +
             "order by index",
-        new BeanListHandler<>(BalanceChange.class), trn.getId());
+        new BeanListHandler<>(BalanceChange.class), operId);
   }
 
   public static void skipMoneyTrn(UUID bsId, MoneyTrn trn) {
     assertNonNulls(bsId, trn);
     try (Connection conn = MainDao.getConnection()) {
-      if (trn.getId() != null) {
+      if (trn.getStatus() != MoneyTrn.Status.recurrence) {
         setStatusNChangeBalanceValues(conn, bsId, trn.getId(), MoneyTrn.Status.cancelled);
       }
       if (trn.getTemplId() != null) {
@@ -553,11 +590,6 @@ public class MoneyTrnsDao {
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
-  }
-
-  private static void setStatusNChangeBalanceValues(Connection conn, UUID bsId, UUID id) throws SQLException {
-    assertNonNulls(conn, bsId, id);
-    setStatusNChangeBalanceValues(conn, bsId, id, MoneyTrn.Status.cancelled);
   }
 
   public static void upMoneyTrn(UUID bsId, UUID id) {

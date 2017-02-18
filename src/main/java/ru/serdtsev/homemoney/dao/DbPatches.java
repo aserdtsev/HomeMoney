@@ -114,20 +114,30 @@ public class DbPatches {
   private static void handleBs(Connection conn, BalanceSheet bs) {
     try {
       splitMoneyTrns(conn, bs);
+      List<Category> categories = CategoriesDao.getCategories(bs.getId());
+      categories.stream()
+          .filter(category -> category.getRootId() == null)
+          .forEach(category -> saveCategoryAsLabel(conn, bs, category));
+      categories.stream()
+          .filter(category -> category.getRootId() != null)
+          .forEach(category -> saveCategoryAsLabel(conn, bs, category));
+
+      removeCategoryOfWithoutCategory(conn, bs);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
+  }
 
-    List<Category> categories = CategoriesDao.getCategories(bs.getId());
-    categories.stream()
-        .filter(category -> category.getRootId() == null)
-        .forEach(category -> saveCategoryAsLabel(conn, bs, category));
-    categories.stream()
-        .filter(category -> category.getRootId() != null)
-        .forEach(category -> saveCategoryAsLabel(conn, bs, category));
+  private static void removeCategoryOfWithoutCategory(Connection conn, BalanceSheet bs) throws SQLException {
+    Optional<Label> label = LabelsDao.findLabel(conn, bs.getId(), "<Без категории>");
+    if (label.isPresent()) {
+      new QueryRunner().update(conn, "delete from labels2objs where label_id = ?", label.get().getId());
+      new QueryRunner().update(conn, "delete from labels where id = ?", label.get().getId());
+    }
   }
 
   private static void saveCategoryAsLabel(Connection conn, BalanceSheet bs, Category category) {
+    if (category.getName().equals("<Без категории>")) return;
     Optional<Label> labelOpt;
     try {
       labelOpt = LabelsDao.findLabel(conn, bs.getId(), category.getName());
@@ -186,14 +196,30 @@ public class DbPatches {
 
   private static void splitMoneyTrn(Connection conn, MoneyTrn trn) throws SQLException {
     assertNonNulls(conn, trn);
-    List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, trn);
-    if (!balanceChanges.isEmpty()) return;
+    List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, trn.getId());
+    if (!balanceChanges.isEmpty()) {
+      if (trn.getType().equals("expense")) {
+        Optional<BalanceChange> change = balanceChanges.stream()
+            .filter(c -> c.getValue().compareTo(BigDecimal.ZERO) > 0)
+            .findFirst();
+        change.ifPresent(c -> MoneyTrnsDao.deleteBalanceChange(conn, c.getId()));
+      }
+      if (trn.getType().equals("income")) {
+        Optional<BalanceChange> change = balanceChanges.stream()
+            .filter(c -> c.getValue().compareTo(BigDecimal.ZERO) < 0)
+            .findFirst();
+        change.ifPresent(c -> MoneyTrnsDao.deleteBalanceChange(conn, c.getId()));
+      }
+      return;
+    }
 
-    MoneyTrnsDao.createBalanceChange(conn, trn.getId(), trn.getFromAccId(), trn.getAmount().negate(), trn.getTrnDate(), 0);
+    if (trn.getType().equals("expense") || trn.getType().equals("transfer")) {
+      MoneyTrnsDao.createBalanceChange(conn, trn.getId(), trn.getFromAccId(), trn.getAmount().negate(), trn.getTrnDate(), 0);
+    }
 
-    BigDecimal toAmount = trn.getToAmount() != null ? trn.getToAmount() : trn.getAmount();
-    MoneyTrnsDao.createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
+    if (trn.getType().equals("income") || trn.getType().equals("transfer")) {
+      BigDecimal toAmount = trn.getToAmount() != null ? trn.getToAmount() : trn.getAmount();
+      MoneyTrnsDao.createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
+    }
   }
-
-
 }
