@@ -112,8 +112,10 @@ public class DbPatches {
   }
 
   private static void handleBs(Connection conn, BalanceSheet bs) {
+    log.info(">> handleBs {}", bs.getId());
     try {
       splitMoneyTrns(conn, bs);
+      splitMoneyTrnTempls(conn, bs);
       List<Category> categories = CategoriesDao.getCategories(bs.getId());
       categories.stream()
           .filter(category -> category.getRootId() == null)
@@ -126,6 +128,7 @@ public class DbPatches {
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
+    log.info("<< handleBs {}", bs.getId());
   }
 
   private static void removeCategoryOfWithoutCategory(Connection conn, BalanceSheet bs) throws SQLException {
@@ -147,10 +150,20 @@ public class DbPatches {
       Label label = labelOpt.isPresent()
           ? labelOpt.get()
           : LabelsDao.createLabel(conn, bs.getId(), category.getName(), rootId, true, category.getIsArc());
+
       List<MoneyTrn> trns = MoneyTrnsDao.getMoneyTrns(conn, bs.getId(), category);
       trns.forEach(trn -> {
         try {
           addLabelToMoneyTrn(conn, bs, label, trn);
+        } catch (SQLException e) {
+          throw new HmSqlException(e);
+        }
+      });
+
+      List<MoneyTrnTempl> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(conn, bs.getId(), null);
+      templs.forEach(templ -> {
+        try {
+          addLabelToMoneyTrnTempl(conn, bs, label, templ);
         } catch (SQLException e) {
           throw new HmSqlException(e);
         }
@@ -174,12 +187,34 @@ public class DbPatches {
     log.trace("<< splitMoneyTrns");
   }
 
+  private static void splitMoneyTrnTempls(Connection conn, BalanceSheet bs) throws SQLException {
+    log.trace(">> splitMoneyTrnTempls");
+    List<MoneyTrnTempl> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(conn, bs.getId(), null);
+    templs.forEach(templ -> {
+      try {
+        splitMoneyTrnTempl(conn, templ);
+      } catch (SQLException e) {
+        throw new HmSqlException(e);
+      }
+    });
+    log.trace("<< splitMoneyTrnTempls");
+  }
+
+
   private static void addLabelToMoneyTrn(Connection conn, BalanceSheet bs, Label label, MoneyTrn trn) throws SQLException {
     if (trn.getLabels().contains(label.getName())) {
       return;
     }
     trn.getLabels().add(label.getName());
     MoneyTrnsDao.updateMoneyTrn(conn, bs.getId(), trn);
+  }
+
+  private static void addLabelToMoneyTrnTempl(Connection conn, BalanceSheet bs, Label label, MoneyTrnTempl templ) throws SQLException {
+    if (templ.getLabels().contains(label.getName())) {
+      return;
+    }
+    templ.getLabels().add(label.getName());
+    MoneyTrnTemplsDao.updateMoneyTrnTempl(conn, bs.getId(), templ);
   }
 
   private static MoneyTrn updateTrnAmountsIfNeed(Connection conn, BalanceSheet bs, MoneyTrn trn) throws SQLException {
@@ -222,4 +257,34 @@ public class DbPatches {
       MoneyTrnsDao.createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
     }
   }
+
+  private static void splitMoneyTrnTempl(Connection conn, MoneyTrnTempl templ) throws SQLException {
+    assertNonNulls(conn, templ);
+    List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, templ.getId());
+    if (!balanceChanges.isEmpty()) {
+      if (templ.getType().equals("expense")) {
+        Optional<BalanceChange> change = balanceChanges.stream()
+            .filter(c -> c.getValue().compareTo(BigDecimal.ZERO) > 0)
+            .findFirst();
+        change.ifPresent(c -> MoneyTrnsDao.deleteBalanceChange(conn, c.getId()));
+      }
+      if (templ.getType().equals("income")) {
+        Optional<BalanceChange> change = balanceChanges.stream()
+            .filter(c -> c.getValue().compareTo(BigDecimal.ZERO) < 0)
+            .findFirst();
+        change.ifPresent(c -> MoneyTrnsDao.deleteBalanceChange(conn, c.getId()));
+      }
+      return;
+    }
+
+    if (templ.getType().equals("expense") || templ.getType().equals("transfer")) {
+      MoneyTrnsDao.createBalanceChange(conn, templ.getId(), templ.getFromAccId(), templ.getAmount().negate(), null, 0);
+    }
+
+    if (templ.getType().equals("income") || templ.getType().equals("transfer")) {
+      BigDecimal toAmount = templ.getToAmount() != null ? templ.getToAmount() : templ.getAmount();
+      MoneyTrnsDao.createBalanceChange(conn, templ.getId(), templ.getToAccId(), toAmount, null, 1);
+    }
+  }
+
 }

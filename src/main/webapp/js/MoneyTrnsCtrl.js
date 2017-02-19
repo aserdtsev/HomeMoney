@@ -228,7 +228,7 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
       var type = param;
       trn = {type: type, labels: []};
     }
-    trn.status = 'done';
+    trn.status = 'doneNew';
     trn.trnDate = formatDate($scope.getDefaultDate());
     trn.isEdited = true;
     var groupList = $scope.getGroupList('Новые');

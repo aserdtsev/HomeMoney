@@ -47,7 +47,7 @@ public class MoneyTrnTemplsDao {
     }
   }
 
-  private static List<MoneyTrnTempl> getMoneyTrnTempls(Connection conn, UUID bsId, String search) throws SQLException {
+  static List<MoneyTrnTempl> getMoneyTrnTempls(Connection conn, UUID bsId, String search) throws SQLException {
     StringBuilder sql = new StringBuilder(baseSelect + " and te.status = 'active' ");
     List<Object> params = new ArrayList<>();
     params.add(bsId);
@@ -84,55 +84,59 @@ public class MoneyTrnTemplsDao {
 
   public static void updateMoneyTrnTempl(UUID bsId, MoneyTrnTempl templ) {
     try (Connection conn = MainDao.getConnection()) {
-      int rowCount = new QueryRunner().update(conn,
-          "update money_trn_templs set " +
-              "  sample_id = ?, " +
-              "  last_money_trn_id = ?, " +
-              "  next_date = ?, " +
-              "  amount = ?, " +
-              "  to_amount = ?, " +
-              "  from_acc_id = ?, " +
-              "  to_acc_id = ?, " +
-              "  comment = ?, " +
-              "  period = ? " +
-              " where bs_id = ? and id = ?",
-          templ.getSampleId(),
-          templ.getLastMoneyTrnId(),
-          templ.getNextDate(),
-          templ.getAmount(),
-          templ.getToAmount(),
-          templ.getFromAccId(),
-          templ.getToAccId(),
-          templ.getComment(),
-          templ.getPeriod().name(),
-          bsId,
-          templ.getId());
-      if (rowCount == 0) {
-        throw new IllegalArgumentException(String.format("Обновляемый шаблон %s не найден.",
-            templ.getId()));
-      }
-
-      List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, templ.getId());
-      balanceChanges.stream()
-          .filter(balanceChange -> balanceChange.getValue().compareTo(BigDecimal.ZERO) < 0)
-          .findFirst()
-          .ifPresent(balanceChange ->
-              MoneyTrnsDao.updateBalanceChange(conn, balanceChange.getId(), templ.getFromAccId(), templ.getAmount().negate(),
-                  null, balanceChange.getIndex()));
-      balanceChanges.stream()
-          .filter(balanceChange -> balanceChange.getValue().compareTo(BigDecimal.ZERO) > 0)
-          .findFirst()
-          .ifPresent(balanceChange -> {
-            BigDecimal toAmount = templ.getToAmount() != null ? templ.getToAmount() : templ.getAmount();
-            MoneyTrnsDao.updateBalanceChange(conn, balanceChange.getId(), templ.getToAccId(), toAmount,
-                null, balanceChange.getIndex());
-          });
-
-      LabelsDao.saveLabels(conn, bsId, templ.getId(), "template", templ.getLabels());
+      updateMoneyTrnTempl(conn, bsId, templ);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
+  }
+
+  static void updateMoneyTrnTempl(Connection conn, UUID bsId, MoneyTrnTempl templ) throws SQLException {
+    int rowCount = new QueryRunner().update(conn,
+        "update money_trn_templs set " +
+            "  sample_id = ?, " +
+            "  last_money_trn_id = ?, " +
+            "  next_date = ?, " +
+            "  amount = ?, " +
+            "  to_amount = ?, " +
+            "  from_acc_id = ?, " +
+            "  to_acc_id = ?, " +
+            "  comment = ?, " +
+            "  period = ? " +
+            " where bs_id = ? and id = ?",
+        templ.getSampleId(),
+        templ.getLastMoneyTrnId(),
+        templ.getNextDate(),
+        templ.getAmount(),
+        templ.getToAmount(),
+        templ.getFromAccId(),
+        templ.getToAccId(),
+        templ.getComment(),
+        templ.getPeriod().name(),
+        bsId,
+        templ.getId());
+    if (rowCount == 0) {
+      throw new IllegalArgumentException(String.format("Обновляемый шаблон %s не найден.",
+          templ.getId()));
+    }
+
+    List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, templ.getId());
+    balanceChanges.stream()
+        .filter(balanceChange -> balanceChange.getValue().compareTo(BigDecimal.ZERO) < 0)
+        .findFirst()
+        .ifPresent(balanceChange ->
+            MoneyTrnsDao.updateBalanceChange(conn, balanceChange.getId(), templ.getFromAccId(), templ.getAmount().negate(),
+                null, balanceChange.getIndex()));
+    balanceChanges.stream()
+        .filter(balanceChange -> balanceChange.getValue().compareTo(BigDecimal.ZERO) > 0)
+        .findFirst()
+        .ifPresent(balanceChange -> {
+          BigDecimal toAmount = templ.getToAmount() != null ? templ.getToAmount() : templ.getAmount();
+          MoneyTrnsDao.updateBalanceChange(conn, balanceChange.getId(), templ.getToAccId(), toAmount,
+              null, balanceChange.getIndex());
+        });
+
+    LabelsDao.saveLabels(conn, bsId, templ.getId(), "template", templ.getLabels());
   }
 
   public static void createMoneyTrnTempl(UUID bsId, MoneyTrnTempl templ) {

@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import ru.serdtsev.homemoney.dao.DbPatches;
 
 @ComponentScan
 @ServletComponentScan
@@ -20,6 +21,6 @@ public class HmApplication {
 
   public static void main(String[] args) throws Exception {
     SpringApplication.run(HmApplication.class, args);
-//    DbPatches.doPatch2();
+    DbPatches.doPatch2();
   }
 }
