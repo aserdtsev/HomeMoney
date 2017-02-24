@@ -3,9 +3,8 @@ package ru.serdtsev.homemoney.dto;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-public class BalanceSheet {
+public class BalanceSheetDto {
   private UUID id;
-  private String defaultCurrencyCode;
   private Timestamp createdTs;
   private UUID svcRsvId;
   private UUID uncatCostsId;
@@ -13,7 +12,16 @@ public class BalanceSheet {
   private String currencyCode;
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public BalanceSheet() {
+  public BalanceSheetDto() {
+  }
+
+  public BalanceSheetDto(UUID id, Timestamp createdTs, UUID svcRsvId, UUID uncatCostsId, UUID uncatIncomeId, String currencyCode) {
+    this.id = id;
+    this.createdTs = createdTs;
+    this.svcRsvId = svcRsvId;
+    this.uncatCostsId = uncatCostsId;
+    this.uncatIncomeId = uncatIncomeId;
+    this.currencyCode = currencyCode;
   }
 
   public UUID getId() {
@@ -22,16 +30,6 @@ public class BalanceSheet {
 
   public void setId(UUID id) {
     this.id = id;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public String getDefaultCurrencyCode() {
-    return defaultCurrencyCode;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setDefaultCurrencyCode(String defaultCurrencyCode) {
-    this.defaultCurrencyCode = defaultCurrencyCode;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})

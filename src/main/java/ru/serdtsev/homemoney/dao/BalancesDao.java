@@ -6,8 +6,8 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dto.Balance;
-import ru.serdtsev.homemoney.dto.BalanceSheet;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 
 import java.awt.*;
@@ -99,7 +99,7 @@ public class BalancesDao {
     AccountsDao.updateAccount(conn, bsId, balance);
     Balance currBalance = getBalance(conn, balance.getId());
     if (balance.getValue().compareTo(currBalance.getValue()) != 0) {
-      BalanceSheet bs = MainDao.getBalanceSheet(bsId);
+      BalanceSheet bs = BalanceSheet.getInstance(bsId);
       boolean more = balance.getValue().compareTo(currBalance.getValue()) == 1;
       UUID fromAccId = more ? bs.getUncatIncomeId() : balance.getId();
       UUID toAccId = more ? balance.getId() : bs.getUncatCostsId();

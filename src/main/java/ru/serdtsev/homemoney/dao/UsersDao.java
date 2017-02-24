@@ -11,6 +11,7 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.slf4j.Logger;
 import ru.serdtsev.homemoney.HmException;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dto.Authentication;
 import ru.serdtsev.homemoney.dto.User;
 
@@ -31,7 +32,7 @@ public class UsersDao {
     try (Connection conn = MainDao.getConnection()) {
       user = getUser(conn, email);
       if (user == null) {
-        user =createUser(conn, email, pwdHash);
+        user = createUser(conn, email, pwdHash);
       }
       if (!user.getPwdHash().equals(pwdHash))
         throw new HmException(HmException.Code.WrongAuth);
@@ -72,10 +73,9 @@ public class UsersDao {
   }
 
   private static User createUser(Connection conn, String email, String pwdHash) throws SQLException {
-    UUID bsId = UUID.randomUUID();
-    MainDao.createBalanceSheet(conn, bsId);
+    BalanceSheet bs = BalanceSheet.newInstance();
     (new QueryRunner()).update(conn, "insert into users(user_id, email, pwd_hash, bs_id) values (?, ?, ?, ?)",
-        UUID.randomUUID(), email, pwdHash, bsId);
+        UUID.randomUUID(), email, pwdHash, bs.getId());
     return getUser(conn, email);
   }
 

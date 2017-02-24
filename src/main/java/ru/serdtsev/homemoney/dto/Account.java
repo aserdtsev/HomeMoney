@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ru.serdtsev.homemoney.utils.Utils;
 
 import java.sql.Date;
 import java.time.LocalDate;
@@ -62,7 +63,7 @@ public class Account {
   }
 
   public Boolean getIsArc() {
-    return isArc;
+    return Utils.nvl(isArc, false);
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})

@@ -4,10 +4,10 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.ResultSetHandler;
-import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ru.serdtsev.homemoney.dto.*;
 
 import java.beans.PropertyVetoException;
@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,10 +22,7 @@ import java.util.stream.Collectors;
 public class MainDao {
   private static Logger log = LoggerFactory.getLogger(MainDao.class);
   private static final ComboPooledDataSource cpds = new ComboPooledDataSource();
-  private static String baseBsSelectQuery = "" +
-      "select id, created_ts as createdTs, svc_rsv_id as svcRsvId, " +
-      "    uncat_costs_id as uncatCostsId, uncat_income_id as uncatIncomeId, currency_code as currencyCode " +
-      "  from balance_sheets ";
+  private static final JdbcTemplate jdbcTemplate = new JdbcTemplate(cpds);
 
   static {
     try {
@@ -44,9 +40,13 @@ public class MainDao {
     }
   }
 
+  public static JdbcTemplate jdbcTemplate() {
+    return jdbcTemplate;
+  }
+
   public static Connection getConnection() {
     try {
-      Connection conn = cpds.getConnection();
+      Connection conn = jdbcTemplate.getDataSource().getConnection();
       conn.setAutoCommit(false);
       return conn;
     } catch (SQLException e) {
@@ -58,15 +58,6 @@ public class MainDao {
     return new QueryRunner();
   }
 
-  @SuppressWarnings("unused")
-  public static List<BalanceSheet> getBalanceSheets() {
-    try (Connection conn = getConnection()) {
-      return getBalanceSheets(conn);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
   public static void clearDatabase() {
     try (Connection conn = getConnection()) {
       QueryRunner run = new QueryRunner();
@@ -76,67 +67,6 @@ public class MainDao {
       run.update(conn, "delete from accounts");
       run.update(conn, "delete from users");
       run.update(conn, "delete from balance_sheets");
-      DbUtils.commitAndClose(conn);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
-  public static List<BalanceSheet> getBalanceSheets(Connection conn) throws SQLException {
-    return new QueryRunner().query(conn, baseBsSelectQuery + "order by created_ts desc",
-        new BeanListHandler<>(BalanceSheet.class));
-  }
-
-  public static BalanceSheet getBalanceSheet(UUID id) {
-    try (Connection conn = getConnection()) {
-      return getBalanceSheet(conn, id);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
-  private static BalanceSheet getBalanceSheet(Connection conn, UUID id) throws SQLException {
-    return newQueryRunner().query(conn, baseBsSelectQuery + "where id = ?",
-        new BeanHandler<>(BalanceSheet.class), id);
-  }
-
-  public static void createBalanceSheet(UUID id) {
-    try (Connection conn = getConnection()) {
-      createBalanceSheet(conn, id);
-      DbUtils.commitAndClose(conn);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
-  static void createBalanceSheet(Connection conn, UUID id) throws SQLException {
-    QueryRunner run = newQueryRunner();
-    Timestamp now = new java.sql.Timestamp(new java.util.Date().getTime());
-    String currencyCode = "RUB";
-    run.update(conn, "insert into balance_sheets(id, created_ts, currency_code) values (?, ?, ?)", id,
-        now, currencyCode);
-
-    UUID svcRsvId = UUID.randomUUID();
-    AccountsDao.createAccount(conn, id, new Account(svcRsvId, Account.Type.service, "Service reserve"));
-    run.update(conn, "update balance_sheets set svc_rsv_id = ? where id = ?", svcRsvId, id);
-
-    UUID uncatCostsId = UUID.randomUUID();
-    AccountsDao.createAccount(conn, id, new Account(uncatCostsId, Account.Type.expense, "<Без категории>"));
-    run.update(conn, "update balance_sheets set uncat_costs_id = ? where id = ?", uncatCostsId, id);
-
-    UUID uncatIncomeId = UUID.randomUUID();
-    AccountsDao.createAccount(conn, id, new Account(uncatIncomeId, Account.Type.income, "<Без категории>"));
-    run.update(conn, "update balance_sheets set uncat_income_id = ? where id = ?", uncatIncomeId, id);
-
-    BalancesDao.createBalance(conn, id,
-        new Balance(UUID.randomUUID(), Account.Type.debit, "Наличные", currencyCode, BigDecimal.ZERO));
-  }
-
-  public static void deleteBalanceSheet(UUID id) {
-    try (Connection conn = getConnection()) {
-      QueryRunner run = newQueryRunner();
-      run.update(conn, "delete from accounts where balance_sheet_id = ?", id);
-      run.update(conn, "delete from balance_sheets where id = ?", id);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);

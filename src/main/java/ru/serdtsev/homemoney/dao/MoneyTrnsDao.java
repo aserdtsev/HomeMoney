@@ -9,6 +9,7 @@ import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import ru.serdtsev.homemoney.HmException;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dto.*;
 
 import java.math.BigDecimal;
@@ -315,7 +316,7 @@ public class MoneyTrnsDao {
 
   private static MoneyTrn createReserveMoneyTrn(Connection conn, UUID bsId, MoneyTrn moneyTrn) throws SQLException {
     assertNonNulls(conn, bsId, moneyTrn);
-    BalanceSheet bs = MainDao.getBalanceSheet(bsId);
+    BalanceSheet bs = BalanceSheet.getInstance(bsId);
     Account svcRsv = AccountsDao.getAccount(bs.getSvcRsvId());
 
     Account fromAcc = svcRsv;

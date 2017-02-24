@@ -52,7 +52,6 @@
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-core:2.8.4" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-web:4.3.4.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-aop:4.3.4.RELEASE" level="project" />
-    <orderEntry type="library" name="Maven: org.springframework:spring-beans:4.3.4.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-context:4.3.4.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-webmvc:4.3.4.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-expression:4.3.4.RELEASE" level="project" />
@@ -80,5 +79,8 @@
     <orderEntry type="library" name="Maven: org.junit.jupiter:junit-jupiter-api:5.0.0-M3" level="project" />
     <orderEntry type="library" name="Maven: org.opentest4j:opentest4j:1.0.0-M1" level="project" />
     <orderEntry type="library" name="Maven: org.junit.platform:junit-platform-commons:1.0.0-M3" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-jdbc:4.3.6.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-beans:4.3.4.RELEASE" level="project" />
+    <orderEntry type="library" name="Maven: org.springframework:spring-tx:4.3.4.RELEASE" level="project" />
   </component>
 </module>

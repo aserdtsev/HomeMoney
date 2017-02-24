@@ -3,10 +3,10 @@ package ru.serdtsev.homemoney;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
-import ru.serdtsev.homemoney.dao.MainDao;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dao.UsersDao;
 import ru.serdtsev.homemoney.dto.Authentication;
-import ru.serdtsev.homemoney.dto.BalanceSheet;
+import ru.serdtsev.homemoney.dto.BalanceSheetDto;
 import ru.serdtsev.homemoney.dto.HmResponse;
 
 import java.util.UUID;
@@ -55,12 +55,12 @@ public class UserResource {
   }
 
   @RequestMapping(method = RequestMethod.POST)
-  public void createBalanceSheet(BalanceSheet bs) {
-    MainDao.createBalanceSheet(bs.getId());
+  public void createBalanceSheet(BalanceSheetDto bsDto) {
+    BalanceSheet.fromDto(bsDto).init().save();
   }
 
   @RequestMapping(method = RequestMethod.DELETE)
   public void deleteBalanceSheet(@RequestParam UUID id) {
-    MainDao.deleteBalanceSheet(id);
+    BalanceSheet.getInstance(id).delete();
   }
 }
