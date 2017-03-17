@@ -7,7 +7,9 @@ import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.dto.*;
 
 import java.beans.PropertyVetoException;
@@ -19,6 +21,7 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Component
 public class MainDao {
   private static Logger log = LoggerFactory.getLogger(MainDao.class);
   private static final ComboPooledDataSource cpds = new ComboPooledDataSource();
@@ -38,6 +41,13 @@ public class MainDao {
     } catch (PropertyVetoException e) {
       log.error("Error iniatialization database pool", e);
     }
+  }
+
+  private MoneyTrnTemplsDao moneyTrnTemplsDao;
+
+  @Autowired
+  public MainDao(MoneyTrnTemplsDao moneyTrnTemplsDao) {
+    this.moneyTrnTemplsDao = moneyTrnTemplsDao;
   }
 
   public static JdbcTemplate jdbcTemplate() {
@@ -73,7 +83,7 @@ public class MainDao {
     }
   }
 
-  public static BsStat getBsStat(UUID bsId, Long interval) {
+  public BsStat getBsStat(UUID bsId, Long interval) {
     LocalDate today = LocalDate.now();
     java.sql.Date toDate = Date.valueOf(today);
     java.sql.Date fromDate = Date.valueOf(today.minusDays(interval));
@@ -229,8 +239,8 @@ public class MainDao {
     }
   }
 
-  private static List<Turnover> getTemplTurnovers(UUID bsId, Date toDate) {
-    List<MoneyTrnTempl> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(bsId, "");
+  private List<Turnover> getTemplTurnovers(UUID bsId, Date toDate) {
+    List<MoneyTrnTempl> templs = moneyTrnTemplsDao.getMoneyTrnTempls(bsId, "");
     Set<Turnover> turnovers = new HashSet<>();
     Date today = Date.valueOf(LocalDate.now());
     templs.forEach(t -> {

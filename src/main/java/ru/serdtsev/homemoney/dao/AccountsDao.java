@@ -4,6 +4,7 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.dto.Account;
 
 import java.sql.Connection;
@@ -11,7 +12,9 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
+@Component
 public class AccountsDao {
+
   public static List<Account> getAccounts(UUID bsId) {
     try (Connection conn = MainDao.getConnection()) {
       return (new QueryRunner()).query(conn,
@@ -43,7 +46,7 @@ public class AccountsDao {
         account.getId(), bsId, account.getName(), account.getType().name(), account.getCreatedDate(), account.getIsArc());
   }
 
-  public static void deleteAccount(Connection conn, UUID bsId, UUID id) throws SQLException {
+  public void deleteAccount(Connection conn, UUID bsId, UUID id) throws SQLException {
     QueryRunner run = new QueryRunner();
     int rows;
     if (isTrnExists(conn, id) || MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {

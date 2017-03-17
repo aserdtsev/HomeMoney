@@ -6,6 +6,8 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dto.Balance;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
@@ -18,10 +20,18 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+@Component
 public class BalancesDao {
   private static Logger log = LoggerFactory.getLogger(BalancesDao.class);
 
-  public static List<Balance> getBalances(UUID bsId) {
+  private AccountsDao accountsDao;
+
+  @Autowired
+  public BalancesDao(AccountsDao accountsDao) {
+    this.accountsDao = accountsDao;
+  }
+
+  public List<Balance> getBalances(UUID bsId) {
     try (Connection conn = MainDao.getConnection()) {
       return getBalances(conn, bsId);
     } catch (SQLException e) {
@@ -29,7 +39,7 @@ public class BalancesDao {
     }
   }
 
-  private static List<Balance> getBalances(Connection conn, UUID bsId) throws SQLException {
+  private List<Balance> getBalances(Connection conn, UUID bsId) throws SQLException {
     return (new QueryRunner()).query(conn,
         "select a.id, a.type, a.name, b.currency_code as currencyCode, b.value, a.created_date as createdDate, " +
             " a.is_arc as isArc, b.reserve_id as reserveId," +
@@ -40,7 +50,7 @@ public class BalancesDao {
         new BeanListHandler<>(Balance.class), bsId);
   }
 
-  static Balance getBalance(Connection conn, UUID id) throws SQLException {
+  Balance getBalance(Connection conn, UUID id) throws SQLException {
     return (new QueryRunner()).query(conn,
         "select a.id, a.type, a.name, b.currency_code as currencyCode, b.value, a.created_date as createdDate, " +
             " a.is_arc as isArc, b.reserve_id as reserveId," +
@@ -50,7 +60,7 @@ public class BalancesDao {
         new BeanHandler<>(Balance.class), id);
   }
 
-  public static void createBalance(UUID bsId, Balance balance) {
+  public void createBalance(UUID bsId, Balance balance) {
     try (Connection conn = MainDao.getConnection()) {
       createBalance(conn, bsId, balance);
       DbUtils.commitAndClose(conn);
@@ -59,7 +69,7 @@ public class BalancesDao {
     }
   }
 
-  static void createBalance(Connection conn, UUID bsId, Balance balance) throws SQLException {
+  void createBalance(Connection conn, UUID bsId, Balance balance) throws SQLException {
     AccountsDao.createAccount(conn, bsId, balance);
     (new QueryRunner()).update(conn,
         "insert into balances(id, currency_code, value, reserve_id, credit_limit, min_value) values (?, ?, ?, ?, ?, ?)",
@@ -67,7 +77,7 @@ public class BalancesDao {
         balance.getMinValue());
   }
 
-  public static void deleteBalance(UUID bsId, UUID id) {
+  public void deleteBalance(UUID bsId, UUID id) {
     try (Connection conn = MainDao.getConnection()) {
       deleteBalance(conn, bsId, id);
       DbUtils.commitAndClose(conn);
@@ -76,45 +86,47 @@ public class BalancesDao {
     }
   }
 
-  static void deleteBalance(Connection conn, UUID bsId, UUID id) throws SQLException {
+  void deleteBalance(Connection conn, UUID bsId, UUID id) throws SQLException {
     if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
       int rows = (new QueryRunner()).update(conn, "delete from balances where id = ?", id);
       if (rows == 0) {
         throw new IllegalArgumentException("Неверные параметры запроса.");
       }
     }
-    AccountsDao.deleteAccount(conn, bsId, id);
+    accountsDao.deleteAccount(conn, bsId, id);
   }
 
-  public static void updateBalance(UUID bsId, Balance balance) {
+  public MoneyTrn updateBalance(UUID bsId, Balance balance) {
     try (Connection conn = MainDao.getConnection()) {
-      updateBalance(conn, bsId, balance);
+      MoneyTrn moneyTrn = updateBalance(conn, bsId, balance);
       DbUtils.commitAndClose(conn);
+      return moneyTrn;
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
   }
 
-  static void updateBalance(Connection conn, UUID bsId, Balance balance) throws SQLException {
+  MoneyTrn updateBalance(Connection conn, UUID bsId, Balance balance) throws SQLException {
     AccountsDao.updateAccount(conn, bsId, balance);
     Balance currBalance = getBalance(conn, balance.getId());
+    MoneyTrn moneyTrn = null;
     if (balance.getValue().compareTo(currBalance.getValue()) != 0) {
       BalanceSheet bs = BalanceSheet.getInstance(bsId);
       boolean more = balance.getValue().compareTo(currBalance.getValue()) == 1;
       UUID fromAccId = more ? bs.getUncatIncomeId() : balance.getId();
       UUID toAccId = more ? balance.getId() : bs.getUncatCostsId();
       BigDecimal amount = balance.getValue().subtract(currBalance.getValue()).abs();
-      MoneyTrn moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyTrn.Status.done, java.sql.Date.valueOf(LocalDate.now()),
+      moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyTrn.Status.done, java.sql.Date.valueOf(LocalDate.now()),
           fromAccId, toAccId, amount, MoneyTrn.Period.single, "корректировка остатка");
-      MoneyTrnsDao.createMoneyTrn(conn, bsId, moneyTrn);
     }
 
     (new QueryRunner()).update(conn,
         "update balances set value = ?, reserve_id = ?, credit_limit = ?, min_value = ?" + " where id = ?",
         balance.getValue(), balance.getReserveId(), balance.getCreditLimit(), balance.getMinValue(), balance.getId());
+    return moneyTrn;
   }
 
-  public static void upBalance(UUID bsId, Balance balance) {
+  public void upBalance(UUID bsId, Balance balance) {
     try (Connection conn = MainDao.getConnection()) {
       List<Balance> list = getBalances(conn, bsId);
       int index = list.indexOf(balance);
@@ -135,7 +147,7 @@ public class BalancesDao {
     }
   }
 
-  static void changeBalanceValue(Connection conn, Balance balance, BigDecimal amount, UUID trnId,
+  void changeBalanceValue(Connection conn, Balance balance, BigDecimal amount, UUID trnId,
       MoneyTrn.Status status) throws SQLException {
     int rows = (new QueryRunner()).update(conn, "update balances set value = value + ? where id = ?", amount, balance.getId());
     if (rows == 0) {

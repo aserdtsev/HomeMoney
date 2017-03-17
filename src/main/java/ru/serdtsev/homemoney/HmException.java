@@ -23,7 +23,7 @@ public class HmException extends RuntimeException {
     UnknownMoneyTrnStatus,
     IdentifiersDoNotMatch,
     WrongAmount,
-    UserIdCookieIsEmpty
+    WrongUserId, UserIdCookieIsEmpty
   }
 
   @Override

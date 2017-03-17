@@ -7,6 +7,8 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.dto.Account;
 import ru.serdtsev.homemoney.dto.BalanceChange;
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
@@ -20,6 +22,7 @@ import java.util.stream.IntStream;
 
 import static ru.serdtsev.homemoney.utils.Utils.nvl;
 
+@Component
 public class MoneyTrnTemplsDao {
   private static final String baseSelect =
       "select te.id, te.status, te.sample_id as sampleId, te.last_money_trn_id lastMoneyTrnId, " +
@@ -39,7 +42,14 @@ public class MoneyTrnTemplsDao {
           "    and fa.id = te.from_acc_id " +
           "    and ta.id = te.to_acc_id ";
 
-  public static List<MoneyTrnTempl> getMoneyTrnTempls(UUID bsId, String search) {
+  private MoneyTrnsDao moneyTrnsDao;
+
+  @Autowired
+  public MoneyTrnTemplsDao(MoneyTrnsDao moneyTrnsDao) {
+    this.moneyTrnsDao = moneyTrnsDao;
+  }
+
+  public List<MoneyTrnTempl> getMoneyTrnTempls(UUID bsId, String search) {
     try (Connection conn = MainDao.getConnection()) {
       return getMoneyTrnTempls(conn, bsId, search);
     } catch (SQLException e) {
@@ -47,7 +57,7 @@ public class MoneyTrnTemplsDao {
     }
   }
 
-  static List<MoneyTrnTempl> getMoneyTrnTempls(Connection conn, UUID bsId, String search) throws SQLException {
+  List<MoneyTrnTempl> getMoneyTrnTempls(Connection conn, UUID bsId, String search) throws SQLException {
     StringBuilder sql = new StringBuilder(baseSelect + " and te.status = 'active' ");
     List<Object> params = new ArrayList<>();
     params.add(bsId);
@@ -63,7 +73,7 @@ public class MoneyTrnTemplsDao {
         new BeanListHandler<>(MoneyTrnTempl.class, new BasicRowProcessor(new MoneyTrnProcessor())), params.toArray()).stream()
         .peek(templ -> {
           try {
-            templ.setBalanceChanges(MoneyTrnsDao.getBalanceChanges(conn, templ.getId()));
+            templ.setBalanceChanges(moneyTrnsDao.getBalanceChanges(conn, templ.getId()));
             templ.setLabels(LabelsDao.getLabelNames(conn, templ.getId()));
           } catch (SQLException e) {
             throw new HmSqlException(e);
@@ -139,7 +149,7 @@ public class MoneyTrnTemplsDao {
     LabelsDao.saveLabels(conn, bsId, templ.getId(), "template", templ.getLabels());
   }
 
-  public static void createMoneyTrnTempl(UUID bsId, MoneyTrnTempl templ) {
+  public void createMoneyTrnTempl(UUID bsId, MoneyTrnTempl templ) {
     try (Connection conn = MainDao.getConnection()) {
       List<String> labels = templ.getLabels();
 
@@ -154,12 +164,12 @@ public class MoneyTrnTemplsDao {
       templ = getMoneyTrnTempl(conn, bsId, templ.getId());
 
       if (templ.getType().equals("expense") || templ.getType().equals("transfer")) {
-        MoneyTrnsDao.createBalanceChange(conn, templ.getId(), templ.getFromAccId(), templ.getAmount().negate(), null, 0);
+        moneyTrnsDao.createBalanceChange(conn, templ.getId(), templ.getFromAccId(), templ.getAmount().negate(), null, 0);
       }
 
       if (templ.getType().equals("income") || templ.getType().equals("transfer")) {
         BigDecimal toAmount = nvl(templ.getToAmount(), templ.getAmount());
-        MoneyTrnsDao.createBalanceChange(conn, templ.getId(), templ.getToAccId(), toAmount, null, 1);
+        moneyTrnsDao.createBalanceChange(conn, templ.getId(), templ.getToAccId(), toAmount, null, 1);
       }
 
       Account fromAcc = AccountsDao.getAccount(templ.getFromAccId());
@@ -181,7 +191,7 @@ public class MoneyTrnTemplsDao {
     }
   }
 
-  public static void deleteMoneyTrnTempl(UUID bsId, UUID id) {
+  public void deleteMoneyTrnTempl(UUID bsId, UUID id) {
     try (Connection conn = MainDao.getConnection()) {
       String sql = "update money_trn_templs set status = ? where bs_id = ? and id = ?";
       int rows = new QueryRunner().update(conn, sql, MoneyTrnTempl.Status.deleted.name(), bsId, id);

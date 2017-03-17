@@ -4,6 +4,8 @@ import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.dto.Account;
 import ru.serdtsev.homemoney.dto.Category;
 
@@ -12,7 +14,17 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
+@Component
 public class CategoriesDao {
+  private MoneyTrnTemplsDao moneyTrnTemplsDao;
+  private AccountsDao accountsDao;
+
+  @Autowired
+  public CategoriesDao(MoneyTrnTemplsDao moneyTrnTemplsDao, AccountsDao accountDao) {
+    this.moneyTrnTemplsDao = moneyTrnTemplsDao;
+    this.accountsDao = accountDao;
+  }
+
   public static List<Category> getCategories(UUID bsId) {
     try (Connection conn = MainDao.getConnection()) {
       return (new QueryRunner()).query(conn,
@@ -57,12 +69,12 @@ public class CategoriesDao {
     }
   }
 
-  public static void deleteCategory(UUID bsId, UUID id) {
+  public void deleteCategory(UUID bsId, UUID id) {
     try (Connection conn = MainDao.getConnection()) {
-      if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
+      if (!AccountsDao.isTrnExists(conn, id) && !moneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
         (new QueryRunner()).update(conn, "delete from categories where id = ?", id);
       }
-      AccountsDao.deleteAccount(conn, bsId, id);
+      accountsDao.deleteAccount(conn, bsId, id);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);

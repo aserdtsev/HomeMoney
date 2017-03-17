@@ -4,8 +4,11 @@ import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.dto.Account;
 import ru.serdtsev.homemoney.dto.Balance;
+import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.Reserve;
 
 import java.sql.Connection;
@@ -13,7 +16,15 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
+@Component
 public class ReservesDao {
+  private BalancesDao balancesDao;
+
+  @Autowired
+  public ReservesDao(BalancesDao balancesDao) {
+    this.balancesDao = balancesDao;
+  }
+
   public static List<Reserve> getReserves(UUID bsId) {
     try (Connection conn = MainDao.getConnection()) {
       return (new QueryRunner()).query(conn,
@@ -27,7 +38,7 @@ public class ReservesDao {
     }
   }
 
-  public static Reserve getReserve(UUID id) {
+  public Reserve getReserve(UUID id) {
     try (Connection conn = MainDao.getConnection()) {
       return getReserve(conn, id);
     } catch (SQLException e) {
@@ -35,7 +46,7 @@ public class ReservesDao {
     }
   }
 
-  private static Reserve getReserve(Connection conn, UUID id) throws SQLException {
+  private Reserve getReserve(Connection conn, UUID id) throws SQLException {
     return (new QueryRunner()).query(conn,
         "select a.id, a.name, a.type, b.value, a.created_date as createdDate, a.is_arc as isArc, r.target " +
             "from accounts a, balances b, reserves r " +
@@ -43,7 +54,7 @@ public class ReservesDao {
         new BeanHandler<>(Reserve.class), id);
   }
 
-  public static void createReserve(UUID bsId, Reserve reserve) {
+  public void createReserve(UUID bsId, Reserve reserve) {
     try (Connection conn = MainDao.getConnection()) {
       createReserve(conn, bsId, reserve);
       DbUtils.commitAndClose(conn);
@@ -53,16 +64,16 @@ public class ReservesDao {
 
   }
 
-  private static void createReserve(Connection conn, UUID bsId, Reserve reserve) throws SQLException {
+  private void createReserve(Connection conn, UUID bsId, Reserve reserve) throws SQLException {
     Balance balance = new Balance(reserve.getId(), Account.Type.reserve, reserve.getName(),
         reserve.getCurrencyCode(), reserve.getValue());
-    BalancesDao.createBalance(conn, bsId, balance);
+    balancesDao.createBalance(conn, bsId, balance);
     (new QueryRunner()).update(conn,
         "insert into reserves(id, target) values (?, ?)",
         reserve.getId(), reserve.getTarget());
   }
 
-  public static void deleteReserve(UUID bsId, UUID id) {
+  public void deleteReserve(UUID bsId, UUID id) {
     try (Connection conn = MainDao.getConnection()) {
       if (!AccountsDao.isTrnExists(conn, id) && !MoneyTrnTemplsDao.isTrnTemplExists(conn, id)) {
         int rows = (new QueryRunner()).update(conn, "delete from reserves where id = ?", id);
@@ -70,20 +81,21 @@ public class ReservesDao {
           throw new IllegalArgumentException("Неверные параметры запроса.");
         }
       }
-      BalancesDao.deleteBalance(conn, bsId, id);
+      balancesDao.deleteBalance(conn, bsId, id);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
   }
 
-  public static void updateReserve(UUID bsId, Reserve reserve) {
+  public MoneyTrn updateReserve(UUID bsId, Reserve reserve) {
     try (Connection conn = MainDao.getConnection()) {
-      BalancesDao.updateBalance(conn, bsId, reserve);
+      MoneyTrn moneyTrn = balancesDao.updateBalance(conn, bsId, reserve);
       (new QueryRunner()).update(conn,
           "update reserves set target = ? where id = ?",
           reserve.getTarget(), reserve.getId());
       DbUtils.commitAndClose(conn);
+      return moneyTrn;
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }

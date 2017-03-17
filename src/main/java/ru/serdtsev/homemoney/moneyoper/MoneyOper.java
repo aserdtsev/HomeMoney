@@ -3,12 +3,17 @@ package ru.serdtsev.homemoney.moneyoper;
 import ru.serdtsev.homemoney.dto.BalanceChange;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 
+import javax.persistence.Id;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 
+//@Entity
+//@Table(name = "money_trns")
 public class MoneyOper {
+
+  @Id
   private UUID id;
   private UUID bsId;
   private MoneyOperStatus status;
@@ -34,13 +39,13 @@ public class MoneyOper {
     this.period = period;
   }
 
-  public UUID getId() {
-    return id;
-  }
-
   public MoneyOper setRecurrenceOper(MoneyOper recurrenceOper) {
     this.recurrenceOperId = recurrenceOper.getId();
     return this;
+  }
+
+  public UUID getId() {
+    return id;
   }
 
   public static MoneyOper fromDto(MoneyTrn dto) {
@@ -50,6 +55,5 @@ public class MoneyOper {
   public MoneyTrn toDto() {
     return null;
   }
-
 
 }

@@ -21,7 +21,7 @@ public abstract class Model {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     BalanceSheet that = (BalanceSheet) o;
-    return Objects.equals(id, that.id);
+    return Objects.equals(id, that.getId());
   }
 
   @Override
