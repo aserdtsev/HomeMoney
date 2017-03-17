@@ -21,8 +21,8 @@ public class DbPatches {
     try (Connection conn = MainDao.getConnection()) {
       List<BalanceSheet> bsList = BalanceSheet.getAllInstances();
       bsList.forEach(bs -> handleBs(conn, bs));
-//      DbUtils.commitAndClose(conn);
-      DbUtils.rollbackAndClose(conn);
+      DbUtils.commitAndClose(conn);
+//      DbUtils.rollbackAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }
