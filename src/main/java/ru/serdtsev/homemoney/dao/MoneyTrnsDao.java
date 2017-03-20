@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.HmException;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.dto.*;
 
 import java.math.BigDecimal;
@@ -56,11 +57,13 @@ public class MoneyTrnsDao {
 
   private BalancesDao balancesDao;
   private ReservesDao reservesDao;
+  private BalanceSheetRepository balanceSheetRepo;
 
   @Autowired
-  public MoneyTrnsDao(BalancesDao balancesDao, ReservesDao reservesDao) {
+  public MoneyTrnsDao(BalancesDao balancesDao, ReservesDao reservesDao, BalanceSheetRepository balanceSheetRepo) {
     this.balancesDao = balancesDao;
     this.reservesDao = reservesDao;
+    this.balanceSheetRepo = balanceSheetRepo;
   }
 
   @NotNull
@@ -328,8 +331,8 @@ public class MoneyTrnsDao {
 
   private MoneyTrn createReserveMoneyTrn(Connection conn, UUID bsId, MoneyTrn moneyTrn) throws SQLException {
     assertNonNulls(conn, bsId, moneyTrn);
-    BalanceSheet bs = BalanceSheet.getInstance(bsId);
-    Account svcRsv = AccountsDao.getAccount(bs.getSvcRsvId());
+    BalanceSheet bs = balanceSheetRepo.findOne(bsId);
+    Account svcRsv = AccountsDao.getAccount(bs.getSvcRsv().getId());
 
     Account fromAcc = svcRsv;
     Account account = AccountsDao.getAccount(moneyTrn.getFromAccId());

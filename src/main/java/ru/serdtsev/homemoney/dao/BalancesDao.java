@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.dto.Balance;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 
@@ -25,10 +26,12 @@ public class BalancesDao {
   private static Logger log = LoggerFactory.getLogger(BalancesDao.class);
 
   private AccountsDao accountsDao;
+  private BalanceSheetRepository balanceSheetRepo;
 
   @Autowired
-  public BalancesDao(AccountsDao accountsDao) {
+  public BalancesDao(AccountsDao accountsDao, BalanceSheetRepository balanceSheetRepo) {
     this.accountsDao = accountsDao;
+    this.balanceSheetRepo = balanceSheetRepo;
   }
 
   public List<Balance> getBalances(UUID bsId) {
@@ -111,10 +114,10 @@ public class BalancesDao {
     Balance currBalance = getBalance(conn, balance.getId());
     MoneyTrn moneyTrn = null;
     if (balance.getValue().compareTo(currBalance.getValue()) != 0) {
-      BalanceSheet bs = BalanceSheet.getInstance(bsId);
+      BalanceSheet bs = balanceSheetRepo.findOne(bsId);
       boolean more = balance.getValue().compareTo(currBalance.getValue()) == 1;
-      UUID fromAccId = more ? bs.getUncatIncomeId() : balance.getId();
-      UUID toAccId = more ? balance.getId() : bs.getUncatCostsId();
+      UUID fromAccId = more ? bs.getUncatIncome().getId() : balance.getId();
+      UUID toAccId = more ? balance.getId() : bs.getUncatCosts().getId();
       BigDecimal amount = balance.getValue().subtract(currBalance.getValue()).abs();
       moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyTrn.Status.done, java.sql.Date.valueOf(LocalDate.now()),
           fromAccId, toAccId, amount, MoneyTrn.Period.single, "корректировка остатка");
