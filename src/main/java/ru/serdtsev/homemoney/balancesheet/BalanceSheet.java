@@ -1,17 +1,17 @@
 package ru.serdtsev.homemoney.balancesheet;
 
-import org.jetbrains.annotations.Nullable;
-import ru.serdtsev.homemoney.account.AccountType;
-import ru.serdtsev.homemoney.account.Category;
-import ru.serdtsev.homemoney.account.ServiceAccount;
+import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.dto.BalanceSheetDto;
 
+import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "balance_sheets")
@@ -35,6 +35,10 @@ public class BalanceSheet {
   @OneToOne
   @JoinColumn(name = "uncat_income_id", insertable = false)
   private Category uncatIncome;
+
+  @OneToMany
+  @JoinColumn(name = "balance_sheet_id")
+  private List<Account> accounts;
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   protected BalanceSheet() { }
@@ -93,6 +97,17 @@ public class BalanceSheet {
 
   public Category getUncatIncome() {
     return uncatIncome;
+  }
+
+  public List<Account> getAccounts() {
+    return this.accounts;
+  }
+
+  public List<Balance> getBalances() {
+    return this.accounts.stream()
+        .filter(account -> account instanceof Balance)
+        .map(account -> (Balance) account)
+        .collect(Collectors.toList());
   }
 
 }

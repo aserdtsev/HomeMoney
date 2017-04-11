@@ -6,8 +6,8 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.serdtsev.homemoney.dto.Account;
-import ru.serdtsev.homemoney.dto.Balance;
+import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.account.BalanceDto;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.Reserve;
 
@@ -65,7 +65,7 @@ public class ReservesDao {
   }
 
   private void createReserve(Connection conn, UUID bsId, Reserve reserve) throws SQLException {
-    Balance balance = new Balance(reserve.getId(), Account.Type.reserve, reserve.getName(),
+    BalanceDto balance = new BalanceDto(reserve.getId(), AccountType.reserve, reserve.getName(),
         reserve.getCurrencyCode(), reserve.getValue());
     balancesDao.createBalance(conn, bsId, balance);
     (new QueryRunner()).update(conn,

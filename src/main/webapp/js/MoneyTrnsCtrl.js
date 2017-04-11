@@ -162,6 +162,9 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     }
     return $scope.accounts.filter(function(account) {
       if (trn.type == 'transfer') {
+        if (account.type == 'expense' || account.type == 'income') {
+          return false;
+        }
         var result = true;
         if (typeof trn.toAccId != 'undefined') {
           result = account.id != trn.toAccId;

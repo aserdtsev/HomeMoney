@@ -2,7 +2,9 @@ package ru.serdtsev.homemoney.account;
 
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
-import javax.persistence.*;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.math.BigDecimal;
 import java.sql.Date;
 
@@ -12,6 +14,7 @@ import java.sql.Date;
 public class Reserve extends Balance {
   private BigDecimal target;
 
+  @SuppressWarnings({"unused", "WeakerAccess"})
   protected Reserve() {
   }
 

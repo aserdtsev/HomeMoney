@@ -6,11 +6,13 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.serdtsev.homemoney.dto.Account;
+import ru.serdtsev.homemoney.account.AccountDto;
 import ru.serdtsev.homemoney.dto.Category;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,7 +60,7 @@ public class CategoriesDao {
 
   public static void createCategory(UUID bsId, Category category) {
     try (Connection conn = MainDao.getConnection()) {
-      Account account = new Account(category.getId(), category.getType(), category.getName());
+      AccountDto account = new AccountDto(category.getId(), category.getType(), category.getName(), Date.valueOf(LocalDate.now()), false);
       AccountsDao.createAccount(conn, bsId, account);
       (new QueryRunner()).update(conn,
           "insert into categories (id, root_id) values (?, ?)",

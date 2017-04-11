@@ -20,4 +20,11 @@ public class Category extends Account {
     super(balanceSheet, type, name, created, isArc);
     this.root = root;
   }
+
+  @Override
+  public String getSortIndex() {
+    return (root != null)
+        ? root.getSortIndex() + "#" + getName()
+        : getName();
+  }
 }

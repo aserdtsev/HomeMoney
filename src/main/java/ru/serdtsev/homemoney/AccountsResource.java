@@ -1,19 +1,37 @@
 package ru.serdtsev.homemoney;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.serdtsev.homemoney.dao.AccountsDao;
+import ru.serdtsev.homemoney.account.Account;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
+import ru.serdtsev.homemoney.account.AccountDto;
 import ru.serdtsev.homemoney.dto.HmResponse;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+@SuppressWarnings("unused")
 @RestController
 public final class AccountsResource {
+  private BalanceSheetRepository balanceSheetRepo;
+
+  @Autowired
+  public AccountsResource(BalanceSheetRepository balanceSheetRepo) {
+    this.balanceSheetRepo = balanceSheetRepo;
+  }
+
   @RequestMapping("/api/{bsId}/accounts")
   public final HmResponse getAccountList(@PathVariable UUID bsId) {
-    List allAccounts = AccountsDao.getAccounts(bsId);
-    return HmResponse.getOk(allAccounts);
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    List<AccountDto> accounts = balanceSheet.getAccounts().stream()
+        .sorted(Comparator.comparing(Account::getSortIndex))
+        .map(Account::toDto)
+        .collect(Collectors.toList());
+    return HmResponse.getOk(accounts);
   }
 }

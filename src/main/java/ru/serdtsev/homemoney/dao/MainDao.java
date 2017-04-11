@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import ru.serdtsev.homemoney.account.Account;
+import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.dto.*;
 
 import java.beans.PropertyVetoException;
@@ -43,11 +46,13 @@ public class MainDao {
     }
   }
 
+  private AccountRepository accountRepo;
   private MoneyTrnTemplsDao moneyTrnTemplsDao;
 
   @Autowired
-  public MainDao(MoneyTrnTemplsDao moneyTrnTemplsDao) {
+  public MainDao(MoneyTrnTemplsDao moneyTrnTemplsDao, AccountRepository accountRepo) {
     this.moneyTrnTemplsDao = moneyTrnTemplsDao;
+    this.accountRepo = accountRepo;
   }
 
   public static JdbcTemplate jdbcTemplate() {
@@ -164,12 +169,12 @@ public class MainDao {
   }
 
   private static void calcPastSaldoNTurnovers(BsStat bsStat, Map<Date, BsDayStat> map) {
-    Map<Account.Type, BigDecimal> saldoMap = new HashMap<>(Account.Type.values().length);
+    Map<AccountType, BigDecimal> saldoMap = new HashMap<>(AccountType.values().length);
     bsStat.getSaldoMap().forEach((type, value) -> saldoMap.put(type, value.plus()));
     List<BsDayStat> dayStats = new ArrayList<>(map.values());
     dayStats.sort((e1, e2) -> (e1.getDateAsLocalDate().isAfter(e2.getDateAsLocalDate())) ? -1 : 1);
     dayStats.forEach(dayStat -> {
-        Arrays.asList(Account.Type.values()).forEach(type -> {
+        Arrays.asList(AccountType.values()).forEach(type -> {
           dayStat.setSaldo(type, saldoMap.getOrDefault(type, BigDecimal.ZERO));
           saldoMap.put(type, (saldoMap).getOrDefault(type, BigDecimal.ZERO).subtract(dayStat.getDelta(type)));
         });
@@ -180,10 +185,10 @@ public class MainDao {
 
   private static void calcTrendSaldoNTurnovers(BsStat bsStat, Map<Date, BsDayStat> trendMap) {
     List<BsDayStat> dayStats = new ArrayList<>(trendMap.values());
-    Map<Account.Type, BigDecimal> saldoMap = new HashMap<>(Account.Type.values().length);
+    Map<AccountType, BigDecimal> saldoMap = new HashMap<>(AccountType.values().length);
     bsStat.getSaldoMap().forEach((type, value) -> saldoMap.put(type, value.plus()));
     dayStats.forEach(dayStat ->
-        Arrays.asList(Account.Type.values()).forEach(type -> {
+        Arrays.asList(AccountType.values()).forEach(type -> {
           BigDecimal saldo = saldoMap.getOrDefault(type, BigDecimal.ZERO).add(dayStat.getDelta(type));
           saldoMap.put(type, saldo);
           dayStat.setSaldo(type, saldo);
@@ -199,10 +204,10 @@ public class MainDao {
       BsDayStat dayStat = map.computeIfAbsent(t.getTrnDate(), k -> new BsDayStat(t.getTrnDate().getTime()));
       dayStat.setDelta(t.getFromAccType(), dayStat.getDelta(t.getFromAccType()).subtract(t.getAmount()));
       dayStat.setDelta(t.getToAccType(), dayStat.getDelta(t.getToAccType()).add(t.getAmount()));
-      if (Account.Type.income == t.getFromAccType()) {
+      if (AccountType.income == t.getFromAccType()) {
         dayStat.setIncomeAmount(dayStat.getIncomeAmount().add(t.getAmount()));
       }
-      if (Account.Type.expense == t.getToAccType()) {
+      if (AccountType.expense == t.getToAccType()) {
         dayStat.setChargeAmount(dayStat.getChargeAmount().add(t.getAmount()));
       }
     });
@@ -246,8 +251,8 @@ public class MainDao {
     templs.forEach(t -> {
       Date templNextDate = t.getNextDate();
       while (templNextDate.compareTo(toDate) <= 0) {
-        Account fromAcc = AccountsDao.getAccount(t.getFromAccId());
-        Account toAcc = AccountsDao.getAccount(t.getToAccId());
+        Account fromAcc = accountRepo.findOne(t.getFromAccId());
+        Account toAcc = accountRepo.findOne(t.getToAccId());
         Date nextDate = (templNextDate.before(today)) ? today : templNextDate;
         Turnover newTurnover = new Turnover(nextDate, fromAcc.getType(), toAcc.getType());
         Optional<Turnover> turnover = turnovers.stream()

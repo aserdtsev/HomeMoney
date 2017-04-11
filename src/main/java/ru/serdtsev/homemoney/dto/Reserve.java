@@ -1,9 +1,11 @@
 package ru.serdtsev.homemoney.dto;
 
 
+import ru.serdtsev.homemoney.account.BalanceDto;
+
 import java.math.BigDecimal;
 
-public class Reserve extends Balance {
+public class Reserve extends BalanceDto {
   private BigDecimal target;
 
   public Reserve() {

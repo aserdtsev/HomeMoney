@@ -9,14 +9,18 @@ import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.serdtsev.homemoney.dto.Account;
+import ru.serdtsev.homemoney.account.Account;
+import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.dto.BalanceChange;
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -43,10 +47,12 @@ public class MoneyTrnTemplsDao {
           "    and ta.id = te.to_acc_id ";
 
   private MoneyTrnsDao moneyTrnsDao;
+  private AccountRepository accountRepo;
 
   @Autowired
-  public MoneyTrnTemplsDao(MoneyTrnsDao moneyTrnsDao) {
+  public MoneyTrnTemplsDao(MoneyTrnsDao moneyTrnsDao, AccountRepository accountRepo) {
     this.moneyTrnsDao = moneyTrnsDao;
+    this.accountRepo = accountRepo;
   }
 
   public List<MoneyTrnTempl> getMoneyTrnTempls(UUID bsId, String search) {
@@ -172,13 +178,13 @@ public class MoneyTrnTemplsDao {
         moneyTrnsDao.createBalanceChange(conn, templ.getId(), templ.getToAccId(), toAmount, null, 1);
       }
 
-      Account fromAcc = AccountsDao.getAccount(templ.getFromAccId());
-      if (fromAcc.getType() == Account.Type.income) {
+      Account fromAcc = accountRepo.findOne(templ.getFromAccId());
+      if (fromAcc.getType() == AccountType.income) {
         labels.add(fromAcc.getName());
       }
 
-      Account toAcc = AccountsDao.getAccount(templ.getToAccId());
-      if (toAcc.getType() == Account.Type.expense) {
+      Account toAcc = accountRepo.findOne(templ.getToAccId());
+      if (toAcc.getType() == AccountType.expense) {
         labels.add(toAcc.getName());
       }
 
@@ -199,6 +205,14 @@ public class MoneyTrnTemplsDao {
         throw new IllegalArgumentException(String.format("Удаляемый шаблон %s не найден.", id));
       }
       DbUtils.commitAndClose(conn);
+    } catch (SQLException e) {
+      throw new HmSqlException(e);
+    }
+  }
+
+  public static Boolean isTrnTemplExists(UUID id) {
+    try (Connection conn = MainDao.getConnection()) {
+      return isTrnTemplExists(conn, id);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }

@@ -1,19 +1,21 @@
 package ru.serdtsev.homemoney.dto;
 
+import ru.serdtsev.homemoney.account.AccountType;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 
 public class Turnover {
   private Date trnDate;
-  private Account.Type fromAccType;
-  private Account.Type toAccType;
+  private AccountType fromAccType;
+  private AccountType toAccType;
   private BigDecimal amount = BigDecimal.ZERO;
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public Turnover() {
   }
 
-  public Turnover(Date trnDate, Account.Type fromAccType, Account.Type toAccType) {
+  public Turnover(Date trnDate, AccountType fromAccType, AccountType toAccType) {
     this.trnDate = trnDate;
     this.fromAccType = fromAccType;
     this.toAccType = toAccType;
@@ -28,21 +30,21 @@ public class Turnover {
     this.trnDate = trnDate;
   }
 
-  public Account.Type getFromAccType() {
+  public AccountType getFromAccType() {
     return fromAccType;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setFromAccType(Account.Type fromAccType) {
+  public void setFromAccType(AccountType fromAccType) {
     this.fromAccType = fromAccType;
   }
 
-  public Account.Type getToAccType() {
+  public AccountType getToAccType() {
     return toAccType;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setToAccType(Account.Type toAccType) {
+  public void setToAccType(AccountType toAccType) {
     this.toAccType = toAccType;
   }
 

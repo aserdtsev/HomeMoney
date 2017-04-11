@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ru.serdtsev.homemoney.account.AccountType;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -18,7 +19,7 @@ public class BsStat {
   private List<CategoryStat> categories;
 
   @JsonIgnore
-  private HashMap<Account.Type, BigDecimal> saldoMap = new HashMap<>();
+  private HashMap<AccountType, BigDecimal> saldoMap = new HashMap<>();
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BsStat() {
@@ -82,7 +83,7 @@ public class BsStat {
     this.categories = categories;
   }
 
-  public HashMap<Account.Type, BigDecimal> getSaldoMap() {
+  public HashMap<AccountType, BigDecimal> getSaldoMap() {
     return saldoMap;
   }
 
@@ -93,7 +94,7 @@ public class BsStat {
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BigDecimal getReserveSaldo() {
-    return saldoMap.getOrDefault(Account.Type.reserve, BigDecimal.ZERO);
+    return saldoMap.getOrDefault(AccountType.reserve, BigDecimal.ZERO);
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
@@ -103,20 +104,20 @@ public class BsStat {
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BigDecimal getDebitSaldo() {
-    return getSaldo(Account.Type.debit);
+    return getSaldo(AccountType.debit);
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BigDecimal getCreditSaldo() {
-    return getSaldo(Account.Type.credit);
+    return getSaldo(AccountType.credit);
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BigDecimal getAssetSaldo() {
-    return getSaldo(Account.Type.asset);
+    return getSaldo(AccountType.asset);
   }
 
-  private BigDecimal getSaldo(Account.Type type) {
+  private BigDecimal getSaldo(AccountType type) {
     return saldoMap.getOrDefault(type, BigDecimal.ZERO);
   }
 }

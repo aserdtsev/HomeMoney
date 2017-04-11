@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import ru.serdtsev.homemoney.account.AccountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -10,8 +11,8 @@ public class BsDayStat {
   private Long date;
   private BigDecimal incomeAmount = BigDecimal.ZERO;
   private BigDecimal chargeAmount = BigDecimal.ZERO;
-  private HashMap<Account.Type, BigDecimal> saldoMap = new HashMap<>();
-  private HashMap<Account.Type, BigDecimal> deltaMap = new HashMap<>();
+  private HashMap<AccountType, BigDecimal> saldoMap = new HashMap<>();
+  private HashMap<AccountType, BigDecimal> deltaMap = new HashMap<>();
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BsDayStat() {
@@ -52,32 +53,32 @@ public class BsDayStat {
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BigDecimal getTotalSaldo() {
-    return getSaldo(Account.Type.debit).add(getSaldo(Account.Type.credit)).add(getSaldo(Account.Type.asset));
+    return getSaldo(AccountType.debit).add(getSaldo(AccountType.credit)).add(getSaldo(AccountType.asset));
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
   public BigDecimal getFreeAmount() {
-    return getSaldo(Account.Type.debit).subtract(getReserveSaldo());
+    return getSaldo(AccountType.debit).subtract(getReserveSaldo());
   }
 
-  private BigDecimal getSaldo(Account.Type type) {
+  private BigDecimal getSaldo(AccountType type) {
     return saldoMap.getOrDefault(type, BigDecimal.ZERO);
   }
 
-  public void setSaldo(Account.Type type, BigDecimal value) {
+  public void setSaldo(AccountType type, BigDecimal value) {
     saldoMap.put(type, value.plus());
   }
 
-  public BigDecimal getDelta(Account.Type type) {
+  public BigDecimal getDelta(AccountType type) {
     return deltaMap.getOrDefault(type, BigDecimal.ZERO);
   }
 
-  public void setDelta(Account.Type type, BigDecimal amount) {
+  public void setDelta(AccountType type, BigDecimal amount) {
     deltaMap.put(type, amount);
   }
 
   private BigDecimal getReserveSaldo() {
-    return getSaldo(Account.Type.reserve);
+    return getSaldo(AccountType.reserve);
   }
 
 }

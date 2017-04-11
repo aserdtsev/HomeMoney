@@ -5,9 +5,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dao.ReservesDao;
-import ru.serdtsev.homemoney.dto.Account.Type;
 import ru.serdtsev.homemoney.dto.HmResponse;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.Reserve;
@@ -36,7 +36,7 @@ public final class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      reserve.setType(Type.reserve);
+      reserve.setType(AccountType.reserve);
       reservesDao.createReserve(bsId, reserve);
       return HmResponse.getOk();
     } catch (HmException e) {

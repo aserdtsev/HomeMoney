@@ -6,15 +6,19 @@ import org.apache.commons.dbutils.DbUtils;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.HmException;
+import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.dto.*;
+import ru.serdtsev.homemoney.dto.BalanceChange;
+import ru.serdtsev.homemoney.dto.Category;
+import ru.serdtsev.homemoney.dto.MoneyTrn;
+import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
@@ -29,9 +33,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.done;
-import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.doneNew;
-import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.pending;
+import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.*;
 import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
 import static ru.serdtsev.homemoney.utils.Utils.nvl;
 
@@ -58,15 +60,20 @@ public class MoneyTrnsDao {
   private BalancesDao balancesDao;
   private ReservesDao reservesDao;
   private BalanceSheetRepository balanceSheetRepo;
+  private AccountRepository accountRepo;
+  private BalanceRepository balanceRepo;
 
   @Autowired
-  public MoneyTrnsDao(BalancesDao balancesDao, ReservesDao reservesDao, BalanceSheetRepository balanceSheetRepo) {
+  public MoneyTrnsDao(BalancesDao balancesDao, ReservesDao reservesDao, BalanceSheetRepository balanceSheetRepo,
+      AccountRepository accountRepo, BalanceRepository balanceRepo) {
     this.balancesDao = balancesDao;
     this.reservesDao = reservesDao;
     this.balanceSheetRepo = balanceSheetRepo;
+    this.accountRepo = accountRepo;
+    this.balanceRepo = balanceRepo;
   }
 
-  @NotNull
+  @Nonnull
   public List<MoneyTrn> getDoneMoneyTrns(UUID bsId, @Nullable String search, @Nullable Integer limit,
       @Nullable Integer offset) {
     assertNonNulls(bsId);
@@ -79,7 +86,7 @@ public class MoneyTrnsDao {
     return trns;
   }
 
-  @NotNull
+  @Nonnull
   public List<MoneyTrn> getPendingAndRecurrenceMoneyTrns(UUID bsId, String search, Date beforeDate) {
     List<MoneyTrn> trns;
     try (Connection conn = MainDao.getConnection()) {
@@ -93,7 +100,7 @@ public class MoneyTrnsDao {
     return trns;
   }
 
-  @NotNull
+  @Nonnull
   List<MoneyTrn> getMoneyTrns(Connection conn, UUID bsId) throws SQLException {
     assertNonNulls(conn, bsId);
     return new QueryRunner().query(conn, baseSelect,
@@ -108,7 +115,7 @@ public class MoneyTrnsDao {
     }).collect(Collectors.toList());
   }
 
-  @NotNull
+  @Nonnull
   private List<MoneyTrn> getMoneyTrns(Connection conn, UUID bsId, MoneyTrn.Status status,
       @Nullable String search, @Nullable Integer limit, @Nullable Integer offset, @Nullable Date beforeDate) throws SQLException {
     assertNonNulls(conn, bsId, status);
@@ -176,7 +183,7 @@ public class MoneyTrnsDao {
     return moneyTrnList;
   }
 
-  @NotNull
+  @Nonnull
   private List<MoneyTrn> getMoneyTrns(Connection conn, UUID bsId, Date trnDate) throws SQLException {
     assertNonNulls(conn, bsId, trnDate);
 
@@ -196,7 +203,7 @@ public class MoneyTrnsDao {
         .collect(Collectors.toList());
   }
 
-  @NotNull
+  @Nonnull
   List<MoneyTrn> getMoneyTrns(Connection conn, UUID bsId, Category category) throws SQLException {
     assertNonNulls(conn, bsId, category);
 
@@ -215,7 +222,7 @@ public class MoneyTrnsDao {
         .collect(Collectors.toList());
   }
 
-  @NotNull
+  @Nonnull
   private List<MoneyTrn> getTemplMoneyTrns(Connection conn, UUID bsId,
       @Nullable String search, Date beforeDate) throws SQLException {
     assertNonNulls(conn, bsId, beforeDate);
@@ -332,23 +339,22 @@ public class MoneyTrnsDao {
   private MoneyTrn createReserveMoneyTrn(Connection conn, UUID bsId, MoneyTrn moneyTrn) throws SQLException {
     assertNonNulls(conn, bsId, moneyTrn);
     BalanceSheet bs = balanceSheetRepo.findOne(bsId);
-    Account svcRsv = AccountsDao.getAccount(bs.getSvcRsv().getId());
 
-    Account fromAcc = svcRsv;
-    Account account = AccountsDao.getAccount(moneyTrn.getFromAccId());
-    if (Account.Type.debit == account.getType()) {
-      Balance balance = balancesDao.getBalance(conn, account.getId());
-      if (balance.getReserveId() != null) {
-        fromAcc = reservesDao.getReserve(balance.getReserveId());
+    Account fromAcc = bs.getSvcRsv();
+    Account account = accountRepo.findOne(moneyTrn.getFromAccId());
+    if (account.getType() == AccountType.debit) {
+      Balance balance = (Balance) account;
+      if (balance.getReserve() != null) {
+        fromAcc = balance.getReserve();
       }
     }
 
-    Account toAcc = svcRsv;
-    account = AccountsDao.getAccount(moneyTrn.getToAccId());
-    if (Account.Type.debit == account.getType()) {
-      Balance balance = balancesDao.getBalance(conn, account.getId());
-      if (balance.getReserveId() != null) {
-        toAcc = reservesDao.getReserve(balance.getReserveId());
+    Account toAcc = bs.getSvcRsv();
+    account = accountRepo.findOne(moneyTrn.getToAccId());
+    if (account.getType() == AccountType.debit) {
+      Balance balance = (Balance) account;
+      if (balance.getReserve() != null) {
+        toAcc = balance.getReserve();
       }
     }
 
@@ -399,13 +405,13 @@ public class MoneyTrnsDao {
       createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
     }
 
-    Account fromAcc = AccountsDao.getAccount(trn.getFromAccId());
-    if (fromAcc.getType() == Account.Type.income) {
+    Account fromAcc = accountRepo.findOne(trn.getFromAccId());
+    if (fromAcc.getType() == AccountType.income) {
       labels.add(fromAcc.getName());
     }
 
-    Account toAcc = AccountsDao.getAccount(trn.getToAccId());
-    if (toAcc.getType() == Account.Type.expense) {
+    Account toAcc = accountRepo.findOne(trn.getToAccId());
+    if (toAcc.getType() == AccountType.expense) {
       labels.add(toAcc.getName());
     }
 
@@ -481,18 +487,20 @@ public class MoneyTrnsDao {
     }
 
     if (fromAccId != null) {
-      Account fromAccount = AccountsDao.getAccount(fromAccId);
-      if (!trn.getTrnDate().before(fromAccount.getCreatedDate()) && fromAccount.isBalance()) {
-        Balance fromBalance = balancesDao.getBalance(conn, fromAccId);
-        balancesDao.changeBalanceValue(conn, fromBalance, fromAmount.negate(), trn.getId(), status);
+      Account fromAccount = accountRepo.findOne(fromAccId);
+      if (!trn.getTrnDate().before(fromAccount.getCreated()) && fromAccount instanceof Balance) {
+        Balance fromBalance = balanceRepo.findOne(fromAccId);
+        fromBalance.changeValue(fromAmount.negate(), trn.getId(), status);
+        balanceRepo.save(fromBalance);
       }
     }
 
     if (toAccId != null) {
-      Account toAccount = AccountsDao.getAccount(toAccId);
-      if (!trn.getTrnDate().before(toAccount.getCreatedDate()) && toAccount.isBalance()) {
-        Balance toBalance = balancesDao.getBalance(conn, toAccId);
-        balancesDao.changeBalanceValue(conn, toBalance, toAmount, trn.getId(), status);
+      Account toAccount = accountRepo.findOne(toAccId);
+      if (!trn.getTrnDate().before(toAccount.getCreated()) && toAccount instanceof Balance) {
+        Balance toBalance = balanceRepo.findOne(toAccId);
+        toBalance.changeValue(toAmount, trn.getId(), status);
+        balanceRepo.save(toBalance);
       }
     }
 

@@ -1,19 +1,21 @@
 package ru.serdtsev.homemoney.dto;
 
+import ru.serdtsev.homemoney.account.AccountType;
+
 import java.math.BigDecimal;
 
 public class AggrAccSaldo {
-  private Account.Type type;
+  private AccountType type;
   private BigDecimal saldo;
 
   public AggrAccSaldo() {
   }
 
-  public Account.Type getType() {
+  public AccountType getType() {
     return type;
   }
 
-  public void setType(Account.Type type) {
+  public void setType(AccountType type) {
     this.type = type;
   }
 

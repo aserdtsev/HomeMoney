@@ -1,46 +1,18 @@
 package ru.serdtsev.homemoney.dao;
 
 import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanHandler;
-import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
 import org.springframework.stereotype.Component;
-import ru.serdtsev.homemoney.dto.Account;
+import ru.serdtsev.homemoney.account.AccountDto;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.UUID;
 
 @Component
 public class AccountsDao {
 
-  public static List<Account> getAccounts(UUID bsId) {
-    try (Connection conn = MainDao.getConnection()) {
-      return (new QueryRunner()).query(conn,
-          "select a.id, a.type, a.name, a.created_date as createdDate, a.is_arc as isArc, " +
-              " case when c.root_id is null then a.name " +
-              " else (select name from accounts where id = c.root_id) || '#' || a.name end as sort " +
-              "from accounts a left join categories c on c.id = a.id " +
-              "where a.balance_sheet_id = ? " +
-              "order by type, sort",
-          new BeanListHandler<>(Account.class), bsId);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
-  public static Account getAccount(UUID id) {
-    try (Connection conn = MainDao.getConnection()) {
-      return (new QueryRunner()).query(conn,
-          "select id, name, type, created_date as createdDate, is_arc as isArc " + " from accounts where id = ?",
-          new BeanHandler<>(Account.class), id);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
-  public static void createAccount(Connection conn, UUID bsId, Account account) throws SQLException {
+  public static void createAccount(Connection conn, UUID bsId, AccountDto account) throws SQLException {
     (new QueryRunner()).update(conn,
         "insert into accounts(id, balance_sheet_id, name, type, created_date, is_arc) values (?, ?, ?, ?, ?, ?)",
         account.getId(), bsId, account.getName(), account.getType().name(), account.getCreatedDate(), account.getIsArc());
@@ -60,12 +32,20 @@ public class AccountsDao {
     }
   }
 
-  public static void updateAccount(Connection conn, UUID bsId, Account account) throws SQLException {
+  public static void updateAccount(Connection conn, UUID bsId, AccountDto account) throws SQLException {
     int rows = (new QueryRunner()).update(conn,
         "update accounts set type = ?, name = ?, created_date = ?, is_arc = ? where balance_sheet_id = ? and id = ?",
         account.getType().name(), account.getName(), account.getCreatedDate(), account.getIsArc(), bsId, account.getId());
     if (rows == 0) {
       throw new IllegalArgumentException("Запись не найдена.");
+    }
+  }
+
+  public static boolean isTrnExists(UUID id) {
+    try (Connection conn = MainDao.getConnection()) {
+      return isTrnExists(conn, id);
+    } catch (SQLException e) {
+      throw new HmSqlException(e);
     }
   }
 

@@ -1,32 +1,27 @@
-package ru.serdtsev.homemoney.dto;
+package ru.serdtsev.homemoney.account;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ru.serdtsev.homemoney.utils.Utils;
 
 import java.sql.Date;
-import java.time.LocalDate;
 import java.util.UUID;
 
-public class Account {
-  public enum Type {
-    debit, credit, expense, income, reserve, asset, service
-  }
-
+public class AccountDto {
   private UUID id;
-  private Type type;
+  private AccountType type;
   private String name;
   private java.sql.Date createdDate;
   private Boolean isArc;
 
-  public Account() {
-    createdDate = java.sql.Date.valueOf(LocalDate.now());
+  public AccountDto() {
   }
 
-  public Account(UUID id, Type type, String name) {
-    this();
+  public AccountDto(UUID id, AccountType type, String name, Date createdDate, Boolean isArc) {
     this.id = id;
     this.type = type;
     this.name = name;
+    this.createdDate = createdDate;
+    this.isArc = isArc;
   }
 
   public UUID getId() {
@@ -37,11 +32,11 @@ public class Account {
     this.id = id;
   }
 
-  public Type getType() {
+  public AccountType getType() {
     return type;
   }
 
-  public void setType(Type type) {
+  public void setType(AccountType type) {
     this.type = type;
   }
 
@@ -73,7 +68,7 @@ public class Account {
 
   @JsonIgnore
   public Boolean isBalance() {
-    return Type.debit == type || Type.credit == type || Type.reserve == type;
+    return AccountType.debit == type || AccountType.credit == type || AccountType.reserve == type;
   }
 
   @Override
@@ -81,7 +76,7 @@ public class Account {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Account account = (Account) o;
+    AccountDto account = (AccountDto) o;
 
     return getId() != null ? getId().equals(account.getId()) : account.getId() == null;
   }

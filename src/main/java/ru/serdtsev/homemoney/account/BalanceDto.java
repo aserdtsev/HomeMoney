@@ -1,12 +1,14 @@
-package ru.serdtsev.homemoney.dto;
+package ru.serdtsev.homemoney.account;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Currency;
 import java.util.UUID;
 
 import static ru.serdtsev.homemoney.utils.Utils.nvl;
 
-public class Balance extends Account {
+public class BalanceDto extends AccountDto {
   private String currencyCode;
   private String currencySymbol;
   private BigDecimal value;
@@ -16,12 +18,12 @@ public class Balance extends Account {
   private Long num;
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public Balance() {
+  public BalanceDto() {
     super();
   }
 
-  public Balance(UUID id, Type type, String name, String currencyCode, BigDecimal value) {
-    super(id, type, name);
+  public BalanceDto(UUID id, AccountType type, String name, String currencyCode, BigDecimal value) {
+    super(id, type, name, Date.valueOf(LocalDate.now()), false);
     this.currencyCode = currencyCode;
     this.value = value;
   }

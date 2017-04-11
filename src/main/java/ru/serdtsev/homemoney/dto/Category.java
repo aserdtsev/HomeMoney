@@ -1,8 +1,10 @@
 package ru.serdtsev.homemoney.dto;
 
+import ru.serdtsev.homemoney.account.AccountDto;
+
 import java.util.UUID;
 
-public class Category extends Account {
+public class Category extends AccountDto {
   private UUID rootId;
 
   @SuppressWarnings({"unused", "WeakerAccess"})
