@@ -5,10 +5,10 @@ import ru.serdtsev.homemoney.account.BalanceDto;
 
 import java.math.BigDecimal;
 
-public class Reserve extends BalanceDto {
+public class ReserveDto extends BalanceDto {
   private BigDecimal target;
 
-  public Reserve() {
+  public ReserveDto() {
   }
 
   public BigDecimal getTarget() {

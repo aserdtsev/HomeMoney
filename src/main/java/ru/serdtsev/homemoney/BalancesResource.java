@@ -12,10 +12,7 @@ import ru.serdtsev.homemoney.dao.AccountsDao;
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dto.HmResponse;
-import ru.serdtsev.homemoney.dto.MoneyTrn;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -27,15 +24,17 @@ public final class BalancesResource {
   private BalanceSheetRepository balanceSheetRepo;
   private BalanceRepository balanceRepo;
   private AccountRepository accountRepo;
+  private ReserveRepository reserveRepo;
   private MoneyTrnsDao moneyTrnsDao;
 
   @Autowired
   public BalancesResource(BalanceSheetRepository balanceSheetRepo, BalanceRepository balanceRepo,
-      AccountRepository accountRepo, MoneyTrnsDao moneyTrnsDao) {
+      AccountRepository accountRepo, ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
     this.balanceSheetRepo = balanceSheetRepo;
     this.balanceRepo = balanceRepo;
     this.accountRepo = accountRepo;
     this.moneyTrnsDao = moneyTrnsDao;
+    this.reserveRepo = reserveRepo;
   }
 
   @RequestMapping
@@ -51,11 +50,11 @@ public final class BalancesResource {
   @RequestMapping("/create")
   public final HmResponse createBalance(
       @PathVariable UUID bsId,
-      @RequestBody BalanceDto balanceDto) {
+      @RequestBody Balance balance) {
     try {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      Balance balance = new Balance(balanceSheet, balanceDto.getType(), balanceDto.getName(), balanceDto.getCreatedDate(),
-          balanceDto.getIsArc(), balanceDto.getCurrencyCode(), balanceDto.getValue(), balanceDto.getMinValue());
+      balance.setBalanceSheet(balanceSheet);
+      balance.init();
       balanceRepo.save(balance);
       return HmResponse.getOk();
     } catch (HmException e) {
@@ -67,34 +66,11 @@ public final class BalancesResource {
   public final HmResponse updateBalance(
       @PathVariable UUID bsId,
       // todo Заменить BalanceDto на Balance.
-      @RequestBody BalanceDto balanceDto) {
+      @RequestBody Balance balance) {
     try {
-      Balance balance = balanceRepo.findOne(balanceDto.getId());
-      balance.setType(balanceDto.getType());
-      balance.setName(balanceDto.getName());
-      balance.setCreated(balanceDto.getCreatedDate());
-      balance.setArc(balanceDto.getIsArc());
-      balance.setCreditLimit(balanceDto.getCreditLimit());
-      balance.setMinValue(balanceDto.getMinValue());
-      balance.setReserve(balanceDto.getReserveId() != null
-          ? (Reserve) accountRepo.findOne(balanceDto.getReserveId())
-          : null);
-
-      if (balanceDto.getValue().compareTo(balance.getValue()) != 0) {
-        BalanceSheet bs = balance.getBalanceSheet();
-        boolean more = balanceDto.getValue().compareTo(balance.getValue()) == 1;
-        UUID fromAccId = more ? bs.getUncatIncome().getId() : balanceDto.getId();
-        UUID toAccId = more ? balanceDto.getId() : bs.getUncatCosts().getId();
-        BigDecimal amount = balanceDto.getValue().subtract(balance.getValue()).abs();
-        MoneyTrn moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyTrn.Status.done, java.sql.Date.valueOf(LocalDate.now()),
-            fromAccId, toAccId, amount, MoneyTrn.Period.single, "корректировка остатка");
-        moneyTrnsDao.createMoneyTrn(bsId, moneyTrn);
-        // todo После полного перехода на JPA обновлять баланс здесь будет не нужно - он будет обновлен при проводке операции.
-        balance.setValue(balanceDto.getValue());
-      }
-
-      balanceRepo.save(balance);
-
+      Balance currBalance = balanceRepo.findOne(balance.getId());
+      currBalance.merge(balance, reserveRepo, moneyTrnsDao);
+      balanceRepo.save(currBalance);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

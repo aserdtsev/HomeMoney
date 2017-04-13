@@ -6,22 +6,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.account.Reserve;
+import ru.serdtsev.homemoney.account.ReserveRepository;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
+import ru.serdtsev.homemoney.dao.AccountsDao;
+import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dao.ReservesDao;
 import ru.serdtsev.homemoney.dto.HmResponse;
-import ru.serdtsev.homemoney.dto.MoneyTrn;
-import ru.serdtsev.homemoney.dto.Reserve;
 
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/{bsId}/reserves")
 public final class ReservesResource {
+  private ReserveRepository reserveRepo;
+  private BalanceSheetRepository balanceSheetRepo;
   private ReservesDao reservesDao;
   private MoneyTrnsDao moneyTrnsDao;
 
   @Autowired
-  public ReservesResource(ReservesDao reservesDao, MoneyTrnsDao moneyTrnsDao) {
+  public ReservesResource(ReserveRepository reserveRepo, BalanceSheetRepository balanceSheetRepo, ReservesDao reservesDao,
+      MoneyTrnsDao moneyTrnsDao) {
+    this.reserveRepo = reserveRepo;
+    this.balanceSheetRepo = balanceSheetRepo;
     this.reservesDao = reservesDao;
     this.moneyTrnsDao = moneyTrnsDao;
   }
@@ -36,8 +45,10 @@ public final class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
+      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      reserve.setBalanceSheet(balanceSheet);
       reserve.setType(AccountType.reserve);
-      reservesDao.createReserve(bsId, reserve);
+      reserveRepo.save(reserve);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -49,8 +60,9 @@ public final class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      MoneyTrn moneyTrn = reservesDao.updateReserve(bsId, reserve);
-      moneyTrnsDao.createMoneyTrn(bsId, moneyTrn);
+      Reserve currReserve = reserveRepo.findOne(reserve.getId());
+      currReserve.merge(reserve);
+      reserveRepo.save(reserve);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -62,7 +74,9 @@ public final class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      reservesDao.deleteReserve(bsId, reserve.getId());
+      if (!AccountsDao.isTrnExists(reserve.getId()) && !MoneyTrnTemplsDao.isTrnTemplExists(reserve.getId())) {
+        reserveRepo.delete(reserve.getId());
+      }
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

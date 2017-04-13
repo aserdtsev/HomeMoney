@@ -57,17 +57,12 @@ public class MoneyTrnsDao {
       "   and fa.id = mt.from_acc_id " +
       "   and ta.id = mt.to_acc_id ";
 
-  private BalancesDao balancesDao;
-  private ReservesDao reservesDao;
   private BalanceSheetRepository balanceSheetRepo;
   private AccountRepository accountRepo;
   private BalanceRepository balanceRepo;
 
   @Autowired
-  public MoneyTrnsDao(BalancesDao balancesDao, ReservesDao reservesDao, BalanceSheetRepository balanceSheetRepo,
-      AccountRepository accountRepo, BalanceRepository balanceRepo) {
-    this.balancesDao = balancesDao;
-    this.reservesDao = reservesDao;
+  public MoneyTrnsDao(BalanceSheetRepository balanceSheetRepo, AccountRepository accountRepo, BalanceRepository balanceRepo) {
     this.balanceSheetRepo = balanceSheetRepo;
     this.accountRepo = accountRepo;
     this.balanceRepo = balanceRepo;

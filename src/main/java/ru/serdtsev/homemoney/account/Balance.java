@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.utils.Utils;
 
@@ -13,6 +14,7 @@ import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Currency;
 import java.util.UUID;
 
@@ -27,6 +29,16 @@ public class Balance extends Account {
   @SuppressWarnings("unused")
   @Transient
   @Autowired
+  private AccountRepository accountRepo;
+
+  @SuppressWarnings("unused")
+  @Transient
+  @Autowired
+  private MoneyTrnsDao moneyTrnsDao;
+
+  @SuppressWarnings("unused")
+  @Transient
+  @Autowired
   private ReserveRepository reserveRepo;
 
   @Column(name = "currency_code")
@@ -37,6 +49,9 @@ public class Balance extends Account {
   @OneToOne
   @JoinColumn(name = "reserve_id")
   private Reserve reserve;
+
+  @Transient
+  private UUID reserveId;
 
   @Column(name = "credit_limit")
   private BigDecimal creditLimit;
@@ -56,6 +71,35 @@ public class Balance extends Account {
     this.currencyCode = currencyCode;
     this.value = value;
     this.minValue = minValue;
+  }
+
+  @Override
+  public void init() {
+    super.init();
+    value = nvl(value, BigDecimal.ZERO);
+    creditLimit = nvl(creditLimit, BigDecimal.ZERO);
+    minValue = nvl(minValue, BigDecimal.ZERO);
+    num = nvl(num, 0L);
+    // todo Reserve!
+  }
+
+  public void merge(Balance balance, ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
+    super.merge(balance);
+    setCreditLimit(balance.getCreditLimit());
+    setMinValue(balance.getMinValue());
+    setReserve(balance.getReserveId() != null ? reserveRepo.findOne(balance.getReserveId()) : null);
+    if (balance.getValue().compareTo(getValue()) != 0) {
+      BalanceSheet bs = getBalanceSheet();
+      boolean more = balance.getValue().compareTo(getValue()) == 1;
+      UUID fromAccId = more ? bs.getUncatIncome().getId() : balance.getId();
+      UUID toAccId = more ? balance.getId() : bs.getUncatCosts().getId();
+      BigDecimal amount = balance.getValue().subtract(getValue()).abs();
+      MoneyTrn moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyTrn.Status.done, java.sql.Date.valueOf(LocalDate.now()),
+          fromAccId, toAccId, amount, MoneyTrn.Period.single, "корректировка остатка");
+      moneyTrnsDao.createMoneyTrn(bs.getId(), moneyTrn);
+      // todo После полного перехода на JPA обновлять баланс здесь будет не нужно - он будет обновлен при проводке операции.
+      balance.setValue(balance.getValue());
+    }
   }
 
   public String getCurrencyCode() {
@@ -90,7 +134,7 @@ public class Balance extends Account {
         "after: " + value + ".");
   }
 
-  private BigDecimal getCreditLimit() {
+  public BigDecimal getCreditLimit() {
     return nvl(creditLimit, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
@@ -98,7 +142,7 @@ public class Balance extends Account {
     this.creditLimit = creditLimit;
   }
 
-  private BigDecimal getMinValue() {
+  public BigDecimal getMinValue() {
     return nvl(minValue, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
@@ -116,7 +160,7 @@ public class Balance extends Account {
    */
   @SuppressWarnings("unused")
   public UUID getReserveId() {
-    return reserve != null ? reserve.getId() : null;
+    return reserveId;
   }
 
   /**
@@ -124,7 +168,7 @@ public class Balance extends Account {
    */
   @SuppressWarnings("unused")
   public void setReserveId(@Nullable UUID reserveId) {
-    reserve = reserveId != null ? reserveRepo.findOne(reserveId) : null;
+    this.reserveId = reserveId;
   }
 
   @Nonnull

@@ -43,8 +43,23 @@ public class Account {
     this.isArc = isArc;
   }
 
+  public void init() {
+    this.id = UUID.randomUUID();
+  }
+
+  public void merge(Account account) {
+    setType(account.getType());
+    setName(account.getName());
+    setCreated(account.getCreated());
+    setArc(account.getArc());
+  }
+
   public UUID getId() {
     return id;
+  }
+
+  public void setBalanceSheet(BalanceSheet balanceSheet) {
+    this.balanceSheet = balanceSheet;
   }
 
   @JsonIgnore
