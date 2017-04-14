@@ -12,32 +12,32 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.dao.AccountsDao;
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
-import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
-import ru.serdtsev.homemoney.dao.ReservesDao;
 import ru.serdtsev.homemoney.dto.HmResponse;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/{bsId}/reserves")
 public final class ReservesResource {
   private ReserveRepository reserveRepo;
   private BalanceSheetRepository balanceSheetRepo;
-  private ReservesDao reservesDao;
-  private MoneyTrnsDao moneyTrnsDao;
 
   @Autowired
-  public ReservesResource(ReserveRepository reserveRepo, BalanceSheetRepository balanceSheetRepo, ReservesDao reservesDao,
-      MoneyTrnsDao moneyTrnsDao) {
+  public ReservesResource(ReserveRepository reserveRepo, BalanceSheetRepository balanceSheetRepo) {
     this.reserveRepo = reserveRepo;
     this.balanceSheetRepo = balanceSheetRepo;
-    this.reservesDao = reservesDao;
-    this.moneyTrnsDao = moneyTrnsDao;
   }
 
   @RequestMapping
   public final HmResponse getReserveList(@PathVariable UUID bsId) {
-    return HmResponse.getOk(ReservesDao.getReserves(bsId));
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    List<Reserve> reserves = ((List<Reserve>) reserveRepo.findByBalanceSheet(balanceSheet)).stream()
+        .sorted(Comparator.comparing(Reserve::getCreated))
+        .collect(Collectors.toList());
+    return HmResponse.getOk(reserves);
   }
 
   @RequestMapping("/create")

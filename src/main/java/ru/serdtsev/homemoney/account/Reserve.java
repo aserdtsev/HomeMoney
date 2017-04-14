@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.account;
 
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
+import ru.serdtsev.homemoney.utils.Utils;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -23,6 +24,11 @@ public class Reserve extends Balance {
       BigDecimal value, BigDecimal target) {
     super(balanceSheet, AccountType.reserve, name, created, isArc, currencyCode, value, null);
     this.target = target;
+  }
+
+  public void init() {
+    super.init(null);
+    target = Utils.nvl(target, BigDecimal.ZERO);
   }
 
   public void merge(Reserve reserve, ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {

@@ -80,11 +80,11 @@ public final class BalancesResource {
   @RequestMapping("/delete")
   public final HmResponse deleteBalance(
       @PathVariable UUID bsId,
-      @RequestBody BalanceDto balanceDto) {
+      @RequestBody Balance balance) {
     try {
-      Balance balance = balanceRepo.findOne(balanceDto.getId());
-      if (!AccountsDao.isTrnExists(balance.getId()) && !MoneyTrnTemplsDao.isTrnTemplExists(balance.getId())) {
-        balanceRepo.delete(balance);
+      Balance currBalance = balanceRepo.findOne(balance.getId());
+      if (!AccountsDao.isTrnExists(currBalance.getId()) && !MoneyTrnTemplsDao.isTrnTemplExists(currBalance.getId())) {
+        balanceRepo.delete(currBalance);
       }
       return HmResponse.getOk();
     } catch (HmException e) {
@@ -95,10 +95,11 @@ public final class BalancesResource {
   @RequestMapping("/up")
   public final HmResponse upBalance(
       @PathVariable UUID bsId,
-      @RequestBody BalanceDto balanceDto) {
+      @RequestBody Balance balance) {
+    // todo работает неправильно, исправить
     try {
-      Balance balance = balanceRepo.findOne(balanceDto.getId());
-      BalanceSheet bs = balanceSheetRepo.findOne(bsId);
+      Balance currBalance = balanceRepo.findOne(balance.getId());
+      BalanceSheet bs = currBalance.getBalanceSheet();
 
       List<Balance> balances = bs.getBalances().stream()
           .sorted((b1, b2) -> b1.getNum() < b2.getNum() ? -1 : (b1.getNum() > b2.getNum() ? 1 : 0))
@@ -107,12 +108,12 @@ public final class BalancesResource {
 
       Balance prev;
       do {
-        int index = balances.indexOf(balance);
+        int index = balances.indexOf(currBalance);
         assert index > -1;
         prev = null;
         if (index > 0) {
           prev = balances.get(index - 1);
-          balances.set(index - 1, balance);
+          balances.set(index - 1, currBalance);
           balances.set(index, prev);
           long i = 0;
           for (Balance b : balances) {

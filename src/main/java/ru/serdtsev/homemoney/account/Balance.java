@@ -73,14 +73,15 @@ public class Balance extends Account {
     this.minValue = minValue;
   }
 
-  @Override
-  public void init() {
+  public void init(ReserveRepository reserveRepo) {
     super.init();
     value = nvl(value, BigDecimal.ZERO);
     creditLimit = nvl(creditLimit, BigDecimal.ZERO);
     minValue = nvl(minValue, BigDecimal.ZERO);
     num = nvl(num, 0L);
-    // todo Reserve!
+    if (reserveId != null) {
+      reserve = reserveRepo.findOne(reserveId);
+    }
   }
 
   public void merge(Balance balance, ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
