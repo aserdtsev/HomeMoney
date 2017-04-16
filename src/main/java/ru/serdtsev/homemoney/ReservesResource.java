@@ -10,7 +10,7 @@ import ru.serdtsev.homemoney.account.Reserve;
 import ru.serdtsev.homemoney.account.ReserveRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.dao.AccountsDao;
+import ru.serdtsev.homemoney.account.AccountsDao;
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
 import ru.serdtsev.homemoney.dto.HmResponse;
 

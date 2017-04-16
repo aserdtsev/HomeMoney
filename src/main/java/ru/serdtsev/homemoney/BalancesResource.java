@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.dao.AccountsDao;
+import ru.serdtsev.homemoney.account.AccountsDao;
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dto.HmResponse;
@@ -54,7 +54,7 @@ public final class BalancesResource {
     try {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
       balance.setBalanceSheet(balanceSheet);
-      balance.init();
+      balance.init(reserveRepo);
       balanceRepo.save(balance);
       return HmResponse.getOk();
     } catch (HmException e) {
