@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.dto.Authentication;
-import ru.serdtsev.homemoney.dto.BalanceSheetDto;
 import ru.serdtsev.homemoney.dto.HmResponse;
 import ru.serdtsev.homemoney.user.User;
 import ru.serdtsev.homemoney.user.UserAuthToken;
@@ -105,14 +104,6 @@ public class UserResource {
 
     log.info("User logout");
     return HmResponse.getOk();
-  }
-
-  @RequestMapping(method = RequestMethod.POST)
-  public void createBalanceSheet(BalanceSheetDto bsDto) {
-    BalanceSheet bs = BalanceSheet.fromDto(bsDto);
-    balanceSheetRepo.save(bs);
-    bs.init();
-    balanceSheetRepo.save(bs);
   }
 
   @RequestMapping(method = RequestMethod.DELETE)

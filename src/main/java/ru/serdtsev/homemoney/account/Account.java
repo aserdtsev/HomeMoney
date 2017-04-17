@@ -103,10 +103,6 @@ public class Account {
     isArc = arc;
   }
 
-  public AccountDto toDto() {
-    return new AccountDto(getId(), type, name, created, isArc);
-  }
-
   @JsonIgnore
   public String getSortIndex() {
     return getName();

@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.account.AccountDto;
 import ru.serdtsev.homemoney.dto.HmResponse;
 
 import java.util.Comparator;
@@ -28,9 +27,8 @@ public final class AccountsResource {
   @RequestMapping("/api/{bsId}/accounts")
   public final HmResponse getAccountList(@PathVariable UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-    List<AccountDto> accounts = balanceSheet.getAccounts().stream()
+    List<Account> accounts = balanceSheet.getAccounts().stream()
         .sorted(Comparator.comparing(Account::getSortIndex))
-        .map(Account::toDto)
         .collect(Collectors.toList());
     return HmResponse.getOk(accounts);
   }

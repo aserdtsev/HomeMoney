@@ -1,7 +1,7 @@
 package ru.serdtsev.homemoney.balancesheet;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import ru.serdtsev.homemoney.account.*;
-import ru.serdtsev.homemoney.dto.BalanceSheetDto;
 
 import javax.annotation.Nullable;
 import javax.persistence.*;
@@ -28,13 +28,22 @@ public class BalanceSheet {
   @JoinColumn(name = "svc_rsv_id", insertable = false)
   private ServiceAccount svcRsv;
 
+  @Transient
+  private UUID svcRsvId;
+
   @OneToOne
   @JoinColumn(name = "uncat_costs_id", insertable = false)
   private Category uncatCosts;
 
+  @Transient
+  private UUID uncatCostsId;
+
   @OneToOne
   @JoinColumn(name = "uncat_income_id", insertable = false)
   private Category uncatIncome;
+
+  @Transient
+  private UUID uncatIncomeId;
 
   @OneToMany
   @JoinColumn(name = "balance_sheet_id")
@@ -66,14 +75,6 @@ public class BalanceSheet {
         .init();
   }
 
-  public static BalanceSheet fromDto(BalanceSheetDto dto) {
-    return new BalanceSheet(dto.getId(), dto.getCreatedTs(), dto.getCurrencyCode());
-  }
-
-  public BalanceSheetDto toDto() {
-    return new BalanceSheetDto(id, created, svcRsv.getId(), uncatCosts.getId(), uncatIncome.getId(), currencyCode);
-  }
-
   public BalanceSheet init() {
     Date now = Date.valueOf(LocalDate.now());
     svcRsv = new ServiceAccount(this, "Service reserve", now, false);
@@ -87,22 +88,51 @@ public class BalanceSheet {
     return currencyCode;
   }
 
+  @JsonIgnore
   public ServiceAccount getSvcRsv() {
     return svcRsv;
   }
 
+  public UUID getSvcRsvId() {
+    return svcRsv.getId();
+  }
+
+  public void setSvcRsvId(UUID svcRsvId) {
+    this.svcRsvId = svcRsvId;
+  }
+
+  @JsonIgnore
   public Category getUncatCosts() {
     return uncatCosts;
   }
 
+  public UUID getUncatCostsId() {
+    return uncatCosts.getId();
+  }
+
+  public void setUncatCostsId(UUID uncatCostsId) {
+    this.uncatCostsId = uncatCostsId;
+  }
+
+  @JsonIgnore
   public Category getUncatIncome() {
     return uncatIncome;
   }
 
+  public UUID getUncatIncomeId() {
+    return uncatIncome.getId();
+  }
+
+  public void setUncatIncomeId(UUID uncatIncomeId) {
+    this.uncatIncomeId = uncatIncomeId;
+  }
+
+  @JsonIgnore
   public List<Account> getAccounts() {
     return this.accounts;
   }
 
+  @JsonIgnore
   public List<Balance> getBalances() {
     return this.accounts.stream()
         .filter(account -> account instanceof Balance)

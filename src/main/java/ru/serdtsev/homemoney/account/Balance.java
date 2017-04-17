@@ -3,7 +3,6 @@ package ru.serdtsev.homemoney.account;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
@@ -25,21 +24,6 @@ import static ru.serdtsev.homemoney.utils.Utils.nvl;
 @DiscriminatorValue("balance")
 public class Balance extends Account {
   private static Logger log = LoggerFactory.getLogger(Balance.class);
-
-  @SuppressWarnings("unused")
-  @Transient
-  @Autowired
-  private AccountRepository accountRepo;
-
-  @SuppressWarnings("unused")
-  @Transient
-  @Autowired
-  private MoneyTrnsDao moneyTrnsDao;
-
-  @SuppressWarnings("unused")
-  @Transient
-  @Autowired
-  private ReserveRepository reserveRepo;
 
   @Column(name = "currency_code")
   private String currencyCode;
@@ -161,7 +145,7 @@ public class Balance extends Account {
    */
   @SuppressWarnings("unused")
   public UUID getReserveId() {
-    return reserveId;
+    return reserve != null ? reserve.getId() : null;
   }
 
   /**
