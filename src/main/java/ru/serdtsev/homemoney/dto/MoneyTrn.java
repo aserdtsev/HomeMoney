@@ -1,6 +1,6 @@
 package ru.serdtsev.homemoney.dto;
 
-import ru.serdtsev.homemoney.HmException;
+import ru.serdtsev.homemoney.common.HmException;
 
 import java.math.BigDecimal;
 import java.sql.Date;

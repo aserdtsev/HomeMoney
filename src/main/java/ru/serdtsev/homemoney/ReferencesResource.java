@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.dao.ReferencesDao;
-import ru.serdtsev.homemoney.dto.HmResponse;
+import ru.serdtsev.homemoney.common.HmResponse;
 
 import java.util.UUID;
 

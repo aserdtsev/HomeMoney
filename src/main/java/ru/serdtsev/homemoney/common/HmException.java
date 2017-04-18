@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney;
+package ru.serdtsev.homemoney.common;
 
 public class HmException extends RuntimeException {
   private final HmException.Code code;

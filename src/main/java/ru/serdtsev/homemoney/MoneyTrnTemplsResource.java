@@ -2,8 +2,9 @@ package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
-import ru.serdtsev.homemoney.dto.HmResponse;
+import ru.serdtsev.homemoney.common.HmResponse;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 

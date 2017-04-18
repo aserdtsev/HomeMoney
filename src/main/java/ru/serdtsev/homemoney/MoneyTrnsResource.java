@@ -2,8 +2,9 @@ package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
-import ru.serdtsev.homemoney.dto.HmResponse;
+import ru.serdtsev.homemoney.common.HmResponse;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.PagedList;
 
@@ -13,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static ru.serdtsev.homemoney.dto.HmResponse.getFail;
-import static ru.serdtsev.homemoney.dto.HmResponse.getOk;
+import static ru.serdtsev.homemoney.common.HmResponse.getFail;
+import static ru.serdtsev.homemoney.common.HmResponse.getOk;
 
 @RestController
 @RequestMapping("/api/{bsId}/money-trns")

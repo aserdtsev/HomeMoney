@@ -5,7 +5,7 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import org.apache.catalina.connector.RequestFacade;
 import org.springframework.beans.factory.annotation.Autowired;
-import ru.serdtsev.homemoney.HmException;
+import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.user.UserAuthToken;
 import ru.serdtsev.homemoney.user.UserAuthTokenRepository;
 

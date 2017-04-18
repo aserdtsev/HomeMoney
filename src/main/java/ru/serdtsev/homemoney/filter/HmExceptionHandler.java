@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import ru.serdtsev.homemoney.HmException;
+import ru.serdtsev.homemoney.common.HmException;
 
 @ControllerAdvice
 public class HmExceptionHandler extends ResponseEntityExceptionHandler {

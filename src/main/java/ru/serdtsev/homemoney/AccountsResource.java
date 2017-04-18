@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.dto.HmResponse;
+import ru.serdtsev.homemoney.common.HmResponse;
 
 import java.util.Comparator;
 import java.util.List;

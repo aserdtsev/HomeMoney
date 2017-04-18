@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.dto;
+package ru.serdtsev.homemoney.common;
 
 public class HmResponse {
   private String status;
