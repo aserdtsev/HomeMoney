@@ -14,6 +14,7 @@ import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.dto.*;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
 
 import java.beans.PropertyVetoException;
 import java.math.BigDecimal;
@@ -102,7 +103,7 @@ public class MainDao {
 
       TreeMap<Date, BsDayStat> map = new TreeMap<>();
       fillBsDayStatMap(map,
-          getRealTurnovers(conn, run, handler, bsId, MoneyTrn.Status.done, fromDate, toDate));
+          getRealTurnovers(conn, run, handler, bsId, MoneyOperStatus.done, fromDate, toDate));
       calcPastSaldoNTurnovers(bsStat, map);
 
       LocalDate trendFromLocalDate = today.plusDays(1).minusMonths(1);
@@ -112,7 +113,7 @@ public class MainDao {
       fillBsDayStatMap(trendMap,
           getTrendTurnovers(conn, run, handler, bsId, trendFromDate, trendToDate));
       fillBsDayStatMap(trendMap,
-          getRealTurnovers(conn, run, handler, bsId, MoneyTrn.Status.pending,
+          getRealTurnovers(conn, run, handler, bsId, MoneyOperStatus.pending,
               Date.valueOf(LocalDate.of(1970, 1, 1)), Date.valueOf(today.plusDays(interval))));
       fillBsDayStatMap(trendMap, getTemplTurnovers(bsId, Date.valueOf(today.plusDays(interval))));
       calcTrendSaldoNTurnovers(bsStat, trendMap);
@@ -214,7 +215,7 @@ public class MainDao {
   }
 
   private static List<Turnover> getRealTurnovers(Connection conn, QueryRunner run,
-      ResultSetHandler<List<Turnover>> handler, UUID bsId, MoneyTrn.Status status, Date fromDate, Date toDate) {
+      ResultSetHandler<List<Turnover>> handler, UUID bsId, MoneyOperStatus status, Date fromDate, Date toDate) {
     try {
       return run.query(conn,
           "select trn_date as trnDate, from_acc_type as fromAccType, to_acc_type as toAccType, " +
@@ -238,7 +239,7 @@ public class MainDao {
               "from v_trns_by_base_crn " +
               "where bs_id = ? and status = ? and trn_date between ? and ? " +
               "group by trn_date, from_acc_type, to_acc_type ",
-          handler, bsId, MoneyTrn.Status.done.name(), fromDate, toDate);
+          handler, bsId, MoneyOperStatus.done.name(), fromDate, toDate);
     } catch (SQLException e) {
       throw new HmSqlException(e);
     }

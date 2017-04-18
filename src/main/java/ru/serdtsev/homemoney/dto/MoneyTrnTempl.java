@@ -1,6 +1,6 @@
 package ru.serdtsev.homemoney.dto;
 
-import ru.serdtsev.homemoney.dto.MoneyTrn.Period;
+import ru.serdtsev.homemoney.moneyoper.Period;
 
 import java.math.BigDecimal;
 import java.sql.Date;

@@ -1,7 +1,10 @@
 package ru.serdtsev.homemoney.dto;
 
 import ru.serdtsev.homemoney.common.HmException;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
+import ru.serdtsev.homemoney.moneyoper.Period;
 
+import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -11,9 +14,14 @@ import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
+//@Entity
+//@Table(name = "money_trns")
 public class MoneyTrn {
+  @Id
   private UUID id;
-  private MoneyTrn.Status status;
+
+
+  private MoneyOperStatus status;
   private Date trnDate;
   private Integer dateNum;
   private List<BalanceChange> balanceChanges;
@@ -26,7 +34,7 @@ public class MoneyTrn {
   private String toCurrencyCode;
   private String comment;
   private Timestamp createdTs;
-  private MoneyTrn.Period period;
+  private Period period;
   private List<String> labels;
   private UUID templId;
   private String fromAccName;
@@ -36,13 +44,13 @@ public class MoneyTrn {
   @SuppressWarnings({"unused", "WeakerAccess"})
   public MoneyTrn() {}
 
-  public MoneyTrn(UUID id, Status status, Date trnDate, UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
+  public MoneyTrn(UUID id, MoneyOperStatus status, Date trnDate, UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
       String comment) {
     this(id, status, trnDate, fromAccId, toAccId, amount, period, comment,
         null, null, null, null, null);
   }
 
-  public MoneyTrn(UUID id, Status status, Date trnDate,
+  public MoneyTrn(UUID id, MoneyOperStatus status, Date trnDate,
       UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
       String comment, List<String> labels, Integer dateNum, UUID parentId, UUID templId, Timestamp createdTs) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
@@ -75,11 +83,11 @@ public class MoneyTrn {
     this.id = id;
   }
 
-  public Status getStatus() {
+  public MoneyOperStatus getStatus() {
     return status;
   }
 
-  public void setStatus(Status status) {
+  public void setStatus(MoneyOperStatus status) {
     this.status = status;
   }
 
@@ -311,35 +319,5 @@ public class MoneyTrn {
         ", toAccName='" + toAccName + '\'' +
         ", type='" + type + '\'' +
         '}';
-  }
-
-  public enum Status {
-    /**
-     * в ожидании
-     */
-    pending,
-    /**
-     * ожидает повтора
-     */
-    recurrence,
-    /**
-     * выполнен
-     */
-    done,
-    /**
-     * выполнен (новый)
-     */
-    doneNew,
-    /**
-     * отменен
-     */
-    cancelled
-  }
-
-  public enum Period {
-    month,
-    quarter,
-    year,
-    single
   }
 }

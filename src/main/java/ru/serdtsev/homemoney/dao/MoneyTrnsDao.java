@@ -8,13 +8,14 @@ import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
+import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.dto.BalanceChange;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,7 +33,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static ru.serdtsev.homemoney.dto.MoneyTrn.Status.*;
+import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.*;
 import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
 import static ru.serdtsev.homemoney.utils.Utils.nvl;
 
@@ -110,7 +111,7 @@ public class MoneyTrnsDao {
   }
 
   @Nonnull
-  private List<MoneyTrn> getMoneyTrns(Connection conn, UUID bsId, MoneyTrn.Status status,
+  private List<MoneyTrn> getMoneyTrns(Connection conn, UUID bsId, MoneyOperStatus status,
       @Nullable String search, @Nullable Integer limit, @Nullable Integer offset, @Nullable Date beforeDate) throws SQLException {
     assertNonNulls(conn, bsId, status);
 
@@ -448,10 +449,10 @@ public class MoneyTrnsDao {
     setStatusNChangeBalanceValues(conn, bsId, moneyTrnId, done);
   }
 
-  private void setStatusNChangeBalanceValues(Connection conn, UUID bsId, UUID moneyTrnId, MoneyTrn.Status status)
+  private void setStatusNChangeBalanceValues(Connection conn, UUID bsId, UUID moneyTrnId, MoneyOperStatus status)
       throws SQLException {
     assertNonNulls(conn, bsId, moneyTrnId, status);
-    assert status != MoneyTrn.Status.doneNew && status != MoneyTrn.Status.doneNew : status.name();
+    assert status != MoneyOperStatus.doneNew && status != MoneyOperStatus.doneNew : status.name();
 
     MoneyTrn trn = getMoneyTrn(conn, bsId, moneyTrnId);
     if (status == trn.getStatus()) return;
@@ -461,7 +462,7 @@ public class MoneyTrnsDao {
     BigDecimal toAmount = null;
     switch (status) {
       case done:
-        if (trn.getStatus() == MoneyTrn.Status.pending || trn.getStatus() == MoneyTrn.Status.cancelled) {
+        if (trn.getStatus() == MoneyOperStatus.pending || trn.getStatus() == MoneyOperStatus.cancelled) {
           fromAccId = trn.getFromAccId();
           fromAmount = trn.getAmount();
           toAccId = trn.getToAccId();
@@ -469,7 +470,7 @@ public class MoneyTrnsDao {
         }
         break;
       case cancelled: case pending:
-        if (trn.getStatus() == MoneyTrn.Status.done) {
+        if (trn.getStatus() == MoneyOperStatus.done) {
           fromAccId = trn.getToAccId();
           fromAmount = trn.getToAmount();
           toAccId = trn.getFromAccId();
@@ -504,7 +505,7 @@ public class MoneyTrnsDao {
   public void deleteMoneyTrn(UUID bsId, UUID id) {
     assertNonNulls(bsId, id);
     try (Connection conn = MainDao.getConnection()) {
-      setStatusNChangeBalanceValues(conn, bsId, id, MoneyTrn.Status.cancelled);
+      setStatusNChangeBalanceValues(conn, bsId, id, MoneyOperStatus.cancelled);
       DbUtils.commitAndClose(conn);
     } catch (SQLException e) {
       throw new HmSqlException(e);
@@ -539,8 +540,8 @@ public class MoneyTrnsDao {
           trn.getDateNum(), trn.getPeriod().name(), trn.getComment(), trn.getId());
       LabelsDao.saveLabels(conn, bsId, trn.getId(), "operation", trn.getLabels());
     } else {
-      MoneyTrn.Status origTrnStatus = trn.getStatus();
-      setStatusNChangeBalanceValues(conn, bsId, trn.getId(), MoneyTrn.Status.cancelled);
+      MoneyOperStatus origTrnStatus = trn.getStatus();
+      setStatusNChangeBalanceValues(conn, bsId, trn.getId(), MoneyOperStatus.cancelled);
       run.update(conn, "" +
               "update money_trns set " +
               "    trn_date = ?," +
@@ -594,8 +595,8 @@ public class MoneyTrnsDao {
   public void skipMoneyTrn(UUID bsId, MoneyTrn trn) {
     assertNonNulls(bsId, trn);
     try (Connection conn = MainDao.getConnection()) {
-      if (trn.getStatus() != MoneyTrn.Status.recurrence) {
-        setStatusNChangeBalanceValues(conn, bsId, trn.getId(), MoneyTrn.Status.cancelled);
+      if (trn.getStatus() != MoneyOperStatus.recurrence) {
+        setStatusNChangeBalanceValues(conn, bsId, trn.getId(), MoneyOperStatus.cancelled);
       }
       if (trn.getTemplId() != null) {
         MoneyTrnTempl templ = MoneyTrnTemplsDao.getMoneyTrnTempl(conn, bsId, trn.getTemplId());

@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.moneyoper;
 
 import ru.serdtsev.homemoney.dto.BalanceChange;
-import ru.serdtsev.homemoney.dto.MoneyTrn;
 
 import javax.persistence.Id;
 import java.sql.Date;
@@ -47,13 +46,4 @@ public class MoneyOper {
   public UUID getId() {
     return id;
   }
-
-  public static MoneyOper fromDto(MoneyTrn dto) {
-    return null;
-  }
-
-  public MoneyTrn toDto() {
-    return null;
-  }
-
 }
