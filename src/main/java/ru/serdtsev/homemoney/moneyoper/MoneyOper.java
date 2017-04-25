@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper;
 
 import ru.serdtsev.homemoney.dto.BalanceChange;
+import ru.serdtsev.homemoney.dto.Label;
 
 import javax.persistence.Id;
 import java.sql.Date;
