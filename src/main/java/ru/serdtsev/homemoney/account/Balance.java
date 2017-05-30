@@ -93,6 +93,10 @@ public class Balance extends Account {
     return currencyCode != null ?  currencyCode : "RUB";
   }
 
+  public void setCurrencyCode(String currencyCode) {
+    this.currencyCode = currencyCode;
+  }
+
   public String getCurrencySymbol() {
     return getCurrency().getSymbol();
   }

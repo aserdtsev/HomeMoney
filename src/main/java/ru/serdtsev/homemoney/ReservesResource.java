@@ -6,15 +6,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.account.AccountsDao;
 import ru.serdtsev.homemoney.account.Reserve;
 import ru.serdtsev.homemoney.account.ReserveRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.account.AccountsDao;
 import ru.serdtsev.homemoney.common.HmException;
-import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
 import ru.serdtsev.homemoney.common.HmResponse;
+import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -49,6 +50,8 @@ public final class ReservesResource {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
       reserve.setBalanceSheet(balanceSheet);
       reserve.setType(AccountType.reserve);
+      reserve.setCurrencyCode(balanceSheet.getCurrencyCode());
+      reserve.setCreated(java.sql.Date.valueOf(LocalDate.now()));
       reserveRepo.save(reserve);
       return HmResponse.getOk();
     } catch (HmException e) {
