@@ -391,21 +391,21 @@ public class MoneyTrnsDao {
 
     trn = getMoneyTrn(conn, bsId, trn.getId());
 
-    if (trn.getType().equals("expense") || trn.getType().equals("transfer")) {
+    Account fromAcc = accountRepo.findOne(trn.getFromAccId());
+    if (fromAcc instanceof Balance) {
       createBalanceChange(conn, trn.getId(), trn.getFromAccId(), trn.getAmount().negate(), trn.getTrnDate(), 0);
     }
 
-    if (trn.getType().equals("income") || trn.getType().equals("transfer")) {
+    Account toAcc = accountRepo.findOne(trn.getToAccId());
+    if (toAcc instanceof Balance) {
       BigDecimal toAmount = nvl(trn.getToAmount(), trn.getAmount());
       createBalanceChange(conn, trn.getId(), trn.getToAccId(), toAmount, trn.getTrnDate(), 1);
     }
 
-    Account fromAcc = accountRepo.findOne(trn.getFromAccId());
     if (fromAcc.getType() == AccountType.income) {
       labels.add(fromAcc.getName());
     }
 
-    Account toAcc = accountRepo.findOne(trn.getToAccId());
     if (toAcc.getType() == AccountType.expense) {
       labels.add(toAcc.getName());
     }
