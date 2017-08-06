@@ -492,7 +492,7 @@ public class MoneyTrnsDao {
 
     if (toAccId != null) {
       Account toAccount = accountRepo.findOne(toAccId);
-      if (!trn.getTrnDate().before(toAccount.getCreated()) && toAccount instanceof Balance) {
+      if (toAccount instanceof Balance && !trn.getTrnDate().before(toAccount.getCreated())) {
         Balance toBalance = balanceRepo.findOne(toAccId);
         toBalance.changeValue(toAmount, trn.getId(), status);
         balanceRepo.save(toBalance);
