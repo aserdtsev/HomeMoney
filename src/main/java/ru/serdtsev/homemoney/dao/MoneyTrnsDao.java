@@ -57,7 +57,7 @@ public class MoneyTrnsDao {
       "   and ta.id = mt.to_acc_id ";
 
   private static final String baseMoneyTrnTemplSelect =
-      "select te.id, te.status, te.sample_id as sampleId, te.last_money_trn_id lastMoneyTrnId, " +
+      "select te.id, 'active' as status, te.template_id as sampleId, te.id lastMoneyTrnId, " +
           "    te.next_date as nextDate, te.period, " +
           "    te.from_acc_id as fromAccId, fa.name as fromAccName," +
           "    te.to_acc_id as toAccId, ta.name as toAccName," +
@@ -65,12 +65,12 @@ public class MoneyTrnsDao {
           "    te.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode," +
           "    coalesce(te.to_amount, te.amount), coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') as toCurrencyCode," +
           "    te.comment " +
-          "  from money_trn_templs te, " +
+          "  from money_trns te, " +
           "    accounts fa " +
           "      left join balances fb on fb.id = fa.id, " +
           "    accounts ta" +
           "      left join balances tb on tb.id = ta.id " +
-          "  where te.bs_id = ? " +
+          "  where te.balance_sheet_id = ? and te.is_template = true" +
           "    and fa.id = te.from_acc_id " +
           "    and ta.id = te.to_acc_id ";
 
@@ -386,7 +386,7 @@ public class MoneyTrnsDao {
   }
 
   public List<MoneyTrnTempl> getMoneyTrnTempls(Connection conn, UUID bsId, String search) throws SQLException {
-    StringBuilder sql = new StringBuilder(baseMoneyTrnTemplSelect + " and te.status = 'active' ");
+    StringBuilder sql = new StringBuilder(baseMoneyTrnTemplSelect);
     List<Object> params = new ArrayList<>();
     params.add(bsId);
     if (!Strings.isNullOrEmpty(search)) {
