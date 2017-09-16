@@ -13,7 +13,7 @@ public class UserAuthToken {
 
   private UUID userId;
 
-  private UserAuthToken() {
+  UserAuthToken() {
   }
 
   public UserAuthToken(UUID token, UUID userId) {

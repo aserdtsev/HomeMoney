@@ -47,13 +47,13 @@ public class MainDao {
     }
   }
 
-  private AccountRepository accountRepo;
-  private MoneyTrnTemplsDao moneyTrnTemplsDao;
+  private final AccountRepository accountRepo;
+  private final MoneyTrnsDao moneyTrnsDao;
 
   @Autowired
-  public MainDao(MoneyTrnTemplsDao moneyTrnTemplsDao, AccountRepository accountRepo) {
-    this.moneyTrnTemplsDao = moneyTrnTemplsDao;
+  public MainDao(AccountRepository accountRepo, MoneyTrnsDao moneyTrnsDao) {
     this.accountRepo = accountRepo;
+    this.moneyTrnsDao = moneyTrnsDao;
   }
 
   public static JdbcTemplate jdbcTemplate() {
@@ -246,7 +246,7 @@ public class MainDao {
   }
 
   private List<Turnover> getTemplTurnovers(UUID bsId, Date toDate) {
-    List<MoneyTrnTempl> templs = moneyTrnTemplsDao.getMoneyTrnTempls(bsId, "");
+    List<MoneyTrnTempl> templs = moneyTrnsDao.getMoneyTrnTempls(bsId, "");
     Set<Turnover> turnovers = new HashSet<>();
     Date today = Date.valueOf(LocalDate.now());
     templs.forEach(t -> {

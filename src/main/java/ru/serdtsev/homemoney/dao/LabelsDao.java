@@ -4,7 +4,11 @@ import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.BeanListHandler;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
-import ru.serdtsev.homemoney.dto.Label;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
+import ru.serdtsev.homemoney.moneyoper.Label;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -13,8 +17,12 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-class LabelsDao {
-  static void saveLabels(Connection conn, UUID bsId, UUID objId, String objType, List<String> labels)
+@Component
+public class LabelsDao {
+  @Autowired
+  private BalanceSheetRepository balanceSheetRepo;
+
+  public void saveLabels(Connection conn, UUID bsId, UUID objId, String objType, List<String> labels)
       throws SQLException {
     List<Label> oldLabels = getLabels(conn, objId);
 
@@ -25,7 +33,7 @@ class LabelsDao {
         Optional<Label> labelOpt = findLabel(conn, bsId, name);
         Label label = labelOpt.isPresent()
             ? labelOpt.get()
-            : createLabel(conn, bsId, name, null, false, false);
+            : createLabel(conn, bsId, name, null, false);
         run.update(conn, "insert into labels2objs(label_id, obj_id, obj_type) values(?, ?, ?)", label.getId(), objId, objType);
       } catch (SQLException e) {
         throw new HmSqlException(e);
@@ -35,22 +43,23 @@ class LabelsDao {
     deleteUnusedLabels(conn, oldLabels);
   }
 
-  static Label createLabel(Connection conn, UUID bsId, String name, UUID rootId, Boolean isCategory, Boolean isArc) throws SQLException {
-    Label label = new Label(UUID.randomUUID(), name, rootId, isCategory, isArc);
+  public Label createLabel(Connection conn, UUID bsId, String name, UUID rootId, Boolean isCategory) throws SQLException {
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    Label label = new Label(UUID.randomUUID(), balanceSheet, name, rootId, isCategory);
     new QueryRunner().update(conn,
-        "insert into labels(id, bs_id, name, root_id, is_category, is_arc) values (?, ?, ?, ?, ?, ?)",
-        label.getId(), bsId, label.getName(), rootId, label.getIsCategory(), isArc);
+        "insert into labels(id, bs_id, name, root_id, is_category, is_arc) values (?, ?, ?, ?, ?, false)",
+        label.getId(), bsId, label.getName(), rootId, label.getIsCategory());
     return label;
   }
 
-  static Optional<Label> findLabel(Connection conn, UUID bsId, String name) throws SQLException {
+  public Optional<Label> findLabel(Connection conn, UUID bsId, String name) throws SQLException {
     Label label = new QueryRunner().query(conn, "" +
         "select id, name, root_id as rootId, is_category as isCategory, is_arc as isArc from labels where bs_id = ? and name = ?",
         new BeanHandler<>(Label.class), bsId, name);
     return Optional.ofNullable(label);
   }
 
-  private static void deleteUnusedLabels(Connection conn, List<Label> labels) throws SQLException {
+  public void deleteUnusedLabels(Connection conn, List<Label> labels) throws SQLException {
     labels.forEach(label -> {
       try {
         Boolean exists = new QueryRunner().query(conn,
@@ -65,15 +74,15 @@ class LabelsDao {
     });
   }
 
-  private static void deleteLabel(Connection conn, UUID id) throws SQLException {
+  public void deleteLabel(Connection conn, UUID id) throws SQLException {
     new QueryRunner().update(conn, "delete from labels where id = ?", id);
   }
 
-  static List<String> getLabelNames(Connection conn, UUID objId) throws SQLException {
+  public List<String> getLabelNames(Connection conn, UUID objId) throws SQLException {
     return getLabels(conn, objId).stream().map(Label::getName).collect(Collectors.toList());
   }
 
-  private static List<Label> getLabels(Connection conn, UUID objId) throws SQLException {
+  public List<Label> getLabels(Connection conn, UUID objId) throws SQLException {
     return new QueryRunner().query(conn, "" +
             "select l.id, l.name, root_id as rootId, is_category as isCategory, is_arc as isArc " +
             "  from labels2objs l2o, labels l " +

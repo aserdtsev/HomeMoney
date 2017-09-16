@@ -13,7 +13,7 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
-import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
+import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -78,7 +78,7 @@ public final class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      if (!AccountsDao.isTrnExists(reserve.getId()) && !MoneyTrnTemplsDao.isTrnTemplExists(reserve.getId())) {
+      if (!AccountsDao.isTrnExists(reserve.getId()) && !MoneyTrnsDao.isTrnTemplExists(reserve.getId())) {
         reserveRepo.delete(reserve.getId());
       }
       return HmResponse.getOk();

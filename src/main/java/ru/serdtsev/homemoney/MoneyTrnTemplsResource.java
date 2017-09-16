@@ -3,8 +3,8 @@ package ru.serdtsev.homemoney;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.common.HmException;
-import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
 import ru.serdtsev.homemoney.common.HmResponse;
+import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 
@@ -15,11 +15,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/{bsId}/money-trn-templs")
 public class MoneyTrnTemplsResource {
-  private MoneyTrnTemplsDao moneyTrnTemplsDao;
+  private MoneyTrnsDao moneyTrnsDao;
 
   @Autowired
-  public MoneyTrnTemplsResource(MoneyTrnTemplsDao moneyTrnTemplsDao) {
-    this.moneyTrnTemplsDao = moneyTrnTemplsDao;
+  public MoneyTrnTemplsResource(MoneyTrnsDao moneyTrnsDao) {
+    this.moneyTrnsDao = moneyTrnsDao;
   }
 
   @RequestMapping
@@ -27,7 +27,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestParam(required = false, defaultValue = "") String search) {
     try {
-      List<MoneyTrnTempl> list = moneyTrnTemplsDao.getMoneyTrnTempls(bsId, search);
+      List<MoneyTrnTempl> list = moneyTrnsDao.getMoneyTrnTempls(bsId, search);
       return HmResponse.getOk(list);
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -42,7 +42,7 @@ public class MoneyTrnTemplsResource {
     MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(), nextDate,
         moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
         moneyTrn.getComment(), moneyTrn.getLabels());
-    moneyTrnTemplsDao.createMoneyTrnTempl(bsId, templ);
+    moneyTrnsDao.createMoneyTrnTempl(bsId, templ);
     return HmResponse.getOk();
   }
 
@@ -51,7 +51,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
     templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
-    moneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
+    moneyTrnsDao.updateMoneyTrnTempl(bsId, templ);
     return HmResponse.getOk();
   }
 
@@ -60,7 +60,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
     try {
-      moneyTrnTemplsDao.deleteMoneyTrnTempl(bsId, templ.getId());
+      moneyTrnsDao.deleteMoneyTrnTempl(bsId, templ.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -72,7 +72,7 @@ public class MoneyTrnTemplsResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
     try {
-      moneyTrnTemplsDao.updateMoneyTrnTempl(bsId, templ);
+      moneyTrnsDao.updateMoneyTrnTempl(bsId, templ);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

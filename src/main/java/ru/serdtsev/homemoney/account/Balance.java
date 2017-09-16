@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
+import ru.serdtsev.homemoney.moneyoper.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
 import ru.serdtsev.homemoney.moneyoper.Period;
 import ru.serdtsev.homemoney.utils.Utils;
@@ -82,7 +83,8 @@ public class Balance extends Account {
       UUID toAccId = more ? balance.getId() : bs.getUncatCosts().getId();
       BigDecimal amount = balance.getValue().subtract(getValue()).abs();
       MoneyTrn moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyOperStatus.done, java.sql.Date.valueOf(LocalDate.now()),
-          fromAccId, toAccId, amount, Period.single, "корректировка остатка");
+          fromAccId, toAccId, amount, balance.getCurrencyCode(), amount, bs.getCurrencyCode(), Period.single,
+          "корректировка остатка");
       moneyTrnsDao.createMoneyTrn(bs.getId(), moneyTrn);
       // todo После полного перехода на JPA обновлять баланс здесь будет не нужно - он будет обновлен при проводке операции.
       balance.setValue(balance.getValue());
@@ -114,6 +116,7 @@ public class Balance extends Account {
     this.value = value;
   }
 
+  @Deprecated
   public void changeValue(BigDecimal amount, UUID trnId, MoneyOperStatus status) {
     BigDecimal beforeValue = value.plus();
     value = value.add(amount);
@@ -121,6 +124,17 @@ public class Balance extends Account {
         "id: " + getId() + ", " +
         "trnId: " + trnId + ", " +
         "status: " + status.name() + ", " +
+        "before: " + beforeValue + ", " +
+        "after: " + value + ".");
+  }
+
+  public void changeValue(BigDecimal amount, MoneyOper oper) {
+    BigDecimal beforeValue = value.plus();
+    value = value.add(amount);
+    log.info("Balance value changed; " +
+        "id: " + getId() + ", " +
+        "operId: " + oper.getId() + ", " +
+        "status: " + oper.getStatus().name() + ", " +
         "before: " + beforeValue + ", " +
         "after: " + value + ".");
   }
@@ -179,5 +193,7 @@ public class Balance extends Account {
   public BigDecimal getFreeFunds() {
     return getValue().add(getCreditLimit().subtract(getMinValue()));
   }
+
+
 
 }

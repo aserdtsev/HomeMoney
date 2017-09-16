@@ -1,10 +1,10 @@
 package ru.serdtsev.homemoney.dto;
 
 import ru.serdtsev.homemoney.common.HmException;
+import ru.serdtsev.homemoney.moneyoper.BalanceChange;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
 import ru.serdtsev.homemoney.moneyoper.Period;
 
-import javax.persistence.Id;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -14,13 +14,8 @@ import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
-//@Entity
-//@Table(name = "money_trns")
 public class MoneyTrn {
-  @Id
   private UUID id;
-
-
   private MoneyOperStatus status;
   private Date trnDate;
   private Integer dateNum;
@@ -44,15 +39,15 @@ public class MoneyTrn {
   @SuppressWarnings({"unused", "WeakerAccess"})
   public MoneyTrn() {}
 
-  public MoneyTrn(UUID id, MoneyOperStatus status, Date trnDate, UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
-      String comment) {
-    this(id, status, trnDate, fromAccId, toAccId, amount, period, comment,
+  public MoneyTrn(UUID id, MoneyOperStatus status, Date trnDate, UUID fromAccId, UUID toAccId,
+      BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode, Period period, String comment) {
+    this(id, status, trnDate, fromAccId, toAccId, amount, currencyCode, toAmount, toCurrencyCode, period, comment,
         null, null, null, null, null);
   }
 
   public MoneyTrn(UUID id, MoneyOperStatus status, Date trnDate,
-      UUID fromAccId, UUID toAccId, BigDecimal amount, Period period,
-      String comment, List<String> labels, Integer dateNum, UUID parentId, UUID templId, Timestamp createdTs) {
+      UUID fromAccId, UUID toAccId, BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode,
+      Period period, String comment, List<String> labels, Integer dateNum, UUID parentId, UUID templId, Timestamp createdTs) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
       throw new HmException(HmException.Code.WrongAmount);
     }
@@ -64,6 +59,9 @@ public class MoneyTrn {
     this.toAccId = toAccId;
     this.parentId = parentId;
     this.amount = amount;
+    this.currencyCode = currencyCode;
+    this.toAmount = toAmount;
+    this.toCurrencyCode = toCurrencyCode;
     this.comment = comment;
     this.createdTs = createdTs != null ? createdTs : Timestamp.valueOf(LocalDateTime.now());
     this.period = period;
@@ -71,8 +69,8 @@ public class MoneyTrn {
     this.templId = templId;
 
     this.balanceChanges = new ArrayList<>();
-    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, fromAccId, amount.negate(), trnDate, 0));
-    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, toAccId, toAmount, trnDate, 1));
+//    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, fromAccId, amount.negate(), trnDate, 0));
+//    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, toAccId, toAmount, trnDate, 1));
   }
 
   public UUID getId() {
@@ -263,16 +261,12 @@ public class MoneyTrn {
   }
 
   /**
-   * Возвращает true, поля операции, которые влияют на остатки в разрезе дат, одинаковые.
+   * Возвращает true, если поля операции, которые влияют на остатки в разрезе дат, одинаковые.
    */
   public Boolean essentialEquals(MoneyTrn other) {
     if (!equals(other)) {
       throw new HmException(HmException.Code.IdentifiersDoNotMatch);
     }
-//    return trnDate.toLocalDate().equals(other.trnDate.toLocalDate())
-//        && balanceChanges.stream().anyMatch(change -> other.balanceChanges.contains(change))
-//        && other.balanceChanges.stream().anyMatch(change -> balanceChanges.contains(change))
-//        && status == other.status;
     return trnDate.equals(other.trnDate)
         && fromAccId.equals(other.fromAccId) && toAccId.equals(other.toAccId)
         && amount.compareTo(other.amount) == 0

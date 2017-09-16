@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Date;
 import java.util.Objects;
 import java.util.UUID;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "accounts")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class Account {
+public class Account implements Serializable {
   @Id
   protected UUID id;
 
@@ -113,12 +114,11 @@ public class Account {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     Account account = (Account) o;
-    return Objects.equals(id, account.id) &&
-        Objects.equals(balanceSheet, account.balanceSheet);
+    return Objects.equals(id, account.id);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, balanceSheet);
+    return Objects.hash(id);
   }
 }

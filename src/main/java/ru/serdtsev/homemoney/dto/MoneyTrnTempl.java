@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.dto;
 
+import ru.serdtsev.homemoney.moneyoper.BalanceChange;
 import ru.serdtsev.homemoney.moneyoper.Period;
 
 import java.math.BigDecimal;

@@ -8,11 +8,9 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.account.AccountsDao;
 import ru.serdtsev.homemoney.common.HmException;
-import ru.serdtsev.homemoney.dao.MoneyTrnTemplsDao;
-import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.common.HmResponse;
+import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,16 +22,14 @@ import java.util.stream.Collectors;
 public final class BalancesResource {
   private BalanceSheetRepository balanceSheetRepo;
   private BalanceRepository balanceRepo;
-  private AccountRepository accountRepo;
   private ReserveRepository reserveRepo;
   private MoneyTrnsDao moneyTrnsDao;
 
   @Autowired
   public BalancesResource(BalanceSheetRepository balanceSheetRepo, BalanceRepository balanceRepo,
-      AccountRepository accountRepo, ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
+      ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
     this.balanceSheetRepo = balanceSheetRepo;
     this.balanceRepo = balanceRepo;
-    this.accountRepo = accountRepo;
     this.moneyTrnsDao = moneyTrnsDao;
     this.reserveRepo = reserveRepo;
   }
@@ -84,7 +80,7 @@ public final class BalancesResource {
       @RequestBody Balance balance) {
     try {
       Balance currBalance = balanceRepo.findOne(balance.getId());
-      if (!AccountsDao.isTrnExists(currBalance.getId()) && !MoneyTrnTemplsDao.isTrnTemplExists(currBalance.getId())) {
+      if (!AccountsDao.isTrnExists(currBalance.getId()) && !MoneyTrnsDao.isTrnTemplExists(currBalance.getId())) {
         balanceRepo.delete(currBalance);
       }
       return HmResponse.getOk();

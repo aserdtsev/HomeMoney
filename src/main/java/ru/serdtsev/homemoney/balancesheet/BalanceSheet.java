@@ -5,6 +5,7 @@ import ru.serdtsev.homemoney.account.*;
 
 import javax.annotation.Nullable;
 import javax.persistence.*;
+import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "balance_sheets")
-public class BalanceSheet {
+public class BalanceSheet implements Serializable {
   @Id
   private UUID id;
 
@@ -140,4 +141,12 @@ public class BalanceSheet {
         .collect(Collectors.toList());
   }
 
+  @Override
+  public String toString() {
+    return "BalanceSheet{" +
+        "id=" + id +
+        ", created=" + created +
+        ", currencyCode='" + currencyCode + '\'' +
+        '}';
+  }
 }

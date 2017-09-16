@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper;
 
 public enum MoneyOperStatus {
+  // todo Порефакторить.
   /**
    * в ожидании
    */
@@ -14,11 +15,11 @@ public enum MoneyOperStatus {
    */
   done,
   /**
-   * выполнен (новый)
+   * выполнен, для повторяющихся операций
    */
   doneNew,
   /**
-   * отменен
+   * отменен, конечный статус
    */
   cancelled
 }
