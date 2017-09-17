@@ -18,7 +18,6 @@ import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 import ru.serdtsev.homemoney.moneyoper.BalanceChange;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -86,72 +85,6 @@ public class MoneyTrnsDao {
     this.accountRepo = accountRepo;
     this.balanceRepo = balanceRepo;
     this.labelsDao = labelsDao;
-  }
-
-  public List<MoneyTrn> getTemplMoneyTrns(UUID bsId, @Nullable String search, Date beforeDate) {
-    try (Connection conn = MainDao.getConnection()) {
-      return getTemplMoneyTrns(conn, bsId, search, beforeDate);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
-  @Nonnull
-  private List<MoneyTrn> getTemplMoneyTrns(Connection conn, UUID bsId,
-      @Nullable String search, Date beforeDate) throws SQLException {
-    assertNonNulls(conn, bsId, beforeDate);
-
-    BeanListHandler<MoneyTrn> handler = new BeanListHandler<>(MoneyTrn.class,
-        new BasicRowProcessor(new MoneyTrnProcessor()));
-    StringBuilder sql = new StringBuilder("" +
-        "select null as id, 'recurrence' as status, null as createdTs, te.next_date as trnDate, 0 as dateNum, " +
-        "    tr.from_acc_id as fromAccId, fa.name as fromAccName, " +
-        "    tr.to_acc_id as toAccId, ta.name as toAccName, " +
-        "    case when fa.type = 'income' then 'income' when ta.type = 'expense' then 'expense' else 'transfer' end as type, " +
-        "    null as parentId, te.amount, coalesce(coalesce(fb.currency_code, tb.currency_code), 'RUB') as currencyCode, " +
-        "    te.to_amount as toAmount, coalesce(coalesce(tb.currency_code, fb.currency_code), 'RUB') as toCurrencyCode, " +
-        "    tr.comment, tr.period, te.id as templId " +
-        "  from money_trn_templs te, money_trns tr, " +
-        "    accounts fa " +
-        "      left join balances fb on fb.id = fa.id, " +
-        "    accounts ta " +
-        "      left join balances tb on tb.id = ta.id " +
-        "  where te.bs_id = ? and te.status = 'active' " +
-        "    and tr.id = te.sample_id and te.next_date < ? " +
-        "    and fa.id = tr.from_acc_id and ta.id = tr.to_acc_id ");
-    List<Object> params = new ArrayList<>();
-    params.add(bsId);
-    params.add(beforeDate);
-    if (!Strings.isNullOrEmpty(search)) {
-      String condition = " and (te.comment ilike ? or fa.name ilike ? or ta.name ilike ? " +
-          " or exists (select null from labels2objs l2o, labels l where l2o.obj_id = te.id and l.id = l2o.label_id and l.name ilike ?)) ";
-      sql.append(condition);
-      long paramNum = condition.chars().filter(ch -> ch == '?').count();
-      IntStream.range(0, ((int) paramNum)).forEach(i -> params.add("%" + search + "%"));
-    }
-    sql.append(" order by trnDate desc ");
-    return new QueryRunner()
-        .query(conn, sql.toString(), handler, params.toArray())
-        .stream()
-        .peek(trn -> {
-          try {
-            trn.setId(UUID.randomUUID());
-            trn.setBalanceChanges(getBalanceChanges(conn, trn.getId()));
-            trn.setLabels(labelsDao.getLabelNames(conn, trn.getTemplId()));
-          } catch (SQLException e) {
-            throw new HmSqlException(e);
-          }
-        })
-        .collect(Collectors.toList());
-  }
-
-  public MoneyTrn getMoneyTrn(UUID bsId, UUID id) {
-    assertNonNulls(bsId, id);
-    try (Connection conn = MainDao.getConnection()) {
-      return getMoneyTrn(conn, bsId, id);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
   }
 
   MoneyTrn getMoneyTrn(Connection conn, UUID bsId, UUID id) throws SQLException {
