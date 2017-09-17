@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
@@ -46,6 +45,7 @@ public class MoneyTrnsResource {
   private static final String SEARCH_DATE_REGEX = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}";
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
+  private final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final AccountRepository accountRepo;
   private final MoneyOperRepository moneyOperRepo;
@@ -54,9 +54,10 @@ public class MoneyTrnsResource {
   private final CategoryRepository categoryRepo;
 
   @Autowired
-  public MoneyTrnsResource(BalanceSheetRepository balanceSheetRepo, AccountRepository accountRepo,
-      MoneyOperRepository moneyOperRepo, LabelRepository labelRepo,
+  public MoneyTrnsResource(MoneyOperService moneyOperService, BalanceSheetRepository balanceSheetRepo,
+      AccountRepository accountRepo, MoneyOperRepository moneyOperRepo, LabelRepository labelRepo,
       BalanceChangeRepository balanceChangeRepo, CategoryRepository categoryRepo) {
+    this.moneyOperService = moneyOperService;
     this.balanceSheetRepo = balanceSheetRepo;
     this.accountRepo = accountRepo;
     this.moneyOperRepo = moneyOperRepo;
@@ -83,8 +84,7 @@ public class MoneyTrnsResource {
         trns.addAll(pendingTrns);
 
         LocalDate beforeDate = LocalDate.now().plusDays(14L);
-        List<MoneyTrn> recurrenceTrns = getRecurrencesOpers(balanceSheet, search, Date.valueOf(beforeDate))
-            .stream()
+        List<MoneyTrn> recurrenceTrns = moneyOperService.getRecurrencesOpers(balanceSheet, search, Date.valueOf(beforeDate))
             .map(this::moneyOperToMoneyTrn)
             .collect(Collectors.toList());
         trns.addAll(recurrenceTrns);
@@ -118,43 +118,6 @@ public class MoneyTrnsResource {
     return moneyTrn;
   }
 
-  private List<MoneyOper> getRecurrencesOpers(BalanceSheet balanceSheet, String search, Date beforeDate) {
-    return moneyOperRepo.findByBalanceSheetAndIsTemplateAndNextDateBeforeOrderByNextDateDesc(balanceSheet, true, beforeDate)
-        .filter(oper -> {
-          if (StringUtils.isEmpty(search)) {
-            return true;
-          } else if (search.matches(SEARCH_DATE_REGEX)) {
-            // по дате в формате ISO
-            return oper.getNextDate().compareTo(Date.valueOf(search)) == 0;
-          } else if (search.matches(SEARCH_UUID_REGEX)) {
-            // по идентификатору операции
-            return oper.getId().equals(UUID.fromString(search));
-          } else if (search.matches(SEARCH_MONEY_REGEX)) {
-            // по сумме операции
-            return oper.getBalanceChanges()
-                .stream()
-                .anyMatch(change -> change.getValue().plus().compareTo(new BigDecimal(search)) == 0);
-          } else {
-            return oper.getBalanceChanges()
-                .stream()
-                .anyMatch(change -> change.getBalance().getName().toLowerCase().contains(search))
-                || oper.getComment().toLowerCase().contains(search)
-                || oper.getLabels().stream().anyMatch(label -> label.getName().toLowerCase().contains(search));
-          }
-        })
-        .map(templateOper -> {
-          MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, MoneyOperStatus.recurrence,
-              templateOper.getNextDate(), 0, templateOper.getLabels(), templateOper.getComment(), templateOper.getPeriod());
-          oper.addBalanceChanges(templateOper.getBalanceChanges());
-          oper.setFromAccId(templateOper.getFromAccId());
-          oper.setAmount(templateOper.getAmount());
-          oper.setToAccId(templateOper.getToAccId());
-          oper.setToAmount(templateOper.getToAmount());
-          oper.setRecurrenceId(templateOper.getRecurrenceId());
-          oper.setTemplateOper(templateOper);
-          return oper;
-        }).collect(Collectors.toList());
-  }
 
   private List<MoneyOper> getMoneyOpers(BalanceSheet balanceSheet, MoneyOperStatus status, @Nullable String search,
       Integer limit, Integer offset) {

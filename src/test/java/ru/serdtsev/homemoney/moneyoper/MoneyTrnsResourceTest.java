@@ -23,6 +23,7 @@ class MoneyTrnsResourceTest {
   private DataSource dataSource = mock(DataSource.class);
   private MoneyTrnsResource mtRes;
   private AccountRepository accountRepo = mock(AccountRepository.class);
+  private MoneyOperService moneyOperService = mock(MoneyOperService.class);
   private BalanceSheetRepository balanceSheetRepo = mock(BalanceSheetRepository.class);
   private BalanceRepository balanceRepo = mock(BalanceRepository.class);
   private MoneyOperRepository moneyOperRepo = mock(MoneyOperRepository.class);
@@ -35,7 +36,7 @@ class MoneyTrnsResourceTest {
   private Balance currentAccount;
 
   public MoneyTrnsResourceTest() {
-    this.mtRes = new MoneyTrnsResource(balanceSheetRepo, accountRepo, moneyOperRepo, labelRepo,
+    this.mtRes = new MoneyTrnsResource(moneyOperService, balanceSheetRepo, accountRepo, moneyOperRepo, labelRepo,
         balanceChangeRepo, categoryRepo);
     when(accountRepo.findOne(balanceSheet.getUncatCosts().getId())).thenReturn(balanceSheet.getUncatCosts());
     when(accountRepo.findOne(balanceSheet.getUncatIncome().getId())).thenReturn(balanceSheet.getUncatIncome());
