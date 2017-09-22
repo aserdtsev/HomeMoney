@@ -2,36 +2,65 @@ package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
+import ru.serdtsev.homemoney.moneyoper.Label;
+import ru.serdtsev.homemoney.moneyoper.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 
+import javax.transaction.Transactional;
 import java.sql.Date;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/{bsId}/money-trn-templs")
 public class MoneyTrnTemplsResource {
-  private MoneyTrnsDao moneyTrnsDao;
+  private final MoneyTrnsDao moneyTrnsDao;
+  private final MoneyOperService moneyOperService;
+  private final BalanceSheetRepository balanceSheetRepo;
 
   @Autowired
-  public MoneyTrnTemplsResource(MoneyTrnsDao moneyTrnsDao) {
+  public MoneyTrnTemplsResource(MoneyTrnsDao moneyTrnsDao, MoneyOperService moneyOperService,
+      BalanceSheetRepository balanceSheetRepo) {
     this.moneyTrnsDao = moneyTrnsDao;
+    this.moneyOperService = moneyOperService;
+    this.balanceSheetRepo = balanceSheetRepo;
   }
 
   @RequestMapping
+  @Transactional
   public HmResponse getList(
       @PathVariable UUID bsId,
       @RequestParam(required = false, defaultValue = "") String search) {
     try {
-      List<MoneyTrnTempl> list = moneyTrnsDao.getMoneyTrnTempls(bsId, search);
+      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      List<MoneyTrnTempl> list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
+          .map(this::moneyOperToMoneyTrnTempl)
+          .collect(Collectors.toList());
       return HmResponse.getOk(list);
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
     }
+  }
+
+  private MoneyTrnTempl moneyOperToMoneyTrnTempl(MoneyOper oper) {
+    return new MoneyTrnTempl(oper.getId(), oper.getTemplateOper().getId(), oper.getTemplateOper().getId(),
+        oper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getComment(),
+        getStringsByLabels(oper.getLabels()));
+  }
+
+  private List<String> getStringsByLabels(Collection<Label> labels) {
+    return labels.stream()
+        .map(Label::getName)
+        .collect(Collectors.toList());
   }
 
   @RequestMapping("/create")

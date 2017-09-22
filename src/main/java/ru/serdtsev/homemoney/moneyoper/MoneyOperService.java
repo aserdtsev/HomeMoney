@@ -7,6 +7,7 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.util.Comparator;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -25,10 +26,18 @@ public class MoneyOperService {
     this.moneyOperRepo = moneyOperRepo;
   }
 
-  public Stream<MoneyOper> getRecurrencesOpers(BalanceSheet balanceSheet, String search, Date beforeDate) {
-    return moneyOperRepo.findByBalanceSheetAndIsTemplateAndNextDateBeforeOrderByNextDateDesc(balanceSheet, true, beforeDate)
+  public Stream<MoneyOper> getRecurrenceOpers(BalanceSheet balanceSheet, String search, Date beforeDate) {
+    return moneyOperRepo.findByBalanceSheetAndIsTemplate(balanceSheet, true)
+        .filter(oper -> isTemplateMatchSearch(oper, search) && oper.getNextDate().before(beforeDate))
+        .map(recurrenceOper -> createMoneyOperByTemplate(balanceSheet, recurrenceOper))
+        .sorted(Comparator.comparing(MoneyOper::getPerformed).reversed());
+  }
+
+  public Stream<MoneyOper> getRecurrenceOpers(BalanceSheet balanceSheet, String search) {
+    return moneyOperRepo.findByBalanceSheetAndIsTemplate(balanceSheet, true)
         .filter(oper -> isTemplateMatchSearch(oper, search))
-        .map(recurrenceOper -> createMoneyOperByTemplate(balanceSheet, recurrenceOper));
+        .map(recurrenceOper -> createMoneyOperByTemplate(balanceSheet, recurrenceOper))
+        .sorted(Comparator.comparing(MoneyOper::getPerformed));
   }
 
   /**
@@ -69,4 +78,5 @@ public class MoneyOperService {
     oper.setTemplateOper(templateOper);
     return oper;
   }
+
 }

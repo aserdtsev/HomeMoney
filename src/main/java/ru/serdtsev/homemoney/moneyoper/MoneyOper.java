@@ -359,7 +359,7 @@ public class MoneyOper implements Serializable {
   }
 
   public void complete() {
-    assert getStatus() == pending || getStatus() == recurrence || getStatus() == cancelled;
+    assert getStatus() == pending || getStatus() == cancelled : getStatus();
     assert !getPerformed().toLocalDate().isAfter(LocalDate.now());
     changeBalances(false);
     setStatus(done);

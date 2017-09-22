@@ -16,6 +16,6 @@ public interface MoneyOperRepository extends PagingAndSortingRepository<MoneyOpe
   Page<MoneyOper> findByBalanceSheetAndStatusAndPerformed(BalanceSheet balanceSheet, MoneyOperStatus status, Date performed, Pageable pageable);
   Stream<MoneyOper> findByBalanceSheetAndStatusAndPerformed(BalanceSheet balanceSheet, MoneyOperStatus status, Date performed);
   Stream<MoneyOper> findByBalanceSheetAndTemplIdAndStatusOrderByPerformed(BalanceSheet balanceSheet, UUID templateId, MoneyOperStatus status);
-  Stream<MoneyOper> findByBalanceSheetAndIsTemplateAndNextDateBeforeOrderByNextDateDesc(BalanceSheet balanceSheet, boolean isTemplate, Date beforeDate);
+  Stream<MoneyOper> findByBalanceSheetAndIsTemplate(BalanceSheet balanceSheet, boolean isTemplate);
 
 }

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
@@ -17,7 +18,6 @@ import ru.serdtsev.homemoney.dto.PagedList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.transaction.Transactional;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
@@ -84,7 +84,7 @@ public class MoneyTrnsResource {
         trns.addAll(pendingTrns);
 
         LocalDate beforeDate = LocalDate.now().plusDays(14L);
-        List<MoneyTrn> recurrenceTrns = moneyOperService.getRecurrencesOpers(balanceSheet, search, Date.valueOf(beforeDate))
+        List<MoneyTrn> recurrenceTrns = moneyOperService.getRecurrenceOpers(balanceSheet, search, Date.valueOf(beforeDate))
             .map(this::moneyOperToMoneyTrn)
             .collect(Collectors.toList());
         trns.addAll(recurrenceTrns);
@@ -210,6 +210,7 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping("/create")
+  @Transactional
   public HmResponse createMoneyTrn(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
@@ -220,6 +221,7 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping("/update")
+  @Transactional
   public HmResponse updateMoneyTrn(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
@@ -230,12 +232,14 @@ public class MoneyTrnsResource {
         return getOk();
       }
 
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      MoneyOper oper = newMoneyOper(balanceSheet, moneyTrn);
       checkMoneyOperBelongsBalanceSheet(bsId, origOper);
 
+      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      MoneyOper oper = newMoneyOper(balanceSheet, moneyTrn);
+
       boolean essentialEquals = origOper.essentialEquals(oper);
-      if (!essentialEquals) {
+      MoneyOperStatus origPrevStatus = origOper.getStatus();
+      if (!essentialEquals && origOper.getStatus() == done) {
         origOper.cancel();
       }
 
@@ -251,6 +255,9 @@ public class MoneyTrnsResource {
         origOper.setToAccId(oper.getToAccId());
         origOper.setAmount(oper.getAmount());
         origOper.setToAmount(oper.getToAmount());
+      }
+
+      if (!essentialEquals && origPrevStatus == done || origOper.getStatus() == pending && moneyTrn.getStatus() == done) {
         origOper.complete();
       }
 
@@ -262,6 +269,7 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping("/delete")
+  @Transactional
   public HmResponse deleteMoneyTrn(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
@@ -283,6 +291,7 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping("/skip")
+  @Transactional
   public HmResponse skipMoneyTrn(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) throws SQLException {
@@ -373,7 +382,7 @@ public class MoneyTrnsResource {
       moneyOperRepo.save(templateOper);
     }
 
-    if (moneyTrn.getStatus() == done || moneyTrn.getStatus() == doneNew && !mainOper.getPerformed().toLocalDate().isAfter(LocalDate.now())) {
+    if ((moneyTrn.getStatus() == done || moneyTrn.getStatus() == doneNew) && !mainOper.getPerformed().toLocalDate().isAfter(LocalDate.now())) {
       moneyOpers.forEach(MoneyOper::complete);
     }
     moneyOpers.forEach(moneyOperRepo::save);
@@ -413,8 +422,8 @@ public class MoneyTrnsResource {
     MoneyOper reserveMoneyOper = null;
     if (!Objects.equals(fromAcc, toAcc)) {
       List<Label> labels = getLabelsByStrings(balanceSheet, moneyTrn.getLabels());
-      reserveMoneyOper = newMoneyOper(balanceSheet, UUID.randomUUID(), moneyTrn.getStatus(), moneyTrn.getTrnDate(),
-          nvl(moneyTrn.getDateNum(), 0), labels,moneyTrn.getComment(), moneyTrn.getPeriod(), fromAcc.getId(), toAcc.getId(),
+      reserveMoneyOper = newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyTrn.getTrnDate(),
+          nvl(moneyTrn.getDateNum(), 0), labels, moneyTrn.getComment(), moneyTrn.getPeriod(), fromAcc.getId(), toAcc.getId(),
           moneyTrn.getAmount(), moneyTrn.getAmount(), moneyTrn.getId(), null);
     }
     return Optional.ofNullable(reserveMoneyOper);
