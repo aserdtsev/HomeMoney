@@ -75,7 +75,7 @@ public class MoneyOperService {
     oper.setToAccId(templateOper.getToAccId());
     oper.setToAmount(templateOper.getToAmount());
     oper.setRecurrenceId(templateOper.getRecurrenceId());
-    oper.setTemplateOper(templateOper);
+    oper.setTemplateId(templateOper.getId());
     return oper;
   }
 

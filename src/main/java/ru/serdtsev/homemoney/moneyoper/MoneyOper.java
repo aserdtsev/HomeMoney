@@ -96,11 +96,10 @@ public class MoneyOper implements Serializable {
   private Date nextDate;
 
   /**
-   * Операция-шаблон, по которой была создана данная операция.
+   * Идентификатор операции-шаблона, по которой была создана данная операция.
    */
-  @OneToOne
-  @JoinColumn(name = "template_id")
-  private MoneyOper templateOper;
+  @Column(name = "template_id")
+  private UUID templateId;
 
   public MoneyOper() {
   }
@@ -321,12 +320,12 @@ public class MoneyOper implements Serializable {
     return nextDate;
   }
 
-  public MoneyOper getTemplateOper() {
-    return templateOper;
+  public UUID getTemplateId() {
+    return templateId;
   }
 
-  public void setTemplateOper(MoneyOper templateOper) {
-    this.templateOper = templateOper;
+  public void setTemplateId(UUID templateId) {
+    this.templateId = templateId;
   }
 
   public MoneyOperType getType() {

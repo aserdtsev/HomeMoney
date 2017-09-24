@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
@@ -26,13 +27,15 @@ public class MoneyTrnTemplsResource {
   private final MoneyTrnsDao moneyTrnsDao;
   private final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
+  private final AccountRepository accountRepo;
 
   @Autowired
   public MoneyTrnTemplsResource(MoneyTrnsDao moneyTrnsDao, MoneyOperService moneyOperService,
-      BalanceSheetRepository balanceSheetRepo) {
+      BalanceSheetRepository balanceSheetRepo, AccountRepository accountRepo) {
     this.moneyTrnsDao = moneyTrnsDao;
     this.moneyOperService = moneyOperService;
     this.balanceSheetRepo = balanceSheetRepo;
+    this.accountRepo = accountRepo;
   }
 
   @RequestMapping
@@ -52,9 +55,11 @@ public class MoneyTrnTemplsResource {
   }
 
   private MoneyTrnTempl moneyOperToMoneyTrnTempl(MoneyOper oper) {
-    return new MoneyTrnTempl(oper.getId(), oper.getTemplateOper().getId(), oper.getTemplateOper().getId(),
+    String fromAccName = accountRepo.findOne(oper.getFromAccId()).getName();
+    String toAccName = accountRepo.findOne(oper.getToAccId()).getName();
+    return new MoneyTrnTempl(oper.getId(), oper.getTemplateId(), oper.getTemplateId(),
         oper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getComment(),
-        getStringsByLabels(oper.getLabels()));
+        getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName, toAccName);
   }
 
   private List<String> getStringsByLabels(Collection<Label> labels) {
@@ -70,7 +75,8 @@ public class MoneyTrnTemplsResource {
     Date nextDate = MoneyTrnTempl.calcNextDate(moneyTrn.getTrnDate(), moneyTrn.getPeriod());
     MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(), nextDate,
         moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
-        moneyTrn.getComment(), moneyTrn.getLabels());
+        moneyTrn.getComment(), moneyTrn.getLabels(), moneyTrn.getCurrencyCode(), moneyTrn.getToCurrencyCode(),
+        moneyTrn.getFromAccName(), moneyTrn.getToAccName());
     moneyTrnsDao.createMoneyTrnTempl(bsId, templ);
     return HmResponse.getOk();
   }

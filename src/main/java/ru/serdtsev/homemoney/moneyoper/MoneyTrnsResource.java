@@ -104,7 +104,7 @@ public class MoneyTrnsResource {
   }
 
   private MoneyTrn moneyOperToMoneyTrn(MoneyOper moneyOper) {
-    MoneyOper templateOper = moneyOper.getTemplateOper();
+    MoneyOper templateOper = nonNull(moneyOper.getTemplateId()) ? moneyOperRepo.findOne(moneyOper.getTemplateId()) : null;
     UUID templateOperId = templateOper != null ? templateOper.getId() : null;
     MoneyTrn moneyTrn = new MoneyTrn(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(), moneyOper.getFromAccId(),
         moneyOper.getToAccId(), moneyOper.getAmount().abs(), moneyOper.getCurrencyCode(),
@@ -315,7 +315,7 @@ public class MoneyTrnsResource {
     oper.cancel();
 
     if (oper.getTemplate()) {
-      MoneyOper templateOper = oper.getTemplateOper();
+      MoneyOper templateOper = moneyOperRepo.findOne(oper.getTemplateId());
       oper.setTemplate(false);
       templateOper.setTemplate(true);
       templateOper.setNextDate(oper.getNextDate());
@@ -371,7 +371,7 @@ public class MoneyTrnsResource {
 
     newReserveMoneyOper(balanceSheet, moneyTrn).ifPresent(moneyOpers::add);
 
-    MoneyOper templateOper = mainOper.getTemplateOper();
+    MoneyOper templateOper = nonNull(mainOper.getTemplateId()) ? moneyOperRepo.findOne(mainOper.getTemplateId()) : null;
     if (nonNull(templateOper)) {
       mainOper.setNextDate(templateOper.getNextDate());
       mainOper.skipNextDate();
@@ -503,7 +503,7 @@ public class MoneyTrnsResource {
       BigDecimal toAmount, UUID parentId, MoneyOper templateOper) {
     MoneyOper oper = new MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period);
     if (nonNull(templateOper)) {
-      oper.setTemplateOper(templateOper);
+      oper.setTemplateId(templateOper.getId());
       oper.setRecurrenceId(templateOper.getRecurrenceId());
     }
 

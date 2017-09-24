@@ -35,7 +35,8 @@ public class MoneyTrnTempl {
   }
 
   public MoneyTrnTempl(UUID id, UUID sampleId, UUID lastMoneyTrnId, Date nextDate, Period period,
-      UUID fromAccId, UUID toAccId, BigDecimal amount, String comment, List<String> labels) {
+      UUID fromAccId, UUID toAccId, BigDecimal amount, String comment, List<String> labels,
+      String currencyCode, String toCurrencyCode, String fromAccName, String toAccName) {
     this.id = id;
     this.sampleId = sampleId;
     this.lastMoneyTrnId = lastMoneyTrnId;
@@ -46,6 +47,10 @@ public class MoneyTrnTempl {
     this.amount = amount;
     this.comment = comment;
     this.labels = labels;
+    this.currencyCode = currencyCode;
+    this.toCurrencyCode = toCurrencyCode;
+    this.fromAccName = fromAccName;
+    this.toAccName = toAccName;
   }
 
   public UUID getId() {

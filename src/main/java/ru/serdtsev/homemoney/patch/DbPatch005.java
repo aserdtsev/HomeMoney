@@ -57,7 +57,7 @@ public class DbPatch005 {
               while(iterator.hasNext()) {
                 MoneyOper oper = iterator.next();
                 oper.setRecurrenceId(recurrenceId);
-                oper.setTemplateOper(prevOper);
+                oper.setTemplateId(prevOper.getId());
                 moneyOperRepo.save(oper);
                 prevOper = oper;
               }
