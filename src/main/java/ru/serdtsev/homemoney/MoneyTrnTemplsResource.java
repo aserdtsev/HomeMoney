@@ -45,7 +45,7 @@ public class MoneyTrnTemplsResource {
       @RequestParam(required = false, defaultValue = "") String search) {
     try {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      List<MoneyTrnTempl> list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
+      List<MoneyTrnTempl> list = moneyOperService.getLastRecurrenceOpers(balanceSheet, search)
           .map(this::moneyOperToMoneyTrnTempl)
           .collect(Collectors.toList());
       return HmResponse.getOk(list);
@@ -57,7 +57,7 @@ public class MoneyTrnTemplsResource {
   private MoneyTrnTempl moneyOperToMoneyTrnTempl(MoneyOper oper) {
     String fromAccName = accountRepo.findOne(oper.getFromAccId()).getName();
     String toAccName = accountRepo.findOne(oper.getToAccId()).getName();
-    return new MoneyTrnTempl(oper.getId(), oper.getTemplateId(), oper.getTemplateId(),
+    return new MoneyTrnTempl(oper.getRecurrenceId(), oper.getTemplateId(), oper.getTemplateId(),
         oper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getComment(),
         getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName, toAccName);
   }
@@ -91,11 +91,13 @@ public class MoneyTrnTemplsResource {
   }
 
   @RequestMapping("/delete")
+  @Transactional
   public HmResponse delete(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
     try {
-      moneyTrnsDao.deleteMoneyTrnTempl(bsId, templ.getId());
+      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      moneyOperService.deleteRecurrenceOper(balanceSheet, templ.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

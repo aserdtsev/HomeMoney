@@ -84,7 +84,7 @@ public class MoneyTrnsResource {
         trns.addAll(pendingTrns);
 
         LocalDate beforeDate = LocalDate.now().plusDays(14L);
-        List<MoneyTrn> recurrenceTrns = moneyOperService.getRecurrenceOpers(balanceSheet, search, Date.valueOf(beforeDate))
+        List<MoneyTrn> recurrenceTrns = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, Date.valueOf(beforeDate))
             .map(this::moneyOperToMoneyTrn)
             .collect(Collectors.toList());
         trns.addAll(recurrenceTrns);

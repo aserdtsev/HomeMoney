@@ -8,6 +8,7 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -26,18 +27,23 @@ public class MoneyOperService {
     this.moneyOperRepo = moneyOperRepo;
   }
 
-  public Stream<MoneyOper> getRecurrenceOpers(BalanceSheet balanceSheet, String search, Date beforeDate) {
+  /**
+   * Возвращает следующие повторяющиеся платежи.
+   */
+  Stream<MoneyOper> getNextRecurrenceOpers(BalanceSheet balanceSheet, String search, Date beforeDate) {
     return moneyOperRepo.findByBalanceSheetAndIsTemplate(balanceSheet, true)
         .filter(oper -> isTemplateMatchSearch(oper, search) && oper.getNextDate().before(beforeDate))
         .map(recurrenceOper -> createMoneyOperByTemplate(balanceSheet, recurrenceOper))
         .sorted(Comparator.comparing(MoneyOper::getPerformed).reversed());
   }
 
-  public Stream<MoneyOper> getRecurrenceOpers(BalanceSheet balanceSheet, String search) {
+  /**
+   * Возвращает последние повторяющиеся платежи.
+   */
+  public Stream<MoneyOper> getLastRecurrenceOpers(BalanceSheet balanceSheet, String search) {
     return moneyOperRepo.findByBalanceSheetAndIsTemplate(balanceSheet, true)
         .filter(oper -> isTemplateMatchSearch(oper, search))
-        .map(recurrenceOper -> createMoneyOperByTemplate(balanceSheet, recurrenceOper))
-        .sorted(Comparator.comparing(MoneyOper::getPerformed));
+        .sorted(Comparator.comparing(MoneyOper::getNextDate));
   }
 
   /**
@@ -77,6 +83,15 @@ public class MoneyOperService {
     oper.setRecurrenceId(templateOper.getRecurrenceId());
     oper.setTemplateId(templateOper.getId());
     return oper;
+  }
+
+  public void deleteRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
+    Optional.ofNullable(moneyOperRepo.findByBalanceSheetAndRecurrenceIdAndIsTemplate(balanceSheet, recurrenceId, true))
+        .ifPresent(oper -> {
+          oper.setTemplate(false);
+          oper.setNextDate(null);
+          moneyOperRepo.save(oper);
+        });
   }
 
 }

@@ -452,19 +452,6 @@ public class MoneyTrnsDao {
     }
   }
 
-  public void deleteMoneyTrnTempl(UUID bsId, UUID id) {
-    try (Connection conn = MainDao.getConnection()) {
-      String sql = "update money_trn_templs set status = ? where bs_id = ? and id = ?";
-      int rows = new QueryRunner().update(conn, sql, MoneyTrnTempl.Status.deleted.name(), bsId, id);
-      if (rows == 0) {
-        throw new IllegalArgumentException(String.format("Удаляемый шаблон %s не найден.", id));
-      }
-      DbUtils.commitAndClose(conn);
-    } catch (SQLException e) {
-      throw new HmSqlException(e);
-    }
-  }
-
   public static Boolean isTrnTemplExists(UUID id) {
     try (Connection conn = MainDao.getConnection()) {
       return isTrnTemplExists(conn, id);
