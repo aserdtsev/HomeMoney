@@ -4,9 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
-import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.moneyoper.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
 import ru.serdtsev.homemoney.moneyoper.Period;
 import ru.serdtsev.homemoney.utils.Utils;
@@ -17,6 +16,7 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.UUID;
 
@@ -71,23 +71,27 @@ public class Balance extends Account {
     }
   }
 
-  public void merge(Balance balance, ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
+  public void merge(Balance balance, ReserveRepository reserveRepo, MoneyOperService moneyOperService) {
     super.merge(balance);
     setCreditLimit(balance.getCreditLimit());
     setMinValue(balance.getMinValue());
     setReserve(balance.getReserveId() != null ? reserveRepo.findOne(balance.getReserveId()) : null);
     if (balance.getValue().compareTo(getValue()) != 0) {
-      BalanceSheet bs = getBalanceSheet();
-      boolean more = balance.getValue().compareTo(getValue()) == 1;
-      UUID fromAccId = more ? bs.getUncatIncome().getId() : balance.getId();
-      UUID toAccId = more ? balance.getId() : bs.getUncatCosts().getId();
+      BalanceSheet balanceSheet = getBalanceSheet();
+      boolean more = balance.getValue().compareTo(getValue()) > 0;
+      UUID fromAccId = more ? balanceSheet.getUncatIncome().getId() : balance.getId();
+      UUID toAccId = more ? balance.getId() : balanceSheet.getUncatCosts().getId();
       BigDecimal amount = balance.getValue().subtract(getValue()).abs();
-      MoneyTrn moneyTrn = new MoneyTrn(UUID.randomUUID(), MoneyOperStatus.done, java.sql.Date.valueOf(LocalDate.now()),
-          fromAccId, toAccId, amount, balance.getCurrencyCode(), amount, bs.getCurrencyCode(), Period.single,
-          "корректировка остатка");
-      moneyTrnsDao.createMoneyTrn(bs.getId(), moneyTrn);
-      // todo После полного перехода на JPA обновлять баланс здесь будет не нужно - он будет обновлен при проводке операции.
-      balance.setValue(balance.getValue());
+
+      if (balance.getType() == AccountType.reserve) {
+        balance.setValue(balance.getValue());
+      } else {
+        MoneyOper moneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, java.sql.Date.valueOf(LocalDate.now()),
+            0, new ArrayList<>(), "корректировка остатка", Period.single, fromAccId, toAccId, amount, amount,
+            null, null);
+        moneyOper.complete();
+        moneyOperService.save(moneyOper);
+      }
     }
   }
 

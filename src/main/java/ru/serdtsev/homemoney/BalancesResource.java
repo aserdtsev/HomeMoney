@@ -11,7 +11,9 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 
+import javax.transaction.Transactional;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -19,23 +21,23 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/{bsId}/balances")
-public final class BalancesResource {
-  private BalanceSheetRepository balanceSheetRepo;
-  private BalanceRepository balanceRepo;
-  private ReserveRepository reserveRepo;
-  private MoneyTrnsDao moneyTrnsDao;
+public class BalancesResource {
+  private final BalanceSheetRepository balanceSheetRepo;
+  private final BalanceRepository balanceRepo;
+  private final ReserveRepository reserveRepo;
+  private final MoneyOperService moneyOperService;
 
   @Autowired
   public BalancesResource(BalanceSheetRepository balanceSheetRepo, BalanceRepository balanceRepo,
-      ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
+      ReserveRepository reserveRepo, MoneyOperService moneyOperService) {
     this.balanceSheetRepo = balanceSheetRepo;
     this.balanceRepo = balanceRepo;
-    this.moneyTrnsDao = moneyTrnsDao;
     this.reserveRepo = reserveRepo;
+    this.moneyOperService = moneyOperService;
   }
 
   @RequestMapping
-  public final HmResponse getBalances(@PathVariable UUID bsId) {
+  public HmResponse getBalances(@PathVariable UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     List<Balance> balances = ((List<Balance>) balanceRepo.findByBalanceSheet(balanceSheet)).stream()
         .filter(balance -> balance.getType() != AccountType.reserve)
@@ -45,7 +47,8 @@ public final class BalancesResource {
   }
 
   @RequestMapping("/create")
-  public final HmResponse createBalance(
+  @Transactional
+  public HmResponse createBalance(
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
@@ -60,13 +63,14 @@ public final class BalancesResource {
   }
 
   @RequestMapping("/update")
-  public final HmResponse updateBalance(
+  @Transactional
+  public HmResponse updateBalance(
       @PathVariable UUID bsId,
       // todo Заменить BalanceDto на Balance.
       @RequestBody Balance balance) {
     try {
       Balance currBalance = balanceRepo.findOne(balance.getId());
-      currBalance.merge(balance, reserveRepo, moneyTrnsDao);
+      currBalance.merge(balance, reserveRepo, moneyOperService);
       balanceRepo.save(currBalance);
       return HmResponse.getOk();
     } catch (HmException e) {
@@ -75,7 +79,8 @@ public final class BalancesResource {
   }
 
   @RequestMapping("/delete")
-  public final HmResponse deleteBalance(
+  @Transactional
+  public HmResponse deleteBalance(
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
@@ -90,7 +95,8 @@ public final class BalancesResource {
   }
 
   @RequestMapping("/up")
-  public final HmResponse upBalance(
+  @Transactional
+  public HmResponse upBalance(
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     // todo работает неправильно, исправить

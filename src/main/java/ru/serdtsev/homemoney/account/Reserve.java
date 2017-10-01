@@ -1,7 +1,7 @@
 package ru.serdtsev.homemoney.account;
 
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 import ru.serdtsev.homemoney.utils.Utils;
 
 import javax.persistence.DiscriminatorValue;
@@ -31,8 +31,8 @@ public class Reserve extends Balance {
     target = Utils.nvl(target, BigDecimal.ZERO);
   }
 
-  public void merge(Reserve reserve, ReserveRepository reserveRepo, MoneyTrnsDao moneyTrnsDao) {
-    super.merge(reserve, reserveRepo, moneyTrnsDao);
+  public void merge(Reserve reserve, ReserveRepository reserveRepo, MoneyOperService moneyOperService) {
+    super.merge(reserve, reserveRepo, moneyOperService);
     setTarget(reserve.getTarget());
   }
 

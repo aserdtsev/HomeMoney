@@ -14,7 +14,9 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
 import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 
+import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -23,18 +25,20 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/{bsId}/reserves")
-public final class ReservesResource {
-  private ReserveRepository reserveRepo;
-  private BalanceSheetRepository balanceSheetRepo;
+public class ReservesResource {
+  private final ReserveRepository reserveRepo;
+  private final BalanceSheetRepository balanceSheetRepo;
+  private final MoneyOperService moneyOperService;
 
   @Autowired
-  public ReservesResource(ReserveRepository reserveRepo, BalanceSheetRepository balanceSheetRepo) {
+  public ReservesResource(ReserveRepository reserveRepo, BalanceSheetRepository balanceSheetRepo, MoneyOperService moneyOperService) {
     this.reserveRepo = reserveRepo;
     this.balanceSheetRepo = balanceSheetRepo;
+    this.moneyOperService = moneyOperService;
   }
 
   @RequestMapping
-  public final HmResponse getReserveList(@PathVariable UUID bsId) {
+  public HmResponse getReserveList(@PathVariable UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     List<Reserve> reserves = ((List<Reserve>) reserveRepo.findByBalanceSheet(balanceSheet)).stream()
         .sorted(Comparator.comparing(Reserve::getCreated))
@@ -43,7 +47,8 @@ public final class ReservesResource {
   }
 
   @RequestMapping("/create")
-  public final HmResponse createReserve(
+  @Transactional
+  public HmResponse createReserve(
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
@@ -60,13 +65,14 @@ public final class ReservesResource {
   }
 
   @RequestMapping("/update")
-  public final HmResponse updateReserve(
+  @Transactional
+  public HmResponse updateReserve(
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
       Reserve currReserve = reserveRepo.findOne(reserve.getId());
-      currReserve.merge(reserve);
-      reserveRepo.save(reserve);
+      currReserve.merge(reserve, reserveRepo, moneyOperService);
+      reserveRepo.save(currReserve);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -74,7 +80,8 @@ public final class ReservesResource {
   }
 
   @RequestMapping("/delete")
-  public final HmResponse deleteReserve(
+  @Transactional
+  public HmResponse deleteReserve(
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {

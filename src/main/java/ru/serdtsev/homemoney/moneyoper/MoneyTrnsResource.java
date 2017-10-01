@@ -45,7 +45,7 @@ public class MoneyTrnsResource {
   private static final String SEARCH_DATE_REGEX = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}";
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
-  private final MoneyOperService moneyOperService;
+  final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final AccountRepository accountRepo;
   private final MoneyOperRepository moneyOperRepo;
@@ -422,7 +422,7 @@ public class MoneyTrnsResource {
     MoneyOper reserveMoneyOper = null;
     if (!Objects.equals(fromAcc, toAcc)) {
       List<Label> labels = getLabelsByStrings(balanceSheet, moneyTrn.getLabels());
-      reserveMoneyOper = newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyTrn.getTrnDate(),
+      reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyTrn.getTrnDate(),
           nvl(moneyTrn.getDateNum(), 0), labels, moneyTrn.getComment(), moneyTrn.getPeriod(), fromAcc.getId(), toAcc.getId(),
           moneyTrn.getAmount(), moneyTrn.getAmount(), moneyTrn.getId(), null);
     }
@@ -439,7 +439,7 @@ public class MoneyTrnsResource {
     }
     assert nonNull(amount);
     MoneyOper templateOper = nonNull(moneyTrn.getTemplId()) ? moneyOperRepo.findOne(moneyTrn.getTemplId()) : null;
-    return newMoneyOper(balanceSheet, moneyTrn.getId(), pending, moneyTrn.getTrnDate(), nvl(moneyTrn.getDateNum(), 0),
+    return moneyOperService.newMoneyOper(balanceSheet, moneyTrn.getId(), pending, moneyTrn.getTrnDate(), nvl(moneyTrn.getDateNum(), 0),
         labels, moneyTrn.getComment(), moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(),
         amount, nvl(moneyTrn.getToAmount(), amount), null, templateOper);
   }
@@ -498,38 +498,4 @@ public class MoneyTrnsResource {
         .collect(Collectors.toList());
   }
 
-  MoneyOper newMoneyOper(BalanceSheet balanceSheet, UUID moneyOperId, MoneyOperStatus status, Date performed,
-      Integer dateNum, List<Label> labels, String comment, Period period, UUID fromAccId, UUID toAccId, BigDecimal amount,
-      BigDecimal toAmount, UUID parentId, MoneyOper templateOper) {
-    MoneyOper oper = new MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period);
-    if (nonNull(templateOper)) {
-      oper.setTemplateId(templateOper.getId());
-      oper.setRecurrenceId(templateOper.getRecurrenceId());
-    }
-
-    oper.setFromAccId(fromAccId);
-    Account fromAcc = accountRepo.findOne(fromAccId);
-    assert fromAcc != null;
-    if (fromAcc instanceof Balance) {
-      oper.addBalanceChange((Balance) fromAcc, amount.negate(), performed);
-    }
-
-    oper.setToAccId(toAccId);
-    Account toAcc = accountRepo.findOne(toAccId);
-    assert toAcc != null;
-    if (toAcc instanceof  Balance) {
-      oper.addBalanceChange((Balance) toAcc, toAmount, performed);
-    }
-
-    oper.setAmount(amount);
-    oper.setToAmount(toAmount);
-
-    if (parentId != null) {
-      MoneyOper parentOper =  moneyOperRepo.findOne(parentId);
-      assert parentOper != null;
-      oper.setParentOper(parentOper);
-    }
-
-    return oper;
-  }
 }

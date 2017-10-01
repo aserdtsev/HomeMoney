@@ -3,14 +3,20 @@ package ru.serdtsev.homemoney.moneyoper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import ru.serdtsev.homemoney.account.Account;
+import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import static java.util.Objects.nonNull;
 
 /**
  * Предоставляет методы работы с денежными операциями
@@ -21,10 +27,12 @@ public class MoneyOperService {
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
   private final MoneyOperRepository moneyOperRepo;
+  private final AccountRepository accountRepo;
 
   @Autowired
-  public MoneyOperService(MoneyOperRepository moneyOperRepo) {
+  public MoneyOperService(MoneyOperRepository moneyOperRepo, AccountRepository accountRepo) {
     this.moneyOperRepo = moneyOperRepo;
+    this.accountRepo = accountRepo;
   }
 
   /**
@@ -94,4 +102,45 @@ public class MoneyOperService {
         });
   }
 
+  /**
+   * Создает экземпляр MoneyOper.
+   */
+  public MoneyOper newMoneyOper(BalanceSheet balanceSheet, UUID moneyOperId, MoneyOperStatus status, Date performed,
+      Integer dateNum, List<Label> labels, String comment, Period period, UUID fromAccId, UUID toAccId, BigDecimal amount,
+      BigDecimal toAmount, UUID parentId, MoneyOper templateOper) {
+    MoneyOper oper = new MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period);
+    if (nonNull(templateOper)) {
+      oper.setTemplateId(templateOper.getId());
+      oper.setRecurrenceId(templateOper.getRecurrenceId());
+    }
+
+    oper.setFromAccId(fromAccId);
+    Account fromAcc = accountRepo.findOne(fromAccId);
+    assert fromAcc != null;
+    if (fromAcc instanceof Balance) {
+      oper.addBalanceChange((Balance) fromAcc, amount.negate(), performed);
+    }
+
+    oper.setToAccId(toAccId);
+    Account toAcc = accountRepo.findOne(toAccId);
+    assert toAcc != null;
+    if (toAcc instanceof  Balance) {
+      oper.addBalanceChange((Balance) toAcc, toAmount, performed);
+    }
+
+    oper.setAmount(amount);
+    oper.setToAmount(toAmount);
+
+    if (parentId != null) {
+      MoneyOper parentOper =  moneyOperRepo.findOne(parentId);
+      assert parentOper != null;
+      oper.setParentOper(parentOper);
+    }
+
+    return oper;
+  }
+
+  public void save(MoneyOper moneyOper) {
+    moneyOperRepo.save(moneyOper);
+  }
 }

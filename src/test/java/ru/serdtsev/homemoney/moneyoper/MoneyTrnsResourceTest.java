@@ -61,7 +61,7 @@ class MoneyTrnsResourceTest {
     labels.add(new Label(UUID.randomUUID(), balanceSheet, "label", null, false));
     java.sql.Date performed = java.sql.Date.valueOf(LocalDate.now());
     String comment = "my comment";
-    MoneyOper oper = mtRes.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, labels,
+    MoneyOper oper = mtRes.moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, labels,
         comment, Period.month, cash.getId(), balanceSheet.getUncatCosts().getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
 
     assertEquals(balanceSheet, oper.getBalanceSheet());
@@ -89,7 +89,7 @@ class MoneyTrnsResourceTest {
   @Test
   void newMoneyOper_simpleIncome() {
     java.sql.Date performed = java.sql.Date.valueOf(LocalDate.now());
-    MoneyOper oper = mtRes.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
+    MoneyOper oper = mtRes.moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
         "", Period.month, balanceSheet.getUncatIncome().getId(), currentAccount.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
 
     List<BalanceChange> balanceChanges = oper.getBalanceChanges();
@@ -103,7 +103,7 @@ class MoneyTrnsResourceTest {
   @Test
   void newMoneyOper_simpleTransfer() {
     java.sql.Date performed = java.sql.Date.valueOf(LocalDate.now());
-    MoneyOper oper = mtRes.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
+    MoneyOper oper = mtRes.moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
         "", Period.month, currentAccount.getId(), cash.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
 
     List<BalanceChange> balanceChanges = oper.getBalanceChanges();
