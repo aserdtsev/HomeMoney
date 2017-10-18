@@ -29,9 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static java.lang.String.format;
 import static java.util.Objects.*;
-import static org.springframework.util.Assert.isTrue;
 import static ru.serdtsev.homemoney.common.HmResponse.getFail;
 import static ru.serdtsev.homemoney.common.HmResponse.getOk;
 import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.*;
@@ -202,7 +200,7 @@ public class MoneyTrnsResource {
       @RequestParam UUID id) {
     try {
       MoneyOper oper = moneyOperRepo.findOne(id);
-      checkMoneyOperBelongsBalanceSheet(bsId, oper);
+      moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
       return getOk(moneyOperToMoneyTrn(oper));
     } catch (HmException e) {
       return getFail(e.getCode());
@@ -232,7 +230,7 @@ public class MoneyTrnsResource {
         return getOk();
       }
 
-      checkMoneyOperBelongsBalanceSheet(bsId, origOper);
+      moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, bsId);
 
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
       MoneyOper oper = newMoneyOper(balanceSheet, moneyTrn);
@@ -276,18 +274,13 @@ public class MoneyTrnsResource {
     try {
       MoneyOper oper = moneyOperRepo.findOne(moneyTrn.getId());
       requireNonNull(oper);
-      checkMoneyOperBelongsBalanceSheet(bsId, oper);
+      moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
       oper.cancel();
       moneyOperRepo.save(oper);
       return getOk();
     } catch (HmException e) {
       return getFail(e.getCode());
     }
-  }
-
-  private void checkMoneyOperBelongsBalanceSheet(@PathVariable UUID bsId, MoneyOper oper) {
-    isTrue(Objects.equals(oper.getBalanceSheet().getId(), bsId),
-        format("MoneyOper id='%s' belongs the other balance sheet.", oper.getId()));
   }
 
   @RequestMapping("/skip")
@@ -311,7 +304,7 @@ public class MoneyTrnsResource {
   private void skipPendingMoneyTrn(UUID bsId, MoneyTrn moneyTrn) {
     MoneyOper oper = moneyOperRepo.findOne(moneyTrn.getId());
     requireNonNull(oper);
-    checkMoneyOperBelongsBalanceSheet(bsId, oper);
+    moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
     oper.cancel();
 
     if (oper.getTemplate()) {
@@ -327,7 +320,7 @@ public class MoneyTrnsResource {
 
   private void skipRecurrenceMoneyTrn(UUID bsId, MoneyTrn moneyTrn) {
     MoneyOper templateOper = moneyOperRepo.findOne(moneyTrn.getTemplId());
-    checkMoneyOperBelongsBalanceSheet(bsId, templateOper);
+    moneyOperService.checkMoneyOperBelongsBalanceSheet(templateOper, bsId);
     requireNonNull(templateOper);
     templateOper.skipNextDate();
     moneyOperRepo.save(templateOper);

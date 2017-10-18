@@ -7,16 +7,16 @@ import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
 
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
-import static java.util.Objects.nonNull;
+import static java.lang.String.format;
+import static java.util.Objects.*;
+import static org.springframework.util.Assert.isTrue;
 
 /**
  * Предоставляет методы работы с денежными операциями
@@ -33,6 +33,10 @@ public class MoneyOperService {
   public MoneyOperService(MoneyOperRepository moneyOperRepo, AccountRepository accountRepo) {
     this.moneyOperRepo = moneyOperRepo;
     this.accountRepo = accountRepo;
+  }
+
+  public Optional<MoneyOper> findOne(UUID id) {
+    return Optional.ofNullable(moneyOperRepo.findOne(id));
   }
 
   /**
@@ -93,13 +97,37 @@ public class MoneyOperService {
     return oper;
   }
 
+  public void createRecurrenceOper(BalanceSheet balanceSheet, UUID operId) {
+    MoneyOper template = moneyOperRepo.findOne(operId);
+    requireNonNull(template);
+    checkMoneyOperBelongsBalanceSheet(template, balanceSheet.getId());
+    if (isNull(template.getRecurrenceId())) {
+      template.setRecurrenceId(UUID.randomUUID());
+    }
+    template.setTemplate(true);
+    template.setNextDate(template.getPerformed());
+    template.skipNextDate();
+    moneyOperRepo.save(template);
+  }
+
   public void deleteRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
-    Optional.ofNullable(moneyOperRepo.findByBalanceSheetAndRecurrenceIdAndIsTemplate(balanceSheet, recurrenceId, true))
-        .ifPresent(oper -> {
-          oper.setTemplate(false);
-          oper.setNextDate(null);
-          moneyOperRepo.save(oper);
-        });
+    MoneyOper template = getTemplate(balanceSheet, recurrenceId);
+    template.setTemplate(false);
+    template.setNextDate(null);
+    moneyOperRepo.save(template);
+  }
+
+  private MoneyOper getTemplate(BalanceSheet balanceSheet, UUID recurrenceId) {
+    MoneyOper template = moneyOperRepo.findByBalanceSheetAndRecurrenceIdAndIsTemplate(balanceSheet, recurrenceId, true);
+    requireNonNull(template);
+    checkMoneyOperBelongsBalanceSheet(template, balanceSheet.getId());
+    return template;
+  }
+
+  public void skipRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
+    MoneyOper template = getTemplate(balanceSheet, recurrenceId);
+    template.skipNextDate();
+    moneyOperRepo.save(template);
   }
 
   /**
@@ -140,7 +168,19 @@ public class MoneyOperService {
     return oper;
   }
 
+  public void updateRecurrenceOper(BalanceSheet balanceSheet, MoneyTrnTempl templ) {
+    MoneyOper templateOper = getTemplate(balanceSheet, templ.getId());
+    requireNonNull(templateOper);
+    createMoneyOperByTemplate(balanceSheet, templateOper);
+    moneyOperRepo.save(templateOper);
+  }
+
   public void save(MoneyOper moneyOper) {
     moneyOperRepo.save(moneyOper);
+  }
+
+  public void checkMoneyOperBelongsBalanceSheet(MoneyOper oper, UUID bsId) {
+    isTrue(Objects.equals(oper.getBalanceSheet().getId(), bsId),
+        format("MoneyOper id='%s' belongs the other balance sheet.", oper.getId()));
   }
 }

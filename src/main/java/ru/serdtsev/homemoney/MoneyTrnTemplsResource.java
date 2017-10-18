@@ -15,7 +15,6 @@ import ru.serdtsev.homemoney.moneyoper.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 
 import javax.transaction.Transactional;
-import java.sql.Date;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -69,15 +68,12 @@ public class MoneyTrnTemplsResource {
   }
 
   @RequestMapping("/create")
+  @Transactional
   public HmResponse create(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrn moneyTrn) {
-    Date nextDate = MoneyTrnTempl.calcNextDate(moneyTrn.getTrnDate(), moneyTrn.getPeriod());
-    MoneyTrnTempl templ = new MoneyTrnTempl(UUID.randomUUID(), moneyTrn.getId(), moneyTrn.getId(), nextDate,
-        moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(), moneyTrn.getAmount(),
-        moneyTrn.getComment(), moneyTrn.getLabels(), moneyTrn.getCurrencyCode(), moneyTrn.getToCurrencyCode(),
-        moneyTrn.getFromAccName(), moneyTrn.getToAccName());
-    moneyTrnsDao.createMoneyTrnTempl(bsId, templ);
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    moneyOperService.createRecurrenceOper(balanceSheet, moneyTrn.getId());
     return HmResponse.getOk();
   }
 
@@ -85,8 +81,8 @@ public class MoneyTrnTemplsResource {
   public HmResponse skip(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
-    templ.setNextDate(MoneyTrnTempl.calcNextDate(templ.getNextDate(), templ.getPeriod()));
-    moneyTrnsDao.updateMoneyTrnTempl(bsId, templ);
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    moneyOperService.skipRecurrenceOper(balanceSheet, templ.getId());
     return HmResponse.getOk();
   }
 

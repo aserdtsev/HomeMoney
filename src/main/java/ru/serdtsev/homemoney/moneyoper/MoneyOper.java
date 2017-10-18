@@ -57,10 +57,6 @@ public class MoneyOper implements Serializable {
   @Column(name = "created_ts")
   private Timestamp created;
 
-//  @ManyToOne
-//  @JoinColumn(name = "templ_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT))
-//  private MoneyOper recurrenceOper;
-
   @OneToOne
   @JoinColumn(name = "parent_id")
   private MoneyOper parentOper;
