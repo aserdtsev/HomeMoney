@@ -8,6 +8,7 @@ import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.utils.Utils;
 
+import javax.annotation.Nullable;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -211,17 +212,17 @@ public class MoneyOper implements Serializable {
     return toAccId;
   }
 
-  public void setAmount(BigDecimal amount) {
+  void setAmount(BigDecimal amount) {
     this.amount = amount;
   }
 
   public BigDecimal getAmount() {
-    // todo return assert
-//    assert !balanceChanges.isEmpty() : getId();
-    if (balanceChanges.isEmpty()) {
-      return amount;
-    }
-    return balanceChanges.get(0).getValue();
+    return balanceChanges.stream()
+        .map(BalanceChange::getValue)
+        .filter(value -> value.signum() < 0)
+        .map(BigDecimal::abs)
+        .findFirst()
+        .orElse(amount);
   }
 
   public String getCurrencyCode() {
@@ -240,12 +241,17 @@ public class MoneyOper implements Serializable {
     return getBalanceSheet().getCurrencyCode();
   }
 
-  public void setToAmount(BigDecimal toAmount) {
+  void setToAmount(BigDecimal toAmount) {
     this.toAmount = toAmount;
   }
 
   public BigDecimal getToAmount() {
-    return this.toAmount;
+    return balanceChanges.stream()
+        .map(BalanceChange::getValue)
+        .filter(value -> value.signum() > 0)
+        .map(BigDecimal::abs)
+        .findFirst()
+        .orElse(toAmount);
   }
 
   public String getToCurrencyCode() {
@@ -286,34 +292,6 @@ public class MoneyOper implements Serializable {
 
   public void setTemplate(Boolean template) {
     isTemplate = template;
-  }
-
-  public Date getNextDate() {
-    return nextDate;
-  }
-
-  public void setNextDate(Date nextDate) {
-    this.nextDate = nextDate;
-  }
-
-  public Date skipNextDate() {
-    LocalDate oldNextDateAsLocalDate = nextDate.toLocalDate();
-    LocalDate newNextDateAsLocalDate;
-    switch (period) {
-      case month:
-        newNextDateAsLocalDate = oldNextDateAsLocalDate.plusMonths(1);
-        break;
-      case quarter:
-        newNextDateAsLocalDate = oldNextDateAsLocalDate.plusMonths(3);
-        break;
-      case year:
-        newNextDateAsLocalDate =  oldNextDateAsLocalDate.plusYears(1);
-        break;
-      default:
-        newNextDateAsLocalDate = nextDate.toLocalDate();
-    }
-    nextDate = Date.valueOf(newNextDateAsLocalDate);
-    return nextDate;
   }
 
   public UUID getTemplateId() {
@@ -361,7 +339,7 @@ public class MoneyOper implements Serializable {
   }
 
   public void cancel() {
-    assert getStatus() == done || getStatus() == pending;
+    assert getStatus() == done || getStatus() == pending || getStatus() == template;
     if (getStatus() == done) {
       changeBalances(true);
     }
@@ -376,8 +354,8 @@ public class MoneyOper implements Serializable {
     return addBalanceChange(balance, value, Date.valueOf(LocalDate.now()));
   }
 
-  public BalanceChange addBalanceChange(Balance balance, BigDecimal value, Date performed) {
-    assertNonNulls(balance, value, performed);
+  public BalanceChange addBalanceChange(Balance balance, BigDecimal value, @Nullable Date performed) {
+    assertNonNulls(balance, value);
     assert value.compareTo(BigDecimal.ZERO) != 0 : this.toString();
     BalanceChange balanceChange = new BalanceChange(UUID.randomUUID(), this, balance, value, performed, balanceChanges.size());
     balanceChanges.add(balanceChange);

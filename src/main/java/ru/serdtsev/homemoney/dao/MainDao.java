@@ -13,8 +13,13 @@ import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.dto.*;
+import ru.serdtsev.homemoney.moneyoper.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
+import ru.serdtsev.homemoney.moneyoper.RecurrenceOper;
+import ru.serdtsev.homemoney.moneyoper.RecurrenceOperRepo;
 
 import java.beans.PropertyVetoException;
 import java.math.BigDecimal;
@@ -24,6 +29,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class MainDao {
@@ -48,12 +54,14 @@ public class MainDao {
   }
 
   private final AccountRepository accountRepo;
-  private final MoneyTrnsDao moneyTrnsDao;
+  private final RecurrenceOperRepo recurrenceOperRepo;
+  private final BalanceSheetRepository balanceSheetRepo;
 
   @Autowired
-  public MainDao(AccountRepository accountRepo, MoneyTrnsDao moneyTrnsDao) {
+  public MainDao(AccountRepository accountRepo, RecurrenceOperRepo recurrenceOperRepo, BalanceSheetRepository balanceSheetRepo) {
     this.accountRepo = accountRepo;
-    this.moneyTrnsDao = moneyTrnsDao;
+    this.recurrenceOperRepo = recurrenceOperRepo;
+    this.balanceSheetRepo = balanceSheetRepo;
   }
 
   public static JdbcTemplate jdbcTemplate() {
@@ -115,7 +123,7 @@ public class MainDao {
       fillBsDayStatMap(trendMap,
           getRealTurnovers(conn, run, handler, bsId, MoneyOperStatus.pending,
               Date.valueOf(LocalDate.of(1970, 1, 1)), Date.valueOf(today.plusDays(interval))));
-      fillBsDayStatMap(trendMap, getTemplTurnovers(bsId, Date.valueOf(today.plusDays(interval))));
+      fillBsDayStatMap(trendMap, getRecurrenceTurnovers(bsId, Date.valueOf(today.plusDays(interval))));
       calcTrendSaldoNTurnovers(bsStat, trendMap);
 
       map.putAll(trendMap);
@@ -245,16 +253,18 @@ public class MainDao {
     }
   }
 
-  private List<Turnover> getTemplTurnovers(UUID bsId, Date toDate) {
-    List<MoneyTrnTempl> templs = moneyTrnsDao.getMoneyTrnTempls(bsId, "");
+  private List<Turnover> getRecurrenceTurnovers(UUID bsId, Date toDate) {
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    Stream<RecurrenceOper> recurrenceOpers =  recurrenceOperRepo.findByBalanceSheet(balanceSheet);
     Set<Turnover> turnovers = new HashSet<>();
     Date today = Date.valueOf(LocalDate.now());
-    templs.forEach(t -> {
-      Date templNextDate = t.getNextDate();
-      while (templNextDate.compareTo(toDate) <= 0) {
-        Account fromAcc = accountRepo.findOne(t.getFromAccId());
-        Account toAcc = accountRepo.findOne(t.getToAccId());
-        Date nextDate = (templNextDate.before(today)) ? today : templNextDate;
+    recurrenceOpers.forEach(ro -> {
+      MoneyOper template = ro.getTemplate();
+      Date roNextDate = ro.getNextDate();
+      while (roNextDate.compareTo(toDate) <= 0) {
+        Account fromAcc = accountRepo.findOne(template.getFromAccId());
+        Account toAcc = accountRepo.findOne(template.getToAccId());
+        Date nextDate = (roNextDate.before(today)) ? today : roNextDate;
         Turnover newTurnover = new Turnover(nextDate, fromAcc.getType(), toAcc.getType());
         Optional<Turnover> turnover = turnovers.stream()
             .filter(t1 -> t1.equals(newTurnover))
@@ -263,8 +273,8 @@ public class MainDao {
           turnover = Optional.of(newTurnover);
           turnovers.add(newTurnover);
         }
-        turnover.get().setAmount(turnover.get().getAmount().add(t.getAmount()));
-        templNextDate = MoneyTrnTempl.calcNextDate(templNextDate, t.getPeriod());
+        turnover.get().setAmount(turnover.get().getAmount().add(template.getAmount()));
+        roNextDate = MoneyTrnTempl.calcNextDate(nextDate, template.getPeriod());
       }
     });
     return new ArrayList<>(turnovers);

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -27,7 +26,6 @@ class MoneyTrnsResourceTest {
   private BalanceSheetRepository balanceSheetRepo = mock(BalanceSheetRepository.class);
   private BalanceRepository balanceRepo = mock(BalanceRepository.class);
   private MoneyOperRepository moneyOperRepo = mock(MoneyOperRepository.class);
-  private MoneyTrnsDao moneyTrnsDao = mock(MoneyTrnsDao.class);
   private LabelRepository labelRepo = mock(LabelRepository.class);
   private BalanceChangeRepository balanceChangeRepo = mock(BalanceChangeRepository.class);
   private CategoryRepository categoryRepo = mock(CategoryRepository.class);

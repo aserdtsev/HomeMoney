@@ -21,5 +21,9 @@ public enum MoneyOperStatus {
   /**
    * отменен, конечный статус
    */
-  cancelled
+  cancelled,
+  /**
+   * шаблон
+   */
+  template
 }

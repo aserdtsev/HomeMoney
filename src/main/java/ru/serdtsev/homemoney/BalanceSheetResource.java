@@ -9,6 +9,7 @@ import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.dao.MainDao;
 import ru.serdtsev.homemoney.common.HmResponse;
 
+import javax.transaction.Transactional;
 import java.util.UUID;
 
 @RestController
@@ -21,6 +22,7 @@ public class BalanceSheetResource {
   }
 
   @RequestMapping("/api/{bsId}/bs-stat")
+  @Transactional
   public HmResponse getBalanceSheetInfo(
       @PathVariable UUID bsId,
       @RequestParam(defaultValue = "30") Long interval) {

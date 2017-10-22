@@ -12,7 +12,6 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
-import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,14 +23,11 @@ import java.util.stream.Collectors;
 public class CategoriesResource {
   private BalanceSheetRepository balanceSheetRepo;
   private CategoryRepository categoryRepo;
-  private MoneyTrnsDao moneyTrnsDao;
 
   @Autowired
-  public CategoriesResource(BalanceSheetRepository balanceSheetRepo, CategoryRepository categoryRepo,
-      MoneyTrnsDao moneyTrnsDao) {
+  public CategoriesResource(BalanceSheetRepository balanceSheetRepo, CategoryRepository categoryRepo) {
     this.balanceSheetRepo = balanceSheetRepo;
     this.categoryRepo = categoryRepo;
-    this.moneyTrnsDao = moneyTrnsDao;
   }
 
   @RequestMapping
@@ -75,7 +71,7 @@ public class CategoriesResource {
       @PathVariable UUID bsId,
       @RequestBody Category category) {
     try {
-      if (!AccountsDao.isTrnExists(category.getId()) && !moneyTrnsDao.isTrnTemplExists(category.getId())) {
+      if (!AccountsDao.isTrnExists(category.getId())) {
         categoryRepo.delete(category);
       }
       return HmResponse.getOk();

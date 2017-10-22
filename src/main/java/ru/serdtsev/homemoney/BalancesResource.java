@@ -10,7 +10,6 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
-import ru.serdtsev.homemoney.dao.MoneyTrnsDao;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 
 import javax.transaction.Transactional;
@@ -85,7 +84,7 @@ public class BalancesResource {
       @RequestBody Balance balance) {
     try {
       Balance currBalance = balanceRepo.findOne(balance.getId());
-      if (!AccountsDao.isTrnExists(currBalance.getId()) && !MoneyTrnsDao.isTrnTemplExists(currBalance.getId())) {
+      if (!AccountsDao.isTrnExists(currBalance.getId())) {
         balanceRepo.delete(currBalance);
       }
       return HmResponse.getOk();
