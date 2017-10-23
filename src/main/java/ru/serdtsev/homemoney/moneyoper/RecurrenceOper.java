@@ -36,7 +36,7 @@ public class RecurrenceOper {
     this.balanceSheet = balanceSheet;
     this.template = template;
     this.nextDate = nextDate;
-
+    this.isArc = false;
   }
 
   public UUID getId() {
