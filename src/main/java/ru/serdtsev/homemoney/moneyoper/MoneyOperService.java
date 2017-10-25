@@ -115,7 +115,6 @@ public class MoneyOperService {
     oper.setToAccId(template.getToAccId());
     oper.setToAmount(template.getToAmount());
     oper.setRecurrenceId(template.getRecurrenceId());
-    oper.setTemplateId(template.getId());
     return oper;
   }
 
@@ -139,13 +138,6 @@ public class MoneyOperService {
     log.info("RecurrenceOper '{}' moved to archive.", recurrenceId);
   }
 
-  private MoneyOper getTemplate(BalanceSheet balanceSheet, UUID recurrenceId) {
-    MoneyOper template = moneyOperRepo.findByBalanceSheetAndRecurrenceIdAndIsTemplate(balanceSheet, recurrenceId, true);
-    requireNonNull(template);
-    checkMoneyOperBelongsBalanceSheet(template, balanceSheet.getId());
-    return template;
-  }
-
   public void skipRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
     RecurrenceOper recurrenceOper = recurrenceOperRepo.findOne(recurrenceId);
     recurrenceOper.skipNextDate();
@@ -160,7 +152,6 @@ public class MoneyOperService {
       BigDecimal toAmount, UUID parentId, MoneyOper templateOper) {
     MoneyOper oper = new MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period);
     if (nonNull(templateOper)) {
-      oper.setTemplateId(templateOper.getId());
       oper.setRecurrenceId(templateOper.getRecurrenceId());
     }
 

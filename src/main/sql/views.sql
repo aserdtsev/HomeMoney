@@ -27,7 +27,6 @@ create or replace view public.v_trns_by_base_crn AS
     mt.status,
     mt.trn_date,
     mt.period,
-    mt.templ_id,
     af.id as from_acc_id,
     af.type as from_acc_type,
     at.id as to_acc_id,

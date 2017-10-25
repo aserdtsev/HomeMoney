@@ -74,29 +74,11 @@ public class MoneyOper implements Serializable {
   @Column(name = "to_amount")
   private BigDecimal toAmount;
 
-  @Column(name = "templ_id")
-  private UUID templId;
-
   /**
    * Идентификатор повторяющейся операции. Служит для получения списка операций, которые были созданы по одному шаблону.
    */
   @Column(name = "recurrence_id")
   private UUID recurrenceId;
-
-  @Column(name = "is_template")
-  private Boolean isTemplate;
-
-  /**
-   * Дата следующей повторяющейся операции по данному шаблону.
-   */
-  @Column(name = "next_date")
-  private Date nextDate;
-
-  /**
-   * Идентификатор операции-шаблона, по которой была создана данная операция.
-   */
-  @Column(name = "template_id")
-  private UUID templateId;
 
   public MoneyOper() {
   }
@@ -270,36 +252,12 @@ public class MoneyOper implements Serializable {
     return getBalanceSheet().getCurrencyCode();
   }
 
-  public UUID getTemplId() {
-    return templId;
-  }
-
-  public void setTemplId(UUID templId) {
-    this.templId = templId;
-  }
-
   public UUID getRecurrenceId() {
     return recurrenceId;
   }
 
   public void setRecurrenceId(UUID recurrenceId) {
     this.recurrenceId = recurrenceId;
-  }
-
-  public Boolean getTemplate() {
-    return isTemplate;
-  }
-
-  public void setTemplate(Boolean template) {
-    isTemplate = template;
-  }
-
-  public UUID getTemplateId() {
-    return templateId;
-  }
-
-  public void setTemplateId(UUID templateId) {
-    this.templateId = templateId;
   }
 
   public MoneyOperType getType() {
