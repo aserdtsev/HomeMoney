@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,8 +17,8 @@ import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 @RestController
-public final class AccountsResource {
-  private BalanceSheetRepository balanceSheetRepo;
+public class AccountsResource {
+  private final BalanceSheetRepository balanceSheetRepo;
 
   @Autowired
   public AccountsResource(BalanceSheetRepository balanceSheetRepo) {
@@ -25,7 +26,8 @@ public final class AccountsResource {
   }
 
   @RequestMapping("/api/{bsId}/accounts")
-  public final HmResponse getAccountList(@PathVariable UUID bsId) {
+  @Transactional(readOnly = true)
+  public HmResponse getAccountList(@PathVariable UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     List<Account> accounts = balanceSheet.getAccounts().stream()
         .sorted(Comparator.comparing(Account::getSortIndex))

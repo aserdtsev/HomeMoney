@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
@@ -14,7 +15,6 @@ import ru.serdtsev.homemoney.moneyoper.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 import ru.serdtsev.homemoney.moneyoper.RecurrenceOper;
 
-import javax.transaction.Transactional;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -37,7 +37,7 @@ public class MoneyTrnTemplsResource {
   }
 
   @RequestMapping
-  @Transactional
+  @Transactional(readOnly = true)
   public HmResponse getList(
       @PathVariable UUID bsId,
       @RequestParam(required = false, defaultValue = "") String search) {
@@ -79,6 +79,7 @@ public class MoneyTrnTemplsResource {
   }
 
   @RequestMapping("/skip")
+  @Transactional
   public HmResponse skip(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {
@@ -102,6 +103,7 @@ public class MoneyTrnTemplsResource {
   }
 
   @RequestMapping("/update")
+  @Transactional
   public HmResponse updateTempl(
       @PathVariable UUID bsId,
       @RequestBody MoneyTrnTempl templ) {

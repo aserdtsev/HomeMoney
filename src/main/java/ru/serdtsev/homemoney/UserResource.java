@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
@@ -40,6 +41,7 @@ public class UserResource {
   }
 
   @RequestMapping("/balance-sheet-id")
+  @Transactional(readOnly = true)
   public HmResponse getBalanceSheetId(
       @CookieValue(value="userId", required=false) UUID userId) {
     HmResponse response;
@@ -56,6 +58,7 @@ public class UserResource {
   }
 
   @RequestMapping(value="/login", method=RequestMethod.POST)
+  @Transactional
   public HmResponse login(
       @RequestParam("email") String email,
       @RequestParam("pwd") String pwd) {
@@ -82,6 +85,7 @@ public class UserResource {
   }
 
   @RequestMapping(value="/logout", method=RequestMethod.POST)
+  @Transactional
   public HmResponse logout(
       @CookieValue(value="userId", required=false) UUID userId,
       @CookieValue(value="authToken", required=false) UUID authToken) {
@@ -108,6 +112,7 @@ public class UserResource {
   }
 
   @RequestMapping(method = RequestMethod.DELETE)
+  @Transactional
   public void deleteBalanceSheet(@RequestParam UUID id) {
     balanceSheetRepo.delete(id);
   }

@@ -43,7 +43,7 @@ public class MoneyTrnsResource {
   private static final String SEARCH_DATE_REGEX = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}";
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
-  final MoneyOperService moneyOperService;
+  private final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final AccountRepository accountRepo;
   private final MoneyOperRepository moneyOperRepo;
@@ -65,7 +65,7 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping
-  @Transactional
+  @Transactional(readOnly = true)
   public HmResponse getMoneyTrns(
       @PathVariable UUID bsId,
       @RequestParam(required = false, defaultValue = "") String search,
@@ -195,6 +195,7 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping("/item")
+  @Transactional(readOnly = true)
   public HmResponse getMoneyTrn(
       @PathVariable UUID bsId,
       @RequestParam UUID id) {

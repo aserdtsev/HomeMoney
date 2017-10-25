@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +13,6 @@ import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 
-import javax.transaction.Transactional;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +36,7 @@ public class BalancesResource {
   }
 
   @RequestMapping
+  @Transactional(readOnly = true)
   public HmResponse getBalances(@PathVariable UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     List<Balance> balances = ((List<Balance>) balanceRepo.findByBalanceSheet(balanceSheet)).stream()

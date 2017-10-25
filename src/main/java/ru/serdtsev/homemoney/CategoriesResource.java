@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,6 +32,7 @@ public class CategoriesResource {
   }
 
   @RequestMapping
+  @Transactional(readOnly = true)
   public HmResponse getCategoryList(@PathVariable UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     List<Category> categories = ((List<Category>) categoryRepo.findByBalanceSheet(balanceSheet)).stream()
