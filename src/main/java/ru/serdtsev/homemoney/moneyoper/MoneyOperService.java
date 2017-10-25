@@ -196,7 +196,7 @@ public class MoneyOperService {
     MoneyOper template = recurrenceOper.getTemplate();
 
     updateFromAccount(template, templ.getFromAccId());
-    updateToAccount(template, templ.getFromAccId());
+    updateToAccount(template, templ.getToAccId());
     updateAmount(template, template.getAmount());
     updateToAmount(template, template.getToAmount());
 
@@ -224,25 +224,25 @@ public class MoneyOperService {
     oper.setToAmount(amount);
   }
 
-  void updateFromAccount(MoneyOper oper, UUID accountId) {
-    if (oper.getFromAccId().equals(accountId)) return;
-    replaceBalance(oper, accountId);
-    oper.setFromAccId(accountId);
+  void updateFromAccount(MoneyOper oper, UUID accId) {
+    if (oper.getFromAccId().equals(accId)) return;
+    replaceBalance(oper, oper.getFromAccId(), accId);
+    oper.setFromAccId(accId);
   }
 
-  private void replaceBalance(MoneyOper oper, UUID accountId) {
+  private void replaceBalance(MoneyOper oper, UUID oldAccId, UUID newAccId) {
     oper.getBalanceChanges().stream()
-        .filter(balanceChange -> balanceChange.getBalance().getId().equals(accountId))
+        .filter(balanceChange -> balanceChange.getBalance().getId().equals(oldAccId))
         .forEach(balanceChange -> {
-          Balance fromAcc = (Balance) accountRepo.findOne(accountId);
-          balanceChange.setBalance(fromAcc);
+          Balance balance = (Balance) accountRepo.findOne(newAccId);
+          balanceChange.setBalance(balance);
         });
   }
 
-  void updateToAccount(MoneyOper oper, UUID accountId) {
-    if (oper.getToAccId().equals(accountId)) return;
-    replaceBalance(oper, accountId);
-    oper.setToAccId(accountId);
+  void updateToAccount(MoneyOper oper, UUID accId) {
+    if (oper.getToAccId().equals(accId)) return;
+    replaceBalance(oper, oper.getToAccId(), accId);
+    oper.setToAccId(accId);
   }
 
   public void checkMoneyOperBelongsBalanceSheet(MoneyOper oper, UUID bsId) {
