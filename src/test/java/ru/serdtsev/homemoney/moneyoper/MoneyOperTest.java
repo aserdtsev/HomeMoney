@@ -95,31 +95,31 @@ class MoneyOperTest {
     MoneyOper oper = SerializationUtils.clone(origOper);
     assertTrue(oper.essentialEquals(origOper));
 
-    BalanceChange change = oper.getBalanceChanges().get(0);
-    change.setValue(change.getValue().add(BigDecimal.ONE));
+    MoneyOperItem item = oper.getItems().get(0);
+    item.setValue(item.getValue().add(BigDecimal.ONE));
     assertFalse(oper.essentialEquals(origOper));
 
     oper = SerializationUtils.clone(origOper);
-    oper.addBalanceChange(cash, BigDecimal.TEN);
+    oper.addItem(cash, BigDecimal.TEN);
     assertFalse(oper.essentialEquals(origOper));
 
     origOper = createTransferFromCheckingAccountToCash(done);
     oper = SerializationUtils.clone(origOper);
-    oper.getBalanceChanges().remove(0);
+    oper.getItems().remove(0);
     assertFalse(oper.essentialEquals(origOper));
   }
 
   private MoneyOper createExpenseFromCash(MoneyOperStatus status) {
     MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, Date.valueOf(LocalDate.now()), 0,
         new ArrayList<>(), "", null);
-    oper.addBalanceChange(cash, BigDecimal.ONE.negate());
+    oper.addItem(cash, BigDecimal.ONE.negate());
     return oper;
   }
 
   private MoneyOper createIncomeToCash(MoneyOperStatus status) {
     MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, Date.valueOf(LocalDate.now()), 0,
         new ArrayList<>(), "", null);
-    oper.addBalanceChange(cash, BigDecimal.ONE);
+    oper.addItem(cash, BigDecimal.ONE);
     return oper;
   }
 
@@ -127,8 +127,8 @@ class MoneyOperTest {
     MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, Date.valueOf(LocalDate.now()), 0,
         new ArrayList<>(), "", null);
     BigDecimal amount = BigDecimal.ONE;
-    oper.addBalanceChange(checkingAccount, amount.negate());
-    oper.addBalanceChange(cash, amount);
+    oper.addItem(checkingAccount, amount.negate());
+    oper.addItem(cash, amount);
     return oper;
   }
 

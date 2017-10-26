@@ -48,19 +48,19 @@ public class MoneyTrnsResource {
   private final AccountRepository accountRepo;
   private final MoneyOperRepository moneyOperRepo;
   private final LabelRepository labelRepo;
-  private final BalanceChangeRepository balanceChangeRepo;
+  private final MoneyOperItemRepo moneyOperItemRepo;
   private final CategoryRepository categoryRepo;
 
   @Autowired
   public MoneyTrnsResource(MoneyOperService moneyOperService, BalanceSheetRepository balanceSheetRepo,
       AccountRepository accountRepo, MoneyOperRepository moneyOperRepo, LabelRepository labelRepo,
-      BalanceChangeRepository balanceChangeRepo, CategoryRepository categoryRepo) {
+      MoneyOperItemRepo moneyOperItemRepo, CategoryRepository categoryRepo) {
     this.moneyOperService = moneyOperService;
     this.balanceSheetRepo = balanceSheetRepo;
     this.accountRepo = accountRepo;
     this.moneyOperRepo = moneyOperRepo;
     this.labelRepo = labelRepo;
-    this.balanceChangeRepo = balanceChangeRepo;
+    this.moneyOperItemRepo = moneyOperItemRepo;
     this.categoryRepo = categoryRepo;
   }
 
@@ -112,7 +112,7 @@ public class MoneyTrnsResource {
     moneyTrn.setFromAccName(getAccountName(moneyOper.getFromAccId()));
     moneyTrn.setToAccName(getAccountName(moneyOper.getToAccId()));
     moneyTrn.setType(moneyOper.getType().name());
-    moneyTrn.setBalanceChanges(moneyOper.getBalanceChanges());
+    moneyTrn.setItems(moneyOper.getItems());
     return moneyTrn;
   }
 
@@ -157,17 +157,17 @@ public class MoneyTrnsResource {
       adder = p -> opers.addAll(p.getContent());
     } else if (search.matches(SEARCH_MONEY_REGEX)) {
       // по сумме операции
-      // todo добавить в BalanceChange поле balanceSheet
+      // todo добавить в MoneyOperItem поле balanceSheet
       pageRequest = new PageRequest(pageRequest.getPageNumber(), pageRequest.getPageSize(), new Sort("performed"));
       pager = pageable -> {
         BigDecimal positiveValue = new BigDecimal(search);
-        return balanceChangeRepo.findByValueOrValue(positiveValue, positiveValue.negate(), pageable);
+        return moneyOperItemRepo.findByValueOrValue(positiveValue, positiveValue.negate(), pageable);
       };
       //noinspection unchecked
-      adder = p -> ((Page<BalanceChange>) p).getContent()
+      adder = p -> ((Page<MoneyOperItem>) p).getContent()
           .stream()
-          .filter(balanceChange -> Objects.equals(balanceChange.getMoneyOper().getBalanceSheet(), balanceSheet))
-          .map(BalanceChange::getMoneyOper)
+          .filter(item -> Objects.equals(item.getMoneyOper().getBalanceSheet(), balanceSheet))
+          .map(MoneyOperItem::getMoneyOper)
           .distinct()
           .forEach(opers::add);
     } else {
@@ -176,7 +176,7 @@ public class MoneyTrnsResource {
         @SuppressWarnings("unchecked") List<MoneyOper> opersChunk = ((Page<MoneyOper>) p).getContent().stream()
             .filter(oper ->
                 // по имени счета
-                oper.getBalanceChanges().stream().anyMatch(change -> change.getBalance().getName().toLowerCase().contains(search))
+                oper.getItems().stream().anyMatch(change -> change.getBalance().getName().toLowerCase().contains(search))
                 // по комментарию
                 || oper.getComment().toLowerCase().contains(search)
                 // по меткам

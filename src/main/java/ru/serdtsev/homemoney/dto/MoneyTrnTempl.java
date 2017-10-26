@@ -1,6 +1,6 @@
 package ru.serdtsev.homemoney.dto;
 
-import ru.serdtsev.homemoney.moneyoper.BalanceChange;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperItem;
 import ru.serdtsev.homemoney.moneyoper.Period;
 
 import java.math.BigDecimal;
@@ -17,7 +17,7 @@ public class MoneyTrnTempl {
   private UUID lastMoneyTrnId;
   private Date nextDate;
   private Period period;
-  private List<BalanceChange> balanceChanges;
+  private List<MoneyOperItem> items;
   private UUID fromAccId;
   private UUID toAccId;
   private BigDecimal amount;
@@ -103,12 +103,12 @@ public class MoneyTrnTempl {
     this.period = period;
   }
 
-  public List<BalanceChange> getBalanceChanges() {
-    return balanceChanges;
+  public List<MoneyOperItem> getItems() {
+    return items;
   }
 
-  public void setBalanceChanges(List<BalanceChange> balanceChanges) {
-    this.balanceChanges = balanceChanges;
+  public void setItems(List<MoneyOperItem> items) {
+    this.items = items;
   }
 
   public UUID getFromAccId() {

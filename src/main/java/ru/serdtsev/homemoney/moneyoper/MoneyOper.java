@@ -42,7 +42,7 @@ public class MoneyOper implements Serializable {
 
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "oper_id")
-  private List<BalanceChange> balanceChanges;
+  private List<MoneyOperItem> items;
 
   @ManyToMany
   @JoinTable(name = "labels2objs",
@@ -90,7 +90,7 @@ public class MoneyOper implements Serializable {
     this.status = status;
     this.performed = performed;
     this.dateNum = dateNum;
-    this.balanceChanges = new ArrayList<>();
+    this.items = new ArrayList<>();
     this.labels = new HashSet<>(labels);
     this.comment = comment;
     this.period = period;
@@ -121,12 +121,12 @@ public class MoneyOper implements Serializable {
     this.performed = performed;
   }
 
-  public List<BalanceChange> getBalanceChanges() {
-    return balanceChanges;
+  public List<MoneyOperItem> getItems() {
+    return items;
   }
 
-  public void setBalanceChanges(List<BalanceChange> balanceChanges) {
-    this.balanceChanges = balanceChanges;
+  public void setItems(List<MoneyOperItem> items) {
+    this.items = items;
   }
 
   public Period getPeriod() {
@@ -199,8 +199,8 @@ public class MoneyOper implements Serializable {
   }
 
   public BigDecimal getAmount() {
-    return balanceChanges.stream()
-        .map(BalanceChange::getValue)
+    return items.stream()
+        .map(MoneyOperItem::getValue)
         .filter(value -> value.signum() < 0)
         .map(BigDecimal::abs)
         .findFirst()
@@ -208,9 +208,9 @@ public class MoneyOper implements Serializable {
   }
 
   public String getCurrencyCode() {
-    return balanceChanges.stream()
-        .sorted(Comparator.comparingInt(change -> change.getValue().signum()))
-        .map(change -> change.getBalance().getCurrencyCode())
+    return items.stream()
+        .sorted(Comparator.comparingInt(item -> item.getValue().signum()))
+        .map(item -> item.getBalance().getCurrencyCode())
         .findFirst()
         .orElse(getBalanceSheet().getCurrencyCode());
   }
@@ -228,8 +228,8 @@ public class MoneyOper implements Serializable {
   }
 
   public BigDecimal getToAmount() {
-    return balanceChanges.stream()
-        .map(BalanceChange::getValue)
+    return items.stream()
+        .map(MoneyOperItem::getValue)
         .filter(value -> value.signum() > 0)
         .map(BigDecimal::abs)
         .findFirst()
@@ -237,9 +237,9 @@ public class MoneyOper implements Serializable {
   }
 
   public String getToCurrencyCode() {
-    return balanceChanges.stream()
-        .sorted(Comparator.comparingInt(change -> change.getValue().signum() * -1))
-        .map(change -> change.getBalance().getCurrencyCode())
+    return items.stream()
+        .sorted(Comparator.comparingInt(item -> item.getValue().signum() * -1))
+        .map(item -> item.getBalance().getCurrencyCode())
         .findFirst()
         .orElse(getBalanceSheet().getCurrencyCode());
   }
@@ -261,14 +261,14 @@ public class MoneyOper implements Serializable {
   }
 
   public MoneyOperType getType() {
-    if (balanceChanges.stream().findFirst().orElseThrow(IllegalStateException::new).getBalance().getType() == AccountType.reserve) {
+    if (items.stream().findFirst().orElseThrow(IllegalStateException::new).getBalance().getType() == AccountType.reserve) {
       return MoneyOperType.transfer;
     }
-    Optional<Integer> valueSignumSumOpt = balanceChanges.stream()
-        .map(change -> change.getValue().signum())
+    Optional<Integer> valueSignumSumOpt = items.stream()
+        .map(item -> item.getValue().signum())
         .reduce((a, s) -> a += s);
     int valueSignumSum = valueSignumSumOpt.orElseThrow(() ->
-        new IllegalStateException("balanceChanges does not have items: " + id));
+        new IllegalStateException("items is empty: " + id));
     if (valueSignumSum > 0) {
       return MoneyOperType.income;
     } else if (valueSignumSum < 0) {
@@ -304,19 +304,19 @@ public class MoneyOper implements Serializable {
     setStatus(cancelled);
   }
 
-  public void addBalanceChanges(Collection<BalanceChange> balanceChanges) {
-    balanceChanges.forEach(change -> addBalanceChange(change.getBalance(), change.getValue()));
+  public void addItems(Collection<MoneyOperItem> items) {
+    items.forEach(item -> addItem(item.getBalance(), item.getValue()));
   }
 
-  public BalanceChange addBalanceChange(Balance balance, BigDecimal value) {
-    return addBalanceChange(balance, value, Date.valueOf(LocalDate.now()));
+  public MoneyOperItem addItem(Balance balance, BigDecimal value) {
+    return addItem(balance, value, Date.valueOf(LocalDate.now()));
   }
 
-  public BalanceChange addBalanceChange(Balance balance, BigDecimal value, @Nullable Date performed) {
+  public MoneyOperItem addItem(Balance balance, BigDecimal value, @Nullable Date performed) {
     assertNonNulls(balance, value);
     assert value.compareTo(BigDecimal.ZERO) != 0 : this.toString();
-    BalanceChange balanceChange = new BalanceChange(UUID.randomUUID(), this, balance, value, performed, balanceChanges.size());
-    balanceChanges.add(balanceChange);
+    MoneyOperItem item = new MoneyOperItem(UUID.randomUUID(), this, balance, value, performed, items.size());
+    items.add(item);
     if (value.signum() ==  -1) {
       fromAccId = balance.getId();
       amount = value.abs();
@@ -324,14 +324,12 @@ public class MoneyOper implements Serializable {
       toAccId = balance.getId();
       toAmount = value;
     }
-    return balanceChange;
+    return item;
   }
 
   void changeBalances(boolean revert) {
     BigDecimal factor = revert ? BigDecimal.ONE.negate() : BigDecimal.ONE;
-    balanceChanges.forEach(change -> {
-      change.getBalance().changeValue(change.getValue().multiply(factor), this);
-    });
+    items.forEach(item -> item.getBalance().changeValue(item.getValue().multiply(factor), this));
   }
 
   @Override
@@ -349,16 +347,13 @@ public class MoneyOper implements Serializable {
 
   boolean essentialEquals(MoneyOper other) {
     assert this.equals(other);
-    return balanceChangesEssentialEquals(other);
+    return itemsEssentialEquals(other);
   }
 
-  boolean balanceChangesEssentialEquals(MoneyOper other) {
-//    if (!balanceChanges.equals(other.getBalanceChanges())) {
-//      return false;
-//    }
-    return balanceChanges.stream().allMatch(change -> other.getBalanceChanges()
+  boolean itemsEssentialEquals(MoneyOper other) {
+    return items.stream().allMatch(item -> other.getItems()
         .stream()
-        .anyMatch(ch -> ch.equals(change)));
+        .anyMatch(ch -> ch.equals(item)));
   }
 
   @Override
@@ -368,7 +363,7 @@ public class MoneyOper implements Serializable {
         ", balanceSheet=" + balanceSheet +
         ", status=" + status +
         ", performed=" + performed +
-        ", balanceChanges=" + balanceChanges +
+        ", items=" + items +
         ", created=" + created +
         '}';
   }

@@ -11,8 +11,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Entity
-@Table(name = "balance_changes")
-public class BalanceChange implements Serializable {
+@Table(name = "money_oper_item")
+public class MoneyOperItem implements Serializable {
   @Id
   private UUID id;
 
@@ -26,16 +26,15 @@ public class BalanceChange implements Serializable {
 
   private BigDecimal value;
 
-  @Column(name = "made")
   private Date performed;
 
   private int index;
 
   @SuppressWarnings("unused")
-  public BalanceChange() {
+  public MoneyOperItem() {
   }
 
-  BalanceChange(UUID id, MoneyOper moneyOper, Balance balance, BigDecimal value, Date performed, int index) {
+  MoneyOperItem(UUID id, MoneyOper moneyOper, Balance balance, BigDecimal value, Date performed, int index) {
     this.id = id;
     this.moneyOper = moneyOper;
     this.balance = balance;
@@ -101,8 +100,8 @@ public class BalanceChange implements Serializable {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (!(o instanceof BalanceChange)) return false;
-    BalanceChange that = (BalanceChange) o;
+    if (!(o instanceof MoneyOperItem)) return false;
+    MoneyOperItem that = (MoneyOperItem) o;
     return Objects.equals(moneyOper.getId(), that.moneyOper.getId()) &&
         Objects.equals(balance.getId(), that.balance.getId()) &&
         value.compareTo(that.value) == 0;
@@ -113,7 +112,7 @@ public class BalanceChange implements Serializable {
     return Objects.hash(moneyOper, balance, value);
   }
 
-  public boolean essentialEquals(BalanceChange other) {
+  public boolean essentialEquals(MoneyOperItem other) {
     assert equals(other);
     return moneyOper.equals(other.getMoneyOper())
         && balance.equals(other.getBalance()) && value.compareTo(other.getValue()) == 0;
@@ -121,7 +120,7 @@ public class BalanceChange implements Serializable {
 
   @Override
   public String toString() {
-    return "BalanceChange{" +
+    return "MoneyOperItem{" +
         "id=" + id +
         ", moneyOperId=" + moneyOper.getId() +
         ", balanceId=" + balance.getId() +

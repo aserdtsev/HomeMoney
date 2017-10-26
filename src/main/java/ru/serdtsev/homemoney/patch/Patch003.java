@@ -43,7 +43,7 @@ public class Patch003 {
       if (balanceSheet.getId().equals(UUID.fromString("f9b8f6b2-7b28-49b4-bf75-89b506f030c3"))) {
         log.info(balanceSheet.toString());
         moneyOperRepo.findByBalanceSheet(balanceSheet)
-            .filter(oper -> oper.getBalanceChanges().isEmpty())
+            .filter(oper -> oper.getItems().isEmpty())
             .forEach(oper -> {
               categoryToLabel(oper);
               createBalanceChanges(oper);
@@ -55,21 +55,21 @@ public class Patch003 {
   }
 
   private void createBalanceChanges(MoneyOper oper) {
-    assert oper.getBalanceChanges().isEmpty();
+    assert oper.getItems().isEmpty();
     log.info("Empty balanceChanges {}", oper);
     MoneyOperType operType = oper.getType(accountRepo);
     if (operType.equals(expense) || operType.equals(transfer)) {
       Account account = accountRepo.findOne(oper.getFromAccId());
       assert nonNull(account) : oper.getFromAccId();
       if (account instanceof Balance) {
-        oper.addBalanceChange((Balance) account, oper.getAmount().negate(), oper.getPerformed());
+        oper.addItem((Balance) account, oper.getAmount().negate(), oper.getPerformed());
       }
     }
     if (operType.equals(income) || operType.equals(transfer)) {
       Account account = accountRepo.findOne(oper.getToAccId());
       assert nonNull(account) : oper.getToAccId();
       if (account instanceof Balance) {
-        oper.addBalanceChange((Balance) account , oper.getAmount(), oper.getPerformed());
+        oper.addItem((Balance) account , oper.getAmount(), oper.getPerformed());
       }
     }
   }

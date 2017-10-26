@@ -93,11 +93,11 @@ public class MoneyOperService {
       return template.getId().equals(UUID.fromString(search));
     } else if (search.matches(SEARCH_MONEY_REGEX)) {
       // по сумме операции
-      return template.getBalanceChanges()
+      return template.getItems()
           .stream()
           .anyMatch(change -> change.getValue().plus().compareTo(new BigDecimal(search)) == 0);
     } else {
-      return template.getBalanceChanges()
+      return template.getItems()
           .stream()
           .anyMatch(change -> change.getBalance().getName().toLowerCase().contains(search))
           || template.getComment().toLowerCase().contains(search)
@@ -109,7 +109,7 @@ public class MoneyOperService {
     MoneyOper template = recurrenceOper.getTemplate();
     MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, MoneyOperStatus.recurrence,
         recurrenceOper.getNextDate(), 0, template.getLabels(), template.getComment(), template.getPeriod());
-    oper.addBalanceChanges(template.getBalanceChanges());
+    oper.addItems(template.getItems());
     oper.setFromAccId(template.getFromAccId());
     oper.setAmount(template.getAmount());
     oper.setToAccId(template.getToAccId());
@@ -159,14 +159,14 @@ public class MoneyOperService {
     Account fromAcc = accountRepo.findOne(fromAccId);
     assert fromAcc != null;
     if (fromAcc instanceof Balance) {
-      oper.addBalanceChange((Balance) fromAcc, amount.negate(), performed);
+      oper.addItem((Balance) fromAcc, amount.negate(), performed);
     }
 
     oper.setToAccId(toAccId);
     Account toAcc = accountRepo.findOne(toAccId);
     assert toAcc != null;
     if (toAcc instanceof  Balance) {
-      oper.addBalanceChange((Balance) toAcc, toAmount, performed);
+      oper.addItem((Balance) toAcc, toAmount, performed);
     }
 
     oper.setAmount(amount);
@@ -201,17 +201,17 @@ public class MoneyOperService {
 
   void updateAmount(MoneyOper oper, BigDecimal amount) {
     if (oper.getAmount().compareTo(amount) != 0) return;
-    oper.getBalanceChanges().stream()
-        .filter(balanceChange -> balanceChange.getValue().signum() < 0)
-        .forEach(balanceChange -> balanceChange.setValue(amount.negate()));
+    oper.getItems().stream()
+        .filter(item -> item.getValue().signum() < 0)
+        .forEach(item -> item.setValue(amount.negate()));
     oper.setAmount(amount);
   }
 
   void updateToAmount(MoneyOper oper, BigDecimal amount) {
     if (oper.getToAmount().compareTo(amount) != 0) return;
-    oper.getBalanceChanges().stream()
-        .filter(balanceChange -> balanceChange.getValue().signum() > 0)
-        .forEach(balanceChange -> balanceChange.setValue(amount));
+    oper.getItems().stream()
+        .filter(item -> item.getValue().signum() > 0)
+        .forEach(item -> item.setValue(amount));
     oper.setToAmount(amount);
   }
 
@@ -222,11 +222,11 @@ public class MoneyOperService {
   }
 
   private void replaceBalance(MoneyOper oper, UUID oldAccId, UUID newAccId) {
-    oper.getBalanceChanges().stream()
-        .filter(balanceChange -> balanceChange.getBalance().getId().equals(oldAccId))
-        .forEach(balanceChange -> {
+    oper.getItems().stream()
+        .filter(item -> item.getBalance().getId().equals(oldAccId))
+        .forEach(item -> {
           Balance balance = (Balance) accountRepo.findOne(newAccId);
-          balanceChange.setBalance(balance);
+          item.setBalance(balance);
         });
   }
 

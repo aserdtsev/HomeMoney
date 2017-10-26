@@ -27,7 +27,7 @@ class MoneyTrnsResourceTest {
   private BalanceRepository balanceRepo = mock(BalanceRepository.class);
   private MoneyOperRepository moneyOperRepo = mock(MoneyOperRepository.class);
   private LabelRepository labelRepo = mock(LabelRepository.class);
-  private BalanceChangeRepository balanceChangeRepo = mock(BalanceChangeRepository.class);
+  private MoneyOperItemRepo moneyOperItemRepo = mock(MoneyOperItemRepo.class);
   private CategoryRepository categoryRepo = mock(CategoryRepository.class);
   private BalanceSheet balanceSheet = BalanceSheet.newInstance();
   private Balance cash;
@@ -35,7 +35,7 @@ class MoneyTrnsResourceTest {
 
   public MoneyTrnsResourceTest() {
     this.mtRes = new MoneyTrnsResource(moneyOperService, balanceSheetRepo, accountRepo, moneyOperRepo, labelRepo,
-        balanceChangeRepo, categoryRepo);
+        moneyOperItemRepo, categoryRepo);
     when(accountRepo.findOne(balanceSheet.getUncatCosts().getId())).thenReturn(balanceSheet.getUncatCosts());
     when(accountRepo.findOne(balanceSheet.getUncatIncome().getId())).thenReturn(balanceSheet.getUncatIncome());
   }
@@ -64,15 +64,15 @@ class MoneyTrnsResourceTest {
 
     assertEquals(balanceSheet, oper.getBalanceSheet());
 
-    List<BalanceChange> balanceChanges = oper.getBalanceChanges();
-    assertEquals(1, balanceChanges.size());
+    List<MoneyOperItem> items = oper.getItems();
+    assertEquals(1, items.size());
 
-    BalanceChange balanceChange = balanceChanges.get(0);
-    assertEquals(oper, balanceChange.getMoneyOper());
-    assertEquals(cash, balanceChange.getBalance());
-    assertEquals(BigDecimal.ONE.negate(), balanceChange.getValue());
-    assertEquals(0, balanceChange.getIndex());
-    assertEquals(performed, balanceChange.getPerformed());
+    MoneyOperItem item = items.get(0);
+    assertEquals(oper, item.getMoneyOper());
+    assertEquals(cash, item.getBalance());
+    assertEquals(BigDecimal.ONE.negate(), item.getValue());
+    assertEquals(0, item.getIndex());
+    assertEquals(performed, item.getPerformed());
 
     assertEquals(cash.getId(), oper.getFromAccId());
     assertEquals(balanceSheet.getUncatCosts().getId(), oper.getToAccId());
@@ -90,12 +90,12 @@ class MoneyTrnsResourceTest {
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
         "", Period.month, balanceSheet.getUncatIncome().getId(), currentAccount.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
 
-    List<BalanceChange> balanceChanges = oper.getBalanceChanges();
-    assertEquals(1, balanceChanges.size());
+    List<MoneyOperItem> items = oper.getItems();
+    assertEquals(1, items.size());
 
-    BalanceChange balanceChange = balanceChanges.get(0);
-    assertEquals(currentAccount, balanceChange.getBalance());
-    assertEquals(BigDecimal.ONE, balanceChange.getValue());
+    MoneyOperItem item = items.get(0);
+    assertEquals(currentAccount, item.getBalance());
+    assertEquals(BigDecimal.ONE, item.getValue());
   }
 
   @Test
@@ -104,16 +104,16 @@ class MoneyTrnsResourceTest {
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
         "", Period.month, currentAccount.getId(), cash.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
 
-    List<BalanceChange> balanceChanges = oper.getBalanceChanges();
-    assertEquals(2, balanceChanges.size());
+    List<MoneyOperItem> items = oper.getItems();
+    assertEquals(2, items.size());
 
-    BalanceChange balanceChange0 = balanceChanges.get(0);
-    assertEquals(currentAccount, balanceChange0.getBalance());
-    assertEquals(BigDecimal.ONE.negate(), balanceChange0.getValue());
+    MoneyOperItem item0 = items.get(0);
+    assertEquals(currentAccount, item0.getBalance());
+    assertEquals(BigDecimal.ONE.negate(), item0.getValue());
 
-    BalanceChange balanceChange1 = balanceChanges.get(1);
-    assertEquals(cash, balanceChange1.getBalance());
-    assertEquals(BigDecimal.ONE, balanceChange1.getValue());
+    MoneyOperItem item1 = items.get(1);
+    assertEquals(cash, item1.getBalance());
+    assertEquals(BigDecimal.ONE, item1.getValue());
   }
 
   @Test

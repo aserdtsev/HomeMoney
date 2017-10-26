@@ -1,7 +1,7 @@
 package ru.serdtsev.homemoney.dto;
 
 import ru.serdtsev.homemoney.common.HmException;
-import ru.serdtsev.homemoney.moneyoper.BalanceChange;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperItem;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
 import ru.serdtsev.homemoney.moneyoper.Period;
 
@@ -19,7 +19,7 @@ public class MoneyTrn {
   private MoneyOperStatus status;
   private Date trnDate;
   private Integer dateNum;
-  private List<BalanceChange> balanceChanges;
+  private List<MoneyOperItem> items;
   private UUID fromAccId;
   private UUID toAccId;
   private UUID parentId;
@@ -68,9 +68,7 @@ public class MoneyTrn {
     this.labels = labels;
     this.templId = templId;
 
-    this.balanceChanges = new ArrayList<>();
-//    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, fromAccId, amount.negate(), trnDate, 0));
-//    balanceChanges.add(new BalanceChange(UUID.randomUUID(), id, toAccId, toAmount, trnDate, 1));
+    this.items = new ArrayList<>();
   }
 
   public UUID getId() {
@@ -252,12 +250,12 @@ public class MoneyTrn {
     return currencyCode.equals(toCurrencyCode);
   }
 
-  public List<BalanceChange> getBalanceChanges() {
-    return balanceChanges;
+  public List<MoneyOperItem> getItems() {
+    return items;
   }
 
-  public void setBalanceChanges(List<BalanceChange> balanceChanges) {
-    this.balanceChanges = balanceChanges;
+  public void setItems(List<MoneyOperItem> items) {
+    this.items = items;
   }
 
   /**
@@ -295,7 +293,7 @@ public class MoneyTrn {
         "id=" + id +
         ", status=" + status +
         ", trnDate=" + trnDate +
-        ", balanceChanges=" + balanceChanges +
+        ", items=" + items +
         ", dateNum=" + dateNum +
         ", fromAccId=" + fromAccId +
         ", toAccId=" + toAccId +

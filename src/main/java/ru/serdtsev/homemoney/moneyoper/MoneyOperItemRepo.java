@@ -7,6 +7,6 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public interface BalanceChangeRepository extends PagingAndSortingRepository<BalanceChange, UUID> {
-  Page<BalanceChange> findByValueOrValue(BigDecimal positiveValue, BigDecimal negativeValue, Pageable pageable);
+public interface MoneyOperItemRepo extends PagingAndSortingRepository<MoneyOperItem, UUID> {
+  Page<MoneyOperItem> findByValueOrValue(BigDecimal positiveValue, BigDecimal negativeValue, Pageable pageable);
 }
