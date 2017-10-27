@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.moneyoper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ru.serdtsev.homemoney.account.Balance;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -12,9 +13,15 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "money_oper_item")
+@NamedQuery(name = "MoneyOperItem.findByBalanceSheetAndValueOrderByPerformedDesc",
+  query = "select m from MoneyOperItem m where balanceSheet = ?1 and abs(value) = ?2 order by performed desc")
 public class MoneyOperItem implements Serializable {
   @Id
   private UUID id;
+
+  @ManyToOne
+  @JoinColumn(name = "bs_id")
+  private BalanceSheet balanceSheet;
 
   @ManyToOne
   @JoinColumn(name = "oper_id")
@@ -37,6 +44,7 @@ public class MoneyOperItem implements Serializable {
   MoneyOperItem(UUID id, MoneyOper moneyOper, Balance balance, BigDecimal value, Date performed, int index) {
     this.id = id;
     this.moneyOper = moneyOper;
+    this.balanceSheet = moneyOper.getBalanceSheet();
     this.balance = balance;
     this.value = value;
     this.performed = performed;
@@ -49,6 +57,14 @@ public class MoneyOperItem implements Serializable {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  public BalanceSheet getBalanceSheet() {
+    return balanceSheet;
+  }
+
+  public void setBalanceSheet(BalanceSheet balanceSheet) {
+    this.balanceSheet = balanceSheet;
   }
 
   @JsonIgnore

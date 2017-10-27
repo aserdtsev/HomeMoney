@@ -351,9 +351,8 @@ public class MoneyOper implements Serializable {
   }
 
   boolean itemsEssentialEquals(MoneyOper other) {
-    return items.stream().allMatch(item -> other.getItems()
-        .stream()
-        .anyMatch(ch -> ch.equals(item)));
+    return items.stream().allMatch(item ->
+        other.getItems().stream().anyMatch(i -> i.equals(item)));
   }
 
   @Override

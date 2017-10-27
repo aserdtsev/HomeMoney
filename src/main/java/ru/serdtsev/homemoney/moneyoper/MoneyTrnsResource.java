@@ -157,26 +157,25 @@ public class MoneyTrnsResource {
       adder = p -> opers.addAll(p.getContent());
     } else if (search.matches(SEARCH_MONEY_REGEX)) {
       // по сумме операции
-      // todo добавить в MoneyOperItem поле balanceSheet
-      pageRequest = new PageRequest(pageRequest.getPageNumber(), pageRequest.getPageSize(), new Sort("performed"));
+      pageRequest = new PageRequest(pageRequest.getPageNumber(), pageRequest.getPageSize());
       pager = pageable -> {
-        BigDecimal positiveValue = new BigDecimal(search);
-        return moneyOperItemRepo.findByValueOrValue(positiveValue, positiveValue.negate(), pageable);
+        BigDecimal value = new BigDecimal(search).abs();
+        return moneyOperItemRepo.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, pageable);
       };
       //noinspection unchecked
       adder = p -> ((Page<MoneyOperItem>) p).getContent()
           .stream()
-          .filter(item -> Objects.equals(item.getMoneyOper().getBalanceSheet(), balanceSheet))
           .map(MoneyOperItem::getMoneyOper)
+          .filter(oper -> oper.getStatus() != status)
           .distinct()
           .forEach(opers::add);
     } else {
-      pager = (pageable) -> moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageable);
-      adder = (p) -> {
+      pager = pageable -> moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageable);
+      adder = p -> {
         @SuppressWarnings("unchecked") List<MoneyOper> opersChunk = ((Page<MoneyOper>) p).getContent().stream()
             .filter(oper ->
                 // по имени счета
-                oper.getItems().stream().anyMatch(change -> change.getBalance().getName().toLowerCase().contains(search))
+                oper.getItems().stream().anyMatch(item -> item.getBalance().getName().toLowerCase().contains(search))
                 // по комментарию
                 || oper.getComment().toLowerCase().contains(search)
                 // по меткам
