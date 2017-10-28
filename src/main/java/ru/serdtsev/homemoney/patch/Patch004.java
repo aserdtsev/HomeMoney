@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.moneyoper.Label;
 import ru.serdtsev.homemoney.moneyoper.LabelRepository;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperRepository;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;
 
 import javax.transaction.Transactional;
 import java.util.List;
@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 @Component
 public class Patch004 {
   private Logger log = LoggerFactory.getLogger(this.getClass());
-  private final MoneyOperRepository moneyOperRepo;
+  private final MoneyOperRepo moneyOperRepo;
   private final LabelRepository labelRepo;
 
   @Autowired
-  public Patch004(MoneyOperRepository moneyOperRepo, LabelRepository labelRepo) {
+  public Patch004(MoneyOperRepo moneyOperRepo, LabelRepository labelRepo) {
     this.moneyOperRepo = moneyOperRepo;
     this.labelRepo = labelRepo;
   }

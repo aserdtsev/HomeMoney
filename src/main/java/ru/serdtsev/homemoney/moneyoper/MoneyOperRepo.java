@@ -9,7 +9,7 @@ import java.sql.Date;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public interface MoneyOperRepository extends PagingAndSortingRepository<MoneyOper, UUID> {
+public interface MoneyOperRepo extends PagingAndSortingRepository<MoneyOper, UUID> {
   Stream<MoneyOper> findByBalanceSheet(BalanceSheet balanceSheet);
   Page<MoneyOper> findByBalanceSheetAndStatus(BalanceSheet balanceSheet, MoneyOperStatus status, Pageable pageable);
   Page<MoneyOper> findByBalanceSheetAndStatusAndId(BalanceSheet balanceSheet, MoneyOperStatus status, UUID id, Pageable pageable);

@@ -243,7 +243,7 @@ public class MainDao {
       return run.query(conn,
           "select trn_date + interval '1 months' as trnDate, " +
               "from_acc_type as fromAccType, to_acc_type as toAccType, " +
-              "sum(case when period = 'single' or not templ_id is null then 0 else amount end) as amount " +
+              "sum(case when period = 'single' or recurrence_id is not null then 0 else amount end) as amount " +
               "from v_trns_by_base_crn " +
               "where bs_id = ? and status = ? and trn_date between ? and ? " +
               "group by trn_date, from_acc_type, to_acc_type ",

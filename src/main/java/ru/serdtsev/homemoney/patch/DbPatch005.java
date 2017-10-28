@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperRepository;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;
 
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
@@ -14,11 +14,11 @@ import javax.transaction.Transactional;
 public class DbPatch005 {
   private Logger log = LoggerFactory.getLogger(this.getClass());
   private final BalanceSheetRepository balanceSheetRepo;
-  private final MoneyOperRepository moneyOperRepo;
+  private final MoneyOperRepo moneyOperRepo;
   private final DataSource dataSource;
 
   @Autowired
-  public DbPatch005(BalanceSheetRepository balanceSheetRepo, MoneyOperRepository moneyOperRepo, DataSource dataSource) {
+  public DbPatch005(BalanceSheetRepository balanceSheetRepo, MoneyOperRepo moneyOperRepo, DataSource dataSource) {
     this.balanceSheetRepo = balanceSheetRepo;
     this.moneyOperRepo = moneyOperRepo;
     this.dataSource = dataSource;

@@ -22,7 +22,7 @@ import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.*;
 import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
 
 @Entity
-@Table(name = "money_trns")
+@Table(name = "money_oper")
 public class MoneyOper implements Serializable {
   @Id
   private UUID id;

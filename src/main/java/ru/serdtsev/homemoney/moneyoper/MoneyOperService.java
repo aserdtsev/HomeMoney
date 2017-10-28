@@ -31,13 +31,13 @@ public class MoneyOperService {
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
   private final Logger log = LoggerFactory.getLogger(this.getClass());
-  private final MoneyOperRepository moneyOperRepo;
+  private final MoneyOperRepo moneyOperRepo;
   private final RecurrenceOperRepo recurrenceOperRepo;
   private final AccountRepository accountRepo;
   private final LabelRepository labelRepo;
 
   @Autowired
-  public MoneyOperService(MoneyOperRepository moneyOperRepo, RecurrenceOperRepo recurrenceOperRepo, AccountRepository accountRepo,
+  public MoneyOperService(MoneyOperRepo moneyOperRepo, RecurrenceOperRepo recurrenceOperRepo, AccountRepository accountRepo,
       LabelRepository labelRepo) {
     this.moneyOperRepo = moneyOperRepo;
     this.recurrenceOperRepo = recurrenceOperRepo;

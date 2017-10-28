@@ -25,7 +25,7 @@ class MoneyTrnsResourceTest {
   private MoneyOperService moneyOperService = mock(MoneyOperService.class);
   private BalanceSheetRepository balanceSheetRepo = mock(BalanceSheetRepository.class);
   private BalanceRepository balanceRepo = mock(BalanceRepository.class);
-  private MoneyOperRepository moneyOperRepo = mock(MoneyOperRepository.class);
+  private MoneyOperRepo moneyOperRepo = mock(MoneyOperRepo.class);
   private LabelRepository labelRepo = mock(LabelRepository.class);
   private MoneyOperItemRepo moneyOperItemRepo = mock(MoneyOperItemRepo.class);
   private CategoryRepository categoryRepo = mock(CategoryRepository.class);

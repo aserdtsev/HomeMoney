@@ -19,14 +19,14 @@ import static ru.serdtsev.homemoney.moneyoper.MoneyOperType.*;
 public class Patch003 {
   private Logger log = LoggerFactory.getLogger(this.getClass());
   private final BalanceSheetRepository balanceSheetRepo;
-  private final MoneyOperRepository moneyOperRepo;
+  private final MoneyOperRepo moneyOperRepo;
   private final BalanceRepository balanceRepo;
   private final LabelRepository labelRepo;
   private final CategoryRepository categoryRepo;
   private final AccountRepository accountRepo;
 
   @Autowired
-  public Patch003(BalanceSheetRepository balanceSheetRepo, MoneyOperRepository moneyOperRepo,
+  public Patch003(BalanceSheetRepository balanceSheetRepo, MoneyOperRepo moneyOperRepo,
       BalanceRepository balanceRepo, LabelRepository labelRepo, CategoryRepository categoryRepo,
       AccountRepository accountRepo) {
     this.balanceSheetRepo = balanceSheetRepo;

@@ -46,14 +46,14 @@ public class MoneyTrnsResource {
   private final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final AccountRepository accountRepo;
-  private final MoneyOperRepository moneyOperRepo;
+  private final MoneyOperRepo moneyOperRepo;
   private final LabelRepository labelRepo;
   private final MoneyOperItemRepo moneyOperItemRepo;
   private final CategoryRepository categoryRepo;
 
   @Autowired
   public MoneyTrnsResource(MoneyOperService moneyOperService, BalanceSheetRepository balanceSheetRepo,
-      AccountRepository accountRepo, MoneyOperRepository moneyOperRepo, LabelRepository labelRepo,
+      AccountRepository accountRepo, MoneyOperRepo moneyOperRepo, LabelRepository labelRepo,
       MoneyOperItemRepo moneyOperItemRepo, CategoryRepository categoryRepo) {
     this.moneyOperService = moneyOperService;
     this.balanceSheetRepo = balanceSheetRepo;
