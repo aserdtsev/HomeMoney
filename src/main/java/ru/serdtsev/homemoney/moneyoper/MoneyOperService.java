@@ -200,7 +200,7 @@ public class MoneyOperService {
   }
 
   void updateAmount(MoneyOper oper, BigDecimal amount) {
-    if (oper.getAmount().compareTo(amount) != 0) return;
+    if (oper.getAmount().compareTo(amount) == 0) return;
     oper.getItems().stream()
         .filter(item -> item.getValue().signum() < 0)
         .forEach(item -> item.setValue(amount.negate()));
@@ -208,7 +208,7 @@ public class MoneyOperService {
   }
 
   void updateToAmount(MoneyOper oper, BigDecimal amount) {
-    if (oper.getToAmount().compareTo(amount) != 0) return;
+    if (oper.getToAmount().compareTo(amount) == 0) return;
     oper.getItems().stream()
         .filter(item -> item.getValue().signum() > 0)
         .forEach(item -> item.setValue(amount));
