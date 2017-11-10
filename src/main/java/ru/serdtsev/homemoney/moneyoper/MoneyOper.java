@@ -10,6 +10,7 @@ import ru.serdtsev.homemoney.utils.Utils;
 
 import javax.annotation.Nullable;
 import javax.persistence.*;
+import javax.validation.constraints.AssertTrue;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -365,5 +366,11 @@ public class MoneyOper implements Serializable {
         ", items=" + items +
         ", created=" + created +
         '}';
+  }
+
+  @SuppressWarnings("unused")
+  @AssertTrue(message = "Fields amount and toAmount is different.")
+  public boolean isAmountsValid() {
+    return !Objects.equals(getCurrencyCode(), getToCurrencyCode()) || amount.compareTo(toAmount) == 0;
   }
 }
