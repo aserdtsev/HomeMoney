@@ -1,29 +1,29 @@
 'use strict';
 
-hmControllers.controller('MoneyTrnsCtrl',
-    ['$scope', '$rootScope', 'AccountsSvc', 'BalancesSvc', 'MoneyTrnsSvc', 'MoneyTrnTemplsSvc', MoneyTrnsCtrl]);
-function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSvc, MoneyTrnTemplsSvc) {
+hmControllers.controller('MoneyOpersCtrl',
+    ['$scope', '$rootScope', 'AccountsSvc', 'BalancesSvc', 'MoneyOpersSvc', 'RecurrenceOpersSvc', MoneyOpersCtrl]);
+function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpersSvc, RecurrenceOpersSvc) {
   $scope.defaultDate;
   $scope.pageSize = 5;
   $scope.accounts;
   $scope.balances;
   $scope.search = '';
-  $scope.trns;
-  $scope.templs;
+  $scope.opers;
+  $scope.recurrenceOpers;
 
   $scope.$on('login', function() {
-    $scope.loadTempls();
-    $scope.loadTrnsFirstPage($scope.pageSize);
+    $scope.loadRecurrenceOpers();
+    $scope.loadOpersFirstPage($scope.pageSize);
     $scope.loadAccounts();
     $scope.loadBalances();
   });
 
   $scope.$on('logout', function() {
-    $scope.templs = undefined;
+    $scope.recurrenceOpers = undefined;
     $scope.accounts = undefined;
     $scope.fromAccounts = undefined;
     $scope.toAccounts = undefined;
-    $scope.trns = undefined;
+    $scope.opers = undefined;
     $scope.search = undefined;
   });
 
@@ -42,13 +42,13 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
   }
 
   $scope.refresh = function() {
-    $scope.loadTempls();
-    $scope.refreshTrns();
+    $scope.loadRecurrenceOpers();
+    $scope.refreshOpers();
     $rootScope.$broadcast('refreshBalanceSheet');
   }
 
-  $scope.refreshTrns = function() {
-    $scope.loadTrnsFirstPage($scope.getTrnsLength());
+  $scope.refreshOpers = function() {
+    $scope.loadOpersFirstPage($scope.getOpersLength());
   }
 
   $scope.loadAccounts = function() {
@@ -69,7 +69,7 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
 
   $scope.getGroupList = function(caption) {
     var result;
-    $scope.trns.data.forEach(function(groupList) {
+    $scope.opers.data.forEach(function(groupList) {
       if (typeof result == 'undefined' && groupList.caption == caption) {
         result = groupList;
       }
@@ -79,8 +79,8 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
       if (caption == 'Ближайшие') {
         result.expanded = false;
       }
-      $scope.trns.data.splice(0, 0, result);
-      $scope.trns.data.sort(function(a, b) {
+      $scope.opers.data.splice(0, 0, result);
+      $scope.opers.data.sort(function(a, b) {
         if (a.caption < b.caption) return 1;
         if (a.caption > b.caption) return -1;
       });
@@ -88,59 +88,59 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     return result;
   }
 
-  $scope.addToTrns = function(list) {
+  $scope.addToOpers = function(list) {
     var today = $scope.getToday();
-    list.forEach(function(trn) {
-      var groupName = (trn.status == "done") ? trn.trnDate : "Ближайшие";
+    list.forEach(function(oper) {
+      var groupName = (oper.status == "done") ? oper.operDate : "Ближайшие";
       var groupList = $scope.getGroupList(groupName);
-      groupList.items = groupList.items.concat(trn);
-      if (groupName == 'Ближайшие' && (new Date(trn.trnDate + 'Z+06:00') - today) == 0) {
+      groupList.items = groupList.items.concat(oper);
+      if (groupName == 'Ближайшие' && (new Date(oper.operDate) - today) == 0) {
         groupList.expanded = true;
       }
     });
   }
 
-  $scope.loadTempls = function() {
+  $scope.loadRecurrenceOpers = function() {
     if (!$scope.isLogged()) return;
-    var response = MoneyTrnTemplsSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
-      $scope.templs = response.data;
+    var response = RecurrenceOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
+      $scope.recurrenceOpers = response.data;
     });
   }
 
-  $scope.loadTrnsFirstPage = function(limit) {
+  $scope.loadOpersFirstPage = function(limit) {
     if (!$scope.isLogged()) return;
     var qLimit = limit;
     if (typeof limit == 'undefined') {
       qLimit = $scope.pageSize;
     }
-    var response = MoneyTrnsSvc.query({bsId: $rootScope.bsId, search: $scope.search, limit: qLimit, offset: 0}, function() {
-      $scope.trns = {data: [], hasNext: response.data.paging.hasNext};
-      $scope.addToTrns(response.data.items);
+    var response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search, limit: qLimit, offset: 0}, function() {
+      $scope.opers = {data: [], hasNext: response.data.paging.hasNext};
+      $scope.addToOpers(response.data.items);
     });
   };
 
-  $scope.loadTrnsNextPage = function(search) {
-    var offset = $scope.getTrnsLength();
-    var response = MoneyTrnsSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
-      $scope.addToTrns(response.data.items);
-      $scope.trns.hasNext = response.data.paging.hasNext;
+  $scope.loadOpersNextPage = function(search) {
+    var offset = $scope.getOpersLength();
+    var response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
+      $scope.addToOpers(response.data.items);
+      $scope.opers.hasNext = response.data.paging.hasNext;
     });
   };
 
-  // Возвращает количество завершенных операций в $scope.trns.
-  $scope.getTrnsLength = function() {
+  // Возвращает количество завершенных операций в $scope.opers.
+  $scope.getOpersLength = function() {
     var length = 0;
-    $scope.trns.data.forEach(function(groupList) {
+    $scope.opers.data.forEach(function(groupList) {
       length += groupList.isDone ? groupList.items.length : 0;
     });
     return length;
   }
 
-  $scope.hasTrnsNextPage = function() {
-    if (typeof $scope.trns == 'undefined' || typeof $scope.trns.data == 'undefined') {
+  $scope.hasOpersNextPage = function() {
+    if (typeof $scope.opers == 'undefined' || typeof $scope.opers.data == 'undefined') {
       return false;
     }
-    return $scope.trns.hasNext;
+    return $scope.opers.hasNext;
   };
 
   $scope.getDefaultDate = function() {
@@ -156,20 +156,20 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     return today;
   }
 
-  $scope.getFirstAccounts = function(trn) {
+  $scope.getFirstAccounts = function(oper) {
     if (typeof $scope.accounts == 'undefined') {
       return [];
     }
     return $scope.accounts.filter(function(account) {
-      if (trn.type == 'transfer') {
+      if (oper.type == 'transfer') {
         if (account.type == 'expense' || account.type == 'income') {
           return false;
         }
         var result = true;
-        if (typeof trn.toAccId != 'undefined') {
-          result = account.id != trn.toAccId;
+        if (typeof oper.toAccId != 'undefined') {
+          result = account.id != oper.toAccId;
           if (result) {
-            var toAccount = $scope.getAccount(trn.toAccId);
+            var toAccount = $scope.getAccount(oper.toAccId);
             if (toAccount.type == 'reserve' || toAccount.type == 'service') {
               result = account.type == 'reserve' || account.type == 'service';
             } else {
@@ -184,17 +184,17 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     });
   }
 
-  $scope.getSecondAccounts = function(trn) {
+  $scope.getSecondAccounts = function(oper) {
     if (typeof $scope.accounts == 'undefined') {
       return [];
     }
     return $scope.accounts.filter(function(account) {
-      if (trn.type == 'transfer') {
+      if (oper.type == 'transfer') {
         var result = true;
-        if (typeof trn.fromAccId != 'undefined') {
-          result = account.id != trn.fromAccId;
+        if (typeof oper.fromAccId != 'undefined') {
+          result = account.id != oper.fromAccId;
           if (result) {
-            var fromAccount = $scope.getAccount(trn.fromAccId);
+            var fromAccount = $scope.getAccount(oper.fromAccId);
             if (fromAccount.type == 'reserve' || fromAccount.type == 'service') {
               result = account.type == 'reserve' || account.type == 'service';
             } else {
@@ -204,7 +204,7 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
         }
         return result;
       } else {
-        return account.type == trn.type;
+        return account.type == oper.type;
       }
     });
   }
@@ -221,88 +221,88 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     })[0]
   }
 
-  $scope.newTrn = function(param) {
-    var trn;
+  $scope.newOper = function(param) {
+    var oper;
     if (typeof param.id != 'undefined') {
-      var templ = param;
-      trn = {type: templ.type, fromAccId: templ.fromAccId, amount: templ.amount, toAccId: templ.toAccId,
-        comment: templ.comment, labels: templ.labels, period: templ.period, templId: templ.id};
+      var recurrenceOper = param;
+      oper = {type: recurrenceOper.type, fromAccId: recurrenceOper.fromAccId, amount: recurrenceOper.amount, toAccId: recurrenceOper.toAccId,
+        comment: recurrenceOper.comment, labels: recurrenceOper.labels, period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
     } else {
       var type = param;
-      trn = {type: type, labels: []};
+      oper = {type: type, labels: []};
     }
-    trn.status = 'doneNew';
-    trn.trnDate = formatDate($scope.getDefaultDate());
-    trn.isEdited = true;
+    oper.status = 'doneNew';
+    oper.operDate = formatDate($scope.getDefaultDate());
+    oper.isEdited = true;
     var groupList = $scope.getGroupList('Новые');
-    groupList.items.splice(0, 0, trn);
+    groupList.items.splice(0, 0, oper);
   };
 
-  $scope.completeTrn = function(trn) {
+  $scope.completeOper = function(oper) {
     var today = formatDate(new Date());
-    if (trn.trnDate > today) {
-      trn.trnDate = today;
+    if (oper.operDate > today) {
+      oper.operDate = today;
     }
-    trn.status = trn.status == 'recurrence' ? 'doneNew' : 'done';
-    trn.isEdited = true;
+    oper.status = oper.status == 'recurrence' ? 'doneNew' : 'done';
+    oper.isEdited = true;
   }
 
-  $scope.cancelTrn = function() {
-    $scope.refreshTrns();
+  $scope.cancelOper = function() {
+    $scope.refreshOpers();
   };
 
-  $scope.saveTrn = function(trn) {
-    delete trn.isEdited;
-    if (trn.status == 'doneNew') {
-      $scope.createTrn(trn);
+  $scope.saveOper = function(oper) {
+    delete oper.isEdited;
+    if (oper.status == 'doneNew') {
+      $scope.createOper(oper);
     } else {
-      $scope.updateTrn(trn);
+      $scope.updateOper(oper);
     }
-    $scope.defaultDate = new Date(trn.trnDate + 'Z+06:00');
+    $scope.defaultDate = new Date(oper.operDate);
   };
 
-  $scope.createTrn = function(trn) {
-    trn.id = randomUUID();
-    var response = MoneyTrnsSvc.create({bsId: $rootScope.bsId}, trn, function() {
-      $scope.loadTrnsFirstPage($scope.getTrnsLength() + response.data.length);
+  $scope.createOper = function(oper) {
+    oper.id = randomUUID();
+    var response = MoneyOpersSvc.create({bsId: $rootScope.bsId}, oper, function() {
+      $scope.loadOpersFirstPage($scope.getOpersLength() + response.data.length);
       $rootScope.$broadcast('refreshBalanceSheet');
     });
   };
 
-  $scope.updateTrn = function(trn) {
-    if (trn.currencyCode == trn.toCurrencyCode) {
-      trn.toAmount = trn.amount
+  $scope.updateOper = function(oper) {
+    if (oper.currencyCode == oper.toCurrencyCode) {
+      oper.toAmount = oper.amount
     }
-    MoneyTrnsSvc.update({bsId: $rootScope.bsId}, trn, function() {
-      $scope.loadTrnsFirstPage($scope.getTrnsLength());
+    MoneyOpersSvc.update({bsId: $rootScope.bsId}, oper, function() {
+      $scope.loadOpersFirstPage($scope.getOpersLength());
       $rootScope.$broadcast('refreshBalanceSheet');
     });
   };
 
-  $scope.deleteTrn = function(trn) {
-    delete trn.isEdited;
-    MoneyTrnsSvc.delete({bsId: $rootScope.bsId}, trn, function() {
-      $scope.loadTrnsFirstPage($scope.getTrnsLength());
+  $scope.deleteOper = function(oper) {
+    delete oper.isEdited;
+    MoneyOpersSvc.delete({bsId: $rootScope.bsId}, oper, function() {
+      $scope.loadOpersFirstPage($scope.getOpersLength());
       $rootScope.$broadcast('refreshBalanceSheet');
     });
   };
 
-  $scope.skipTrn = function(trn) {
-    MoneyTrnsSvc.skip({bsId: $rootScope.bsId}, trn, function() {
-      $scope.loadTrnsFirstPage($scope.getTrnsLength());
-      $scope.loadTempls();
+  $scope.skipOper = function(oper) {
+    MoneyOpersSvc.skip({bsId: $rootScope.bsId}, oper, function() {
+      $scope.loadOpersFirstPage($scope.getOpersLength());
+      $scope.loadRecurrenceOpers();
       $rootScope.$broadcast('refreshBalanceSheet');
     });
   }
 
-  $scope.upTrn = function(trn) {
-    delete trn.isEdited;
-    MoneyTrnsSvc.up({bsId: $rootScope.bsId}, trn, function() {
-      $scope.loadTrnsFirstPage($scope.getTrnsLength());
+  $scope.upOper = function(oper) {
+    delete oper.isEdited;
+    MoneyOpersSvc.up({bsId: $rootScope.bsId}, oper, function() {
+      $scope.loadOpersFirstPage($scope.getOpersLength());
     });
   };
 
-  // item - экземпляр Trn или Templ.
+  // item - экземпляр Oper или RecurrenceOper.
   $scope.newLabelKeyPressed = function(event, label, item) {
     if (event.keyCode == 13) {
       var labels = item['labels'];
@@ -312,7 +312,7 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     }
   };
 
-  // item - экземпляр Trn или Templ.
+  // item - экземпляр Oper или RecurrenceOper.
   $scope.editLabelKeyPressed = function(event, index, label, item) {
     if (event.keyCode == 13) {
       var labels = item['labels'];
@@ -324,12 +324,12 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     }
   };
 
-  $scope.getSignedAmount = function(trn) {
-    return trn['amount'] * (trn['type'] == 'e' ? -1 : 1);
+  $scope.getSignedAmount = function(oper) {
+    return oper['amount'] * (oper['type'] == 'e' ? -1 : 1);
   };
 
-  $scope.getPeriodName = function(trn) {
-    var period = trn['period'];
+  $scope.getPeriodName = function(oper) {
+    var period = oper['period'];
     return (period == 'month') ? 'Месяц' :
         (period == 'quarter') ? 'Квартал' :
         (period == 'year') ? 'Год' :
@@ -348,36 +348,36 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     }
   }
 
-  $scope.skipMoneyTrnByTempl = function(templ) {
-    MoneyTrnTemplsSvc.skip({bsId: $rootScope.bsId}, templ, function() {
+  $scope.skipMoneyOperByRecurrenceOper = function(recurrenceOper) {
+    RecurrenceOpersSvc.skip({bsId: $rootScope.bsId}, recurrenceOper, function() {
       $scope.refresh();
     });
   }
 
-  $scope.cancelTempl = function() {
-    $scope.loadTempls();
+  $scope.cancelRecurrenceOper = function() {
+    $scope.loadRecurrenceOpers();
   };
 
-  $scope.saveTempl = function(templ) {
-    $scope.updateTempl(templ);
+  $scope.saveRecurrenceOper = function(recurrenceOper) {
+    $scope.updateRecurrenceOper(recurrenceOper);
   };
 
-  $scope.createTemplByTrn = function(trn) {
-    MoneyTrnTemplsSvc.create({bsId: $rootScope.bsId}, trn, function() {
+  $scope.createRecurrenceOperByOper = function(oper) {
+    RecurrenceOpersSvc.create({bsId: $rootScope.bsId}, oper, function() {
       $scope.refresh();
     });
   };
 
-  $scope.updateTempl = function(templ) {
-    delete templ.isEdited;
-    MoneyTrnTemplsSvc.update({bsId: $rootScope.bsId}, templ, function() {
+  $scope.updateRecurrenceOper = function(recurrenceOper) {
+    delete recurrenceOper.isEdited;
+    RecurrenceOpersSvc.update({bsId: $rootScope.bsId}, recurrenceOper, function() {
       $scope.refresh();
     });
   };
 
-  $scope.deleteTempl = function(templ) {
-    delete templ.isEdited;
-    MoneyTrnTemplsSvc.delete({bsId: $rootScope.bsId}, templ, function() {
+  $scope.deleteRecurrenceOper = function(recurrenceOper) {
+    delete recurrenceOper.isEdited;
+    RecurrenceOpersSvc.delete({bsId: $rootScope.bsId}, recurrenceOper, function() {
       $scope.refresh();
     });
   };
@@ -398,10 +398,10 @@ function MoneyTrnsCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyTrnsSv
     return balance1['currencyCode'] != balance2['currencyCode'];
   }
 
-  $scope.getAmountAsHtml = function(trn) {
-    var result = $scope.formatMoney($scope.getSignedAmount(trn), trn['currencySymbol'])
-    if (trn['currencyCode'] != trn['toCurrencyCode'])
-      result = result + " (" + $scope.formatMoney(trn['toAmount'], trn['toCurrencySymbol']) + ")"
+  $scope.getAmountAsHtml = function(oper) {
+    var result = $scope.formatMoney($scope.getSignedAmount(oper), oper['currencySymbol'])
+    if (oper['currencyCode'] != oper['toCurrencyCode'])
+      result = result + " (" + $scope.formatMoney(oper['toAmount'], oper['toCurrencySymbol']) + ")"
     return result
   }
 }

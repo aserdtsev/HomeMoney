@@ -17,7 +17,7 @@ import java.util.UUID;
 public class MoneyTrn {
   private UUID id;
   private MoneyOperStatus status;
-  private Date trnDate;
+  private Date operDate;
   private Integer dateNum;
   private List<MoneyOperItem> items;
   private UUID fromAccId;
@@ -45,7 +45,7 @@ public class MoneyTrn {
         null, null, null, null, null);
   }
 
-  public MoneyTrn(UUID id, MoneyOperStatus status, Date trnDate,
+  public MoneyTrn(UUID id, MoneyOperStatus status, Date operDate,
       UUID fromAccId, UUID toAccId, BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode,
       Period period, String comment, List<String> labels, Integer dateNum, UUID parentId, UUID templId, Timestamp createdTs) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
@@ -53,7 +53,7 @@ public class MoneyTrn {
     }
     this.id = id;
     this.status = status;
-    this.trnDate = trnDate;
+    this.operDate = operDate;
     this.dateNum = dateNum;
     this.fromAccId = fromAccId;
     this.toAccId = toAccId;
@@ -87,13 +87,13 @@ public class MoneyTrn {
     this.status = status;
   }
 
-  public Date getTrnDate() {
-    return trnDate;
+  public Date getOperDate() {
+    return operDate;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setTrnDate(Date trnDate) {
-    this.trnDate = trnDate;
+  public void setOperDate(Date trnDate) {
+    this.operDate = trnDate;
   }
 
   public Integer getDateNum() {
@@ -265,7 +265,7 @@ public class MoneyTrn {
     if (!equals(other)) {
       throw new HmException(HmException.Code.IdentifiersDoNotMatch);
     }
-    return trnDate.equals(other.trnDate)
+    return operDate.equals(other.operDate)
         && fromAccId.equals(other.fromAccId) && toAccId.equals(other.toAccId)
         && amount.compareTo(other.amount) == 0
         && toAmount.compareTo(other.toAmount) == 0
@@ -292,7 +292,7 @@ public class MoneyTrn {
     return "MoneyTrn{" +
         "id=" + id +
         ", status=" + status +
-        ", trnDate=" + trnDate +
+        ", operDate=" + operDate +
         ", items=" + items +
         ", dateNum=" + dateNum +
         ", fromAccId=" + fromAccId +

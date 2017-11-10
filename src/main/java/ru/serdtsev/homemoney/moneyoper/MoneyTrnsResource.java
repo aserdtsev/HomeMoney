@@ -87,7 +87,7 @@ public class MoneyTrnsResource {
             .collect(Collectors.toList());
         trns.addAll(recurrenceTrns);
 
-        trns.sort(Comparator.comparing(MoneyTrn::getTrnDate).reversed());
+        trns.sort(Comparator.comparing(MoneyTrn::getOperDate).reversed());
       }
 
       List<MoneyTrn> doneTrns = getMoneyOpers(balanceSheet, MoneyOperStatus.done, search, limit + 1, offset)
@@ -395,7 +395,7 @@ public class MoneyTrnsResource {
     MoneyOper reserveMoneyOper = null;
     if (!Objects.equals(fromAcc, toAcc)) {
       List<Label> labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyTrn.getLabels());
-      reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyTrn.getTrnDate(),
+      reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyTrn.getOperDate(),
           nvl(moneyTrn.getDateNum(), 0), labels, moneyTrn.getComment(), moneyTrn.getPeriod(), fromAcc.getId(), toAcc.getId(),
           moneyTrn.getAmount(), moneyTrn.getAmount(), moneyTrn.getId(), null);
     }
@@ -412,7 +412,7 @@ public class MoneyTrnsResource {
     }
     assert nonNull(amount);
     MoneyOper templateOper = nonNull(moneyTrn.getTemplId()) ? moneyOperRepo.findOne(moneyTrn.getTemplId()) : null;
-    return moneyOperService.newMoneyOper(balanceSheet, moneyTrn.getId(), pending, moneyTrn.getTrnDate(), nvl(moneyTrn.getDateNum(), 0),
+    return moneyOperService.newMoneyOper(balanceSheet, moneyTrn.getId(), pending, moneyTrn.getOperDate(), nvl(moneyTrn.getDateNum(), 0),
         labels, moneyTrn.getComment(), moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(),
         amount, nvl(moneyTrn.getToAmount(), amount), null, templateOper);
   }

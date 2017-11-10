@@ -1,4 +1,4 @@
-<html ng-app="hmApp">
+<html ng-app="hmApp" xmlns="http://www.w3.org/1999/html">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <link rel="stylesheet" type="text/css" href="css/app.css">
@@ -18,14 +18,14 @@
   <script src="js/CategoriesCtrl.js"></script>
   <script src="js/BalancesCtrl.js"></script>
   <script src="js/ReservesCtrl.js"></script>
-  <script src="js/MoneyTrnsCtrl.js"></script>
+  <script src="js/MoneyOpersCtrl.js"></script>
 </head>
 <body>
 <div ng-controller="UserCtrl" class="block">
   <h2>Домашние деньги</h2>
   <!--a href="api/database/clear-n-create-balance-sheet">clear database and create balance sheet</a-->
   <div class="form">
-    <input type="text" ng-readonly="isLogged()" ng-model="email" placeholder="Email"/>
+    <input ng-readonly="isLogged()" ng-model="email" placeholder="Email"/>
     <input type="password" ng-readonly="isLogged()" ng-model="pwd" placeholder="Пароль"/>
     <input type="submit"
            ng-hide="isLogged()"
@@ -84,192 +84,191 @@
   </div>
 </div>
 
-<div ng-controller="MoneyTrnsCtrl" class="block">
+<div ng-controller="MoneyOpersCtrl" class="block">
   <div>
   Журнал операций
   <div>
     <a href="" ng-click="showSearchClick()">поиск</a>
   </div>
   <div ng-show="showSearch">
-    <input type="text" ng-model="search"/>
+    <input ng-model="search"/>
     <input type="button" ng-click="find(search)" value="искать"/>
   </div>
   <div>
     <span>Добавить</span>
-    <a href="" ng-click="newTrn('expense')">расход</a>,
-    <a href="" ng-click="newTrn('income')">доход</a> или
-    <a href="" ng-click="newTrn('transfer')">перевод</a>.
+    <a href="" ng-click="newOper('expense')">расход</a>,
+    <a href="" ng-click="newOper('income')">доход</a> или
+    <a href="" ng-click="newOper('transfer')">перевод</a>.
   </div>
-  <div ng-repeat="groupList in trns.data">
+  <div ng-repeat="groupList in opers.data">
     <div align="center">
       <a href="" ng-click="groupList.expanded = !groupList.expanded">{{groupList.caption}}</a>
     </div>
-    <div ng-repeat="trn in groupList.items" ng-show="groupList.expanded" class="list-item-block">
-      <div ng-show="!trn.isEdited">
-        <span ng-hide="trn.status == 'done'">{{trn.trnDate}}</span>
+    <div ng-repeat="oper in groupList.items" ng-show="groupList.expanded" class="list-item-block">
+      <div ng-show="!oper.isEdited">
+        <span ng-hide="oper.status == 'done'">{{oper.operDate}}</span>
         <a href=""
-           ng-click="trn.isEdited=true"
-           ng-bind-html="getAmountAsHtml(trn)"
-           class="{{trn.type == 'transfer' ? 'money' : (trn.type == 'income' ? 'positive-money' : 'negative-money')}}">
+           ng-click="oper.isEdited=true"
+           ng-bind-html="getAmountAsHtml(oper)"
+           class="{{oper.type == 'transfer' ? 'money' : (oper.type == 'income' ? 'positive-money' : 'negative-money')}}">
         </a>
-        <span ng-bind="trn[trn.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
-        <span ng-bind="trn.type == 'income' ? '&larr;' : '&rarr;'"></span>
-        <span ng-bind="trn[trn.type == 'income' ? 'fromAccName' : 'toAccName']"></span>
-        Периодичность: <span ng-bind="getPeriodName(trn)"></span>
+        <span ng-bind="oper[oper.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
+        <span ng-bind="oper.type == 'income' ? '&larr;' : '&rarr;'"></span>
+        <span ng-bind="oper[oper.type == 'income' ? 'fromAccName' : 'toAccName']"></span>
+        Периодичность: <span ng-bind="getPeriodName(oper)"></span>
         <div>
-          <span>{{trn['comment']}}</span>
-          <span class="label" ng-repeat="label in trn['labels']">{{label}}</span>
+          <span>{{oper['comment']}}</span>
+          <span class="label" ng-repeat="label in oper['labels']">{{label}}</span>
           <span>
             <a href=""
-               ng-show="trn.status == 'done'"
-               ng-click="upTrn(trn)">вверх</a>
+               ng-show="oper.status == 'done'"
+               ng-click="upOper(oper)">вверх</a>
             <a href=""
-               ng-show="trn.status == 'done' && trn.period != 'SINGLE'"
-               ng-click="createTemplByTrn(trn)">шаблон</a>
+               ng-show="oper.status == 'done' && oper.period != 'SINGLE'"
+               ng-click="createRecurrenceOperByOper(oper)">шаблон</a>
             <a href=""
-               ng-show="trn.status == 'pending' || trn.status == 'recurrence'"
-               ng-click="completeTrn(trn)">выполнить</a>
+               ng-show="oper.status == 'pending' || oper.status == 'recurrence'"
+               ng-click="completeOper(oper)">выполнить</a>
             <a href=""
-               ng-hide="(trn.status == 'pending'  || trn.status == 'recurrence') && trn.templId != null"
-               ng-click="deleteTrn(trn)">удалить</a>
+               ng-hide="(oper.status == 'pending'  || oper.status == 'recurrence') && oper.recurrenceId != null"
+               ng-click="deleteOper(oper)">удалить</a>
             <a href=""
-               ng-show="trn.status == 'recurrence' && trn.templId != null"
-               ng-click="skipTrn(trn)">пропустить</a>
+               ng-show="oper.status == 'recurrence' && oper.recurrenceId != null"
+               ng-click="skipOper(oper)">пропустить</a>
           </span>
         </div>
       </div>
-      <div ng-if="trn.isEdited">
+      <div ng-if="oper.isEdited">
         <div class="form">
           <div>
-            <span ng-bind="trn.type == 'expense' ? 'расход' : trn.type == 'income' ? 'доход' : 'перевод'"/>
+            <span ng-bind="oper.type == 'expense' ? 'расход' : oper.type == 'income' ? 'доход' : 'перевод'"></span>
           </div>
           <div>
-            <input type="text" class="date" ng-model="trn.trnDate" placeholder="Дата"/>
-            <input type="text" class="amount" ng-model="trn.amount" placeholder="Сумма"/>
-            <span ng-bind="trn.type == 'income' ? 'Куда: ' : 'Откуда: '"></span>
+            <input class="date" ng-model="oper.operDate" placeholder="Дата"/>
+            <input class="amount" ng-model="oper.amount" placeholder="Сумма"/>
+            <span ng-bind="oper.type == 'income' ? 'Куда: ' : 'Откуда: '"></span>
             <select
-                ng-if="trn.type != 'income'"
-                ng-model="trn.fromAccId"
-                ng-options="acc.id as acc.name for acc in getFirstAccounts(trn)">
+                ng-if="oper.type != 'income'"
+                ng-model="oper.fromAccId"
+                ng-options="acc.id as acc.name for acc in getFirstAccounts(oper)">
             </select>
             <select
-                ng-if="trn.type == 'income'"
-                ng-model="trn.toAccId"
-                ng-options="acc.id as acc.name for acc in getFirstAccounts(trn)">
+                ng-if="oper.type == 'income'"
+                ng-model="oper.toAccId"
+                ng-options="acc.id as acc.name for acc in getFirstAccounts(oper)">
             </select>
-            <span ng-bind="trn.type == 'transfer' ? 'Куда: ' : 'Категория: '"></span>
+            <span ng-bind="oper.type == 'transfer' ? 'Куда: ' : 'Категория: '"></span>
             <select
-                ng-if="trn.type != 'income'"
-                ng-model="trn.toAccId"
-                ng-options="acc.id as acc.name for acc in getSecondAccounts(trn)">
+                ng-if="oper.type != 'income'"
+                ng-model="oper.toAccId"
+                ng-options="acc.id as acc.name for acc in getSecondAccounts(oper)">
             </select>
             <select
-                ng-if="trn.type == 'income'"
-                ng-model="trn.fromAccId"
-                ng-options="acc.id as acc.name for acc in getSecondAccounts(trn)">
+                ng-if="oper.type == 'income'"
+                ng-model="oper.fromAccId"
+                ng-options="acc.id as acc.name for acc in getSecondAccounts(oper)">
             </select>
-            <input type="text"
-                   class="amount"
-                   ng-if="trn.type == 'transfer' && balanceCysIsNotEqual(trn.fromAccId, trn.toAccId)"
-                   ng-model="trn.toAmount"
+            <input class="amount"
+                   ng-if="oper.type == 'transfer' && balanceCysIsNotEqual(oper.fromAccId, oper.toAccId)"
+                   ng-model="oper.toAmount"
                    placeholder="Сумма"/>
           </div>
           <div>
-            <select ng-model="trn.period">
+            <select ng-model="oper.period">
               <option value="month">Месяц</option>
               <option value="quarter">Квартал</option>
               <option value="year">Год</option>
               <option value="single">Разовая</option>
             </select>
-            <input type="text" ng-model="trn.comment" placeholder="Комментарий"/>
+            <input ng-model="oper.comment" placeholder="Комментарий"/>
             <span>
-              <span ng-repeat="label in trn['labels']">
+              <span ng-repeat="label in oper['labels']">
                 <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
-                <input type="text" class="label" ng-show="labelIsEdited[$index]" ng-model="label"
-                     ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, trn)"/>
+                <input class="label" ng-show="labelIsEdited[$index]" ng-model="label"
+                     ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, oper)"/>
               </span>
               <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
-              <input type="text" class="label" ng-hide="!isNewLabel" ng-model="label"
-                   ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, trn);label=$event.keyCode==13 ? null : label"/>
+              <input class="label" ng-hide="!isNewLabel" ng-model="label"
+                   ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, oper);label=$event.keyCode==13 ? null : label"/>
             </span>
           </div>
           <div>
             <input type="submit"
-                   ng-click="saveTrn(trn)"
-                   ng-disabled="!trn.amount.length && !trn.fromAccId && !trn.toAccId"
+                   ng-click="saveOper(oper)"
+                   ng-disabled="!oper.amount.length && !oper.fromAccId && !oper.toAccId"
                    value="сохранить"/>
-            <a href="" ng-click="cancelTrn(trn)">отменить</a>
+            <a href="" ng-click="cancelOper(oper)">отменить</a>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <a href="" ng-show="hasTrnsNextPage()" ng-click="loadTrnsNextPage(search)">еще</a>
+  <a href="" ng-show="hasOpersNextPage()" ng-click="loadOpersNextPage(search)">еще</a>
   </div>
 
   <div>
   Повторяющиеся платежи
-  <a href="" ng-click="showTempls=!showTempls" ng-bind="showTempls ? 'скрыть' : 'показать'"></a>
-  <div ng-hide="!showTempls" ng-repeat="templ in templs" class="list-item-block">
+  <a href="" ng-click="showRecurrenceOpers=!showRecurrenceOpers" ng-bind="showRecurrenceOpers ? 'скрыть' : 'показать'"></a>
+  <div ng-hide="!showRecurrenceOpers" ng-repeat="recurrenceOper in recurrenceOpers" class="list-item-block">
     <div>
-      <div ng-hide="templ.isEdited">
-        <span>{{templ.nextDate}}</span>
-        <span ng-bind-html="getAmountAsHtml(templ)"
-              class="{{templ.type == 'transfer' ? 'money' : (templ.type == 'income' ? 'positive-money' : 'negative-money')}}">
+      <div ng-hide="recurrenceOper.isEdited">
+        <span>{{recurrenceOper.nextDate}}</span>
+        <span ng-bind-html="getAmountAsHtml(recurrenceOper)"
+              class="{{recurrenceOper.type == 'transfer' ? 'money' : (recurrenceOper.type == 'income' ? 'positive-money' : 'negative-money')}}">
         </span>
-        <span ng-bind="templ[templ.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
-        <span ng-bind="templ.type == 'income' ? '&larr;' : '&rarr;'"></span>
-        <span ng-bind="templ[templ.type == 'income' ? 'fromAccName' : 'toAccName']"></span>
-        <span>Периодичность: {{getPeriodName(templ)}}</span>
+        <span ng-bind="recurrenceOper[recurrenceOper.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
+        <span ng-bind="recurrenceOper.type == 'income' ? '&larr;' : '&rarr;'"></span>
+        <span ng-bind="recurrenceOper[recurrenceOper.type == 'income' ? 'fromAccName' : 'toAccName']"></span>
+        <span>Периодичность: {{getPeriodName(recurrenceOper)}}</span>
         <div>
-          <span>{{templ['comment']}}</span>
-          <div><span class="label" ng-repeat="label in templ['labels']">{{label}}</span></div>
+          <span>{{recurrenceOper['comment']}}</span>
+          <div><span class="label" ng-repeat="label in recurrenceOper['labels']">{{label}}</span></div>
           <span>
-            <a href="" ng-click="templ.isEdited=true">изменить</a>
-            <a href="" ng-click="deleteTempl(templ)">удалить</a>
+            <a href="" ng-click="recurrenceOper.isEdited=true">изменить</a>
+            <a href="" ng-click="deleteRecurrenceOper(recurrenceOper)">удалить</a>
           </span>
         </div>
       </div>
-      <div ng-show="templ.isEdited">
+      <div ng-show="recurrenceOper.isEdited">
         <div class="form">
           <div>
-            <input type="text" class="date" ng-model="templ.nextDate" placeholder="Дата"/>
+            <input class="date" ng-model="recurrenceOper.nextDate" placeholder="Дата"/>
             <select
-                ng-model="templ.fromAccId"
-                ng-options="acc.id as acc.name for acc in getFirstAccounts(templ)"
-                ng-click="refreshToAccounts(templ.fromAccId)">
+                ng-model="recurrenceOper.fromAccId"
+                ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)"
+                ng-click="refreshToAccounts(recurrenceOper.fromAccId)">
             </select>
-            <input type="text" class="amount" ng-model="templ.amount" placeholder="Сумма"/>
+            <input class="amount" ng-model="recurrenceOper.amount" placeholder="Сумма"/>
             <select
-                ng-model="templ.toAccId"
-                ng-options="acc.id as acc.name for acc in getSecondAccounts(templ)"
-                ng-click="refreshFromAccounts(templ.toAccId)">
+                ng-model="recurrenceOper.toAccId"
+                ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)"
+                ng-click="refreshFromAccounts(recurrenceOper.toAccId)">
             </select>
-            <select ng-model="templ.period">
+            <select ng-model="recurrenceOper.period">
               <option value="month">Месяц</option>
               <option value="quarter">Квартал</option>
               <option value="year">Год</option>
             </select>
           </div>
           <div>
-            <input type="text" ng-model="templ.comment" placeholder="Комментарий"/>
+            <input ng-model="recurrenceOper.comment" placeholder="Комментарий"/>
             <span>
-              <span ng-repeat="label in templ['labels']">
+              <span ng-repeat="label in recurrenceOper['labels']">
                 <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
-                <input type="text" class="label" ng-show="labelIsEdited[$index]" ng-model="label"
-                       ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, templ)"/>
+                <input class="label" ng-show="labelIsEdited[$index]" ng-model="label"
+                       ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, recurrenceOper)"/>
               </span>
               <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
-              <input type="text" class="label" ng-hide="!isNewLabel" ng-model="label"
-                     ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, templ);label=$event.keyCode==13 ? null : label"/>
+              <input class="label" ng-hide="!isNewLabel" ng-model="label"
+                     ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, recurrenceOper);label=$event.keyCode==13 ? null : label"/>
             </span>
           </div>
           <div>
             <input type="submit"
-                   ng-click="saveTempl(templ)"
-                   ng-disabled="!templ.amount.length && !templ.nextDate.length"
+                   ng-click="saveRecurrenceOper(recurrenceOper)"
+                   ng-disabled="!recurrenceOper.amount.length && !recurrenceOper.nextDate.length"
                    value="сохранить"/>
-            <a href="" ng-click="cancelTempl()">отменить</a>
+            <a href="" ng-click="cancelRecurrenceOper()">отменить</a>
           </div>
         </div>
       </div>
@@ -314,9 +313,9 @@
     </div>
     <div ng-show="balance.isEdited" class="form">
       <div>
-        <input type="text" ng-model="balance.name" placeholder="Название"/>
-        <input type="text" ng-model="balance.currencyCode" placeholder="Код валюты"/>
-        <input type="text" class="date" ng-model="balance.createdDate" placeholder="Дата"/>
+        <input ng-model="balance.name" placeholder="Название"/>
+        <input ng-model="balance.currencyCode" placeholder="Код валюты"/>
+        <input class="date" ng-model="balance.createdDate" placeholder="Дата"/>
         <select ng-model="balance.type">
           <option value="debit">Места хранения</option>
           <option value="credit">Кредиты</option>
@@ -326,16 +325,16 @@
             ng-model="balance.reserveId"
             ng-options="reserve.id as reserve.name for reserve in getReserves()">
         </select>
-        <input type="checkbox" ng_model="balance.isArc">Архивный</input>
+        <input type="checkbox" ng-model="balance.isArc">Архивный</input>
       </div>
       <div>
-        Остаток: <input type="text" ng-model="balance.value"/>
+        Остаток: <input ng-model="balance.value"/>
       </div>
       <div>
-        Кредитный лимит: <input type="text" ng-model="balance.creditLimit"/>
+        Кредитный лимит: <input ng-model="balance.creditLimit"/>
       </div>
       <div>
-        Минимальный остаток: <input type="text" ng-model="balance.minValue"/>
+        Минимальный остаток: <input ng-model="balance.minValue"/>
       </div>
       <input type="submit"
              ng-click="saveBalance(balance)"
@@ -373,14 +372,14 @@
     <div ng-show="reserve.isEdited" class="form">
       <div class="form">
         <div>
-          <input type="text" ng-model="reserve.name" placeholder="Название"/>
-          <input type="checkbox" ng_model="reserve.isArc">Архивный</input>
+          <input ng-model="reserve.name" placeholder="Название"/>
+          <input type="checkbox" ng-model="reserve.isArc">Архивный</input>
         </div>
         <div>
-          Цель: <input type="text" ng-model="reserve.target"/>
+          Цель: <input ng-model="reserve.target"/>
         </div>
         <div>
-          Текущее значение: <input type="text" ng-model="reserve.value"/>
+          Текущее значение: <input ng-model="reserve.value"/>
         </div>
         <div>
           <input type="submit"
@@ -414,7 +413,7 @@
     <div ng-show="category.isEdited">
       <div class="form">
         <div>
-          <input type="text" ng-model="category.name" placeholder="Название"/>
+          <input ng-model="category.name" placeholder="Название"/>
           <input type="checkbox" ng-model="category.isArc">Архивный</input>
           <select ng-model="category.type">
             <option value="expense">Расходы</option>

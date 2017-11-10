@@ -76,7 +76,7 @@ hmServices.factory('ReservesSvc', ['$resource',
   }
 ]);
 
-hmServices.factory('MoneyTrnsSvc', ['$resource',
+hmServices.factory('MoneyOpersSvc', ['$resource',
   function($resource) {
     var baseUrl = 'api/:bsId/money-trns';
     return $resource(baseUrl, {}, {
@@ -91,7 +91,7 @@ hmServices.factory('MoneyTrnsSvc', ['$resource',
   }
 ]);
 
-hmServices.factory('MoneyTrnTemplsSvc', ['$resource',
+hmServices.factory('RecurrenceOpersSvc', ['$resource',
   function($resource) {
     var baseUrl = 'api/:bsId/money-trn-templs';
     return $resource(baseUrl, {}, {
