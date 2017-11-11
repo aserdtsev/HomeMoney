@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney;
+package ru.serdtsev.homemoney.moneyoper;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,12 +8,7 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
-import ru.serdtsev.homemoney.dto.MoneyTrn;
-import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
-import ru.serdtsev.homemoney.moneyoper.Label;
-import ru.serdtsev.homemoney.moneyoper.MoneyOper;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
-import ru.serdtsev.homemoney.moneyoper.RecurrenceOper;
+import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -22,14 +17,15 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/{bsId}/money-trn-templs")
-public class MoneyTrnTemplsResource {
+@RequestMapping("/api/{bsId}/recurrence-opers")
+@Transactional
+public class RecurrenceOperResource {
   private final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final AccountRepository accountRepo;
 
   @Autowired
-  public MoneyTrnTemplsResource(MoneyOperService moneyOperService,
+  public RecurrenceOperResource(MoneyOperService moneyOperService,
       BalanceSheetRepository balanceSheetRepo, AccountRepository accountRepo) {
     this.moneyOperService = moneyOperService;
     this.balanceSheetRepo = balanceSheetRepo;
@@ -43,7 +39,7 @@ public class MoneyTrnTemplsResource {
       @RequestParam(required = false, defaultValue = "") String search) {
     try {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      List<MoneyTrnTempl> list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
+      List<RecurrenceOperDto> list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
           .sorted(Comparator.comparing(RecurrenceOper::getNextDate))
           .map(this::moneyOperToMoneyTrnTempl)
           .collect(Collectors.toList());
@@ -53,11 +49,11 @@ public class MoneyTrnTemplsResource {
     }
   }
 
-  private MoneyTrnTempl moneyOperToMoneyTrnTempl(RecurrenceOper recurrenceOper) {
+  private RecurrenceOperDto moneyOperToMoneyTrnTempl(RecurrenceOper recurrenceOper) {
     MoneyOper oper = recurrenceOper.getTemplate();
     String fromAccName = accountRepo.findOne(oper.getFromAccId()).getName();
     String toAccName = accountRepo.findOne(oper.getToAccId()).getName();
-    return new MoneyTrnTempl(recurrenceOper.getId(), oper.getId(), oper.getId(),
+    return new RecurrenceOperDto(recurrenceOper.getId(), oper.getId(), oper.getId(),
         recurrenceOper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getComment(),
         getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName, toAccName);
   }
@@ -69,33 +65,30 @@ public class MoneyTrnTemplsResource {
   }
 
   @RequestMapping("/create")
-  @Transactional
   public HmResponse create(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrn moneyTrn) {
+      @RequestBody MoneyOperDto moneyOperDto) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-    moneyOperService.createRecurrenceOper(balanceSheet, moneyTrn.getId());
+    moneyOperService.createRecurrenceOper(balanceSheet, moneyOperDto.getId());
     return HmResponse.getOk();
   }
 
   @RequestMapping("/skip")
-  @Transactional
   public HmResponse skip(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrnTempl templ) {
+      @RequestBody RecurrenceOperDto oper) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-    moneyOperService.skipRecurrenceOper(balanceSheet, templ.getId());
+    moneyOperService.skipRecurrenceOper(balanceSheet, oper.getId());
     return HmResponse.getOk();
   }
 
   @RequestMapping("/delete")
-  @Transactional
   public HmResponse delete(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrnTempl templ) {
+      @RequestBody RecurrenceOperDto oper) {
     try {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      moneyOperService.deleteRecurrenceOper(balanceSheet, templ.getId());
+      moneyOperService.deleteRecurrenceOper(balanceSheet, oper.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -103,13 +96,12 @@ public class MoneyTrnTemplsResource {
   }
 
   @RequestMapping("/update")
-  @Transactional
-  public HmResponse updateTempl(
+  public HmResponse updateRecurrenceOper(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrnTempl templ) {
+      @RequestBody RecurrenceOperDto oper) {
     try {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      moneyOperService.updateRecurrenceOper(balanceSheet, templ);
+      moneyOperService.updateRecurrenceOper(balanceSheet, oper);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

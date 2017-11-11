@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.moneyoper;
+package ru.serdtsev.homemoney.moneyoper.model;
 
 public enum Period {
   month,

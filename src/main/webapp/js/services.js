@@ -78,7 +78,7 @@ hmServices.factory('ReservesSvc', ['$resource',
 
 hmServices.factory('MoneyOpersSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/money-trns';
+    var baseUrl = 'api/:bsId/money-opers';
     return $resource(baseUrl, {}, {
       query: { method: 'GET', params: { search: '@search', offset: '@offset', limit: '@limit' } },
       item: { method: 'GET', url: baseUrl + '/item' },
@@ -93,7 +93,7 @@ hmServices.factory('MoneyOpersSvc', ['$resource',
 
 hmServices.factory('RecurrenceOpersSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/money-trn-templs';
+    var baseUrl = 'api/:bsId/recurrence-opers';
     return $resource(baseUrl, {}, {
       query: { method: 'GET', params: { search: '@search' } },
       skip: { method: 'POST', url: baseUrl + '/skip' },

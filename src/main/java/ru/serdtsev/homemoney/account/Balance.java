@@ -4,10 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.moneyoper.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
-import ru.serdtsev.homemoney.moneyoper.Period;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
+import ru.serdtsev.homemoney.moneyoper.model.Period;
 import ru.serdtsev.homemoney.utils.Utils;
 
 import javax.annotation.Nonnull;

@@ -1,16 +1,15 @@
-package ru.serdtsev.homemoney.dto;
+package ru.serdtsev.homemoney.moneyoper.model;
 
-import ru.serdtsev.homemoney.moneyoper.MoneyOperItem;
-import ru.serdtsev.homemoney.moneyoper.Period;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem;
+import ru.serdtsev.homemoney.moneyoper.model.Period;
 
 import java.math.BigDecimal;
 import java.sql.Date;
-import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
-public class MoneyTrnTempl {
+public class RecurrenceOperDto {
   private UUID id;
   private Status status;
   private UUID sampleId;
@@ -31,10 +30,10 @@ public class MoneyTrnTempl {
   private String type;
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public MoneyTrnTempl() {
+  public RecurrenceOperDto() {
   }
 
-  public MoneyTrnTempl(UUID id, UUID sampleId, UUID lastMoneyTrnId, Date nextDate, Period period,
+  public RecurrenceOperDto(UUID id, UUID sampleId, UUID lastMoneyTrnId, Date nextDate, Period period,
       UUID fromAccId, UUID toAccId, BigDecimal amount, String comment, List<String> labels,
       String currencyCode, String toCurrencyCode, String fromAccName, String toAccName) {
     this.id = id;
@@ -215,25 +214,6 @@ public class MoneyTrnTempl {
   @SuppressWarnings({"unused", "WeakerAccess"})
   public String getToCurrencySymbol() {
     return Currency.getInstance(toCurrencyCode).getSymbol();
-  }
-
-  public static java.sql.Date calcNextDate(java.sql.Date origDate, Period period) {
-    LocalDate origLocalDate = origDate.toLocalDate();
-    LocalDate nextDate;
-    switch (period) {
-      case month:
-        nextDate = origLocalDate.plusMonths(1);
-        break;
-      case quarter:
-        nextDate = origLocalDate.plusMonths(3);
-        break;
-      case year:
-        nextDate =  origLocalDate.plusYears(1);
-        break;
-      default:
-        nextDate = origDate.toLocalDate();
-    }
-    return Date.valueOf(nextDate);
   }
 
   public enum Status {

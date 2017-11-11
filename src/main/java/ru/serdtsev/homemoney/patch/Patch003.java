@@ -7,13 +7,16 @@ import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.moneyoper.*;
+import ru.serdtsev.homemoney.moneyoper.model.Label;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperType;
 
 import javax.transaction.Transactional;
 import java.util.UUID;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperType.*;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperType.*;
 
 //@Component
 public class Patch003 {

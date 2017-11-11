@@ -16,10 +16,10 @@ import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.dto.*;
-import ru.serdtsev.homemoney.moneyoper.MoneyOper;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
-import ru.serdtsev.homemoney.moneyoper.RecurrenceOper;
-import ru.serdtsev.homemoney.moneyoper.RecurrenceOperRepo;
+import ru.serdtsev.homemoney.moneyoper.*;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
+import ru.serdtsev.homemoney.moneyoper.model.RecurrenceOper;
 
 import java.beans.PropertyVetoException;
 import java.math.BigDecimal;
@@ -253,7 +253,7 @@ public class MainDao {
     }
   }
 
-  private List<Turnover> getRecurrenceTurnovers(UUID bsId, Date toDate) {
+    private List<Turnover> getRecurrenceTurnovers(UUID bsId, Date toDate) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     Stream<RecurrenceOper> recurrenceOpers =  recurrenceOperRepo.findByBalanceSheet(balanceSheet);
     Set<Turnover> turnovers = new HashSet<>();
@@ -274,7 +274,7 @@ public class MainDao {
           turnovers.add(newTurnover);
         }
         turnover.get().setAmount(turnover.get().getAmount().add(template.getAmount()));
-        roNextDate = MoneyTrnTempl.calcNextDate(nextDate, template.getPeriod());
+        roNextDate = ro.calcNextDate(nextDate);
       }
     });
     return new ArrayList<>(turnovers);

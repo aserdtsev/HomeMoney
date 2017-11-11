@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.moneyoper;
+package ru.serdtsev.homemoney.moneyoper.model;
 
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
@@ -72,23 +72,27 @@ public class RecurrenceOper {
   }
 
   public Date skipNextDate() {
-    LocalDate oldNextDateAsLocalDate = nextDate.toLocalDate();
-    LocalDate newNextDateAsLocalDate;
+    nextDate = calcNextDate(nextDate);
+    return nextDate;
+  }
+
+  public Date calcNextDate(Date date) {
+    LocalDate dateAsLocalDate = date.toLocalDate();
+    LocalDate nextDateAsLocalDate;
     switch (template.getPeriod()) {
       case month:
-        newNextDateAsLocalDate = oldNextDateAsLocalDate.plusMonths(1);
+        nextDateAsLocalDate = dateAsLocalDate.plusMonths(1);
         break;
       case quarter:
-        newNextDateAsLocalDate = oldNextDateAsLocalDate.plusMonths(3);
+        nextDateAsLocalDate = dateAsLocalDate.plusMonths(3);
         break;
       case year:
-        newNextDateAsLocalDate =  oldNextDateAsLocalDate.plusYears(1);
+        nextDateAsLocalDate =  dateAsLocalDate.plusYears(1);
         break;
       default:
-        newNextDateAsLocalDate = nextDate.toLocalDate();
+        nextDateAsLocalDate = date.toLocalDate();
     }
-    nextDate = Date.valueOf(newNextDateAsLocalDate);
-    return nextDate;
+    return Date.valueOf(nextDateAsLocalDate);
   }
 
   public Boolean getArc() {

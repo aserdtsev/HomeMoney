@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.moneyoper;
+package ru.serdtsev.homemoney.moneyoper.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ru.serdtsev.homemoney.account.Balance;

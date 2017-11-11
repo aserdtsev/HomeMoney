@@ -4,6 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
 
 import java.sql.Date;
 import java.util.UUID;

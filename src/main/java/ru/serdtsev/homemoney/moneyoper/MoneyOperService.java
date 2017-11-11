@@ -9,7 +9,7 @@ import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.dto.MoneyTrnTempl;
+import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -181,7 +181,7 @@ public class MoneyOperService {
     return oper;
   }
 
-  public void updateRecurrenceOper(BalanceSheet balanceSheet, MoneyTrnTempl templ) {
+  public void updateRecurrenceOper(BalanceSheet balanceSheet, RecurrenceOperDto templ) {
     RecurrenceOper recurrenceOper = recurrenceOperRepo.findOne(templ.getId());
     recurrenceOper.setNextDate(templ.getNextDate());
     MoneyOper template = recurrenceOper.getTemplate();

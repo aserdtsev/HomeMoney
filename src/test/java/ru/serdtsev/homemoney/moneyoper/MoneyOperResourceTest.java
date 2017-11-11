@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import ru.serdtsev.homemoney.account.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
+import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -18,9 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-class MoneyTrnsResourceTest {
+class MoneyOperResourceTest {
   private DataSource dataSource = mock(DataSource.class);
-  private MoneyTrnsResource mtRes;
+  private MoneyOperResource mtRes;
   private AccountRepository accountRepo = mock(AccountRepository.class);
   private MoneyOperService moneyOperService = mock(MoneyOperService.class);
   private BalanceSheetRepository balanceSheetRepo = mock(BalanceSheetRepository.class);
@@ -33,8 +34,8 @@ class MoneyTrnsResourceTest {
   private Balance cash;
   private Balance currentAccount;
 
-  public MoneyTrnsResourceTest() {
-    this.mtRes = new MoneyTrnsResource(moneyOperService, balanceSheetRepo, accountRepo, moneyOperRepo, labelRepo,
+  public MoneyOperResourceTest() {
+    this.mtRes = new MoneyOperResource(moneyOperService, balanceSheetRepo, accountRepo, moneyOperRepo, labelRepo,
         moneyOperItemRepo, categoryRepo);
     when(accountRepo.findOne(balanceSheet.getUncatCosts().getId())).thenReturn(balanceSheet.getUncatCosts());
     when(accountRepo.findOne(balanceSheet.getUncatIncome().getId())).thenReturn(balanceSheet.getUncatIncome());

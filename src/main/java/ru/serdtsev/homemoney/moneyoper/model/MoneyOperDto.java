@@ -1,9 +1,6 @@
-package ru.serdtsev.homemoney.dto;
+package ru.serdtsev.homemoney.moneyoper.model;
 
 import ru.serdtsev.homemoney.common.HmException;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperItem;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperStatus;
-import ru.serdtsev.homemoney.moneyoper.Period;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -14,7 +11,7 @@ import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
-public class MoneyTrn {
+public class MoneyOperDto {
   private UUID id;
   private MoneyOperStatus status;
   private Date operDate;
@@ -37,15 +34,15 @@ public class MoneyTrn {
   private String type;
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public MoneyTrn() {}
+  public MoneyOperDto() {}
 
-  public MoneyTrn(UUID id, MoneyOperStatus status, Date trnDate, UUID fromAccId, UUID toAccId,
+  public MoneyOperDto(UUID id, MoneyOperStatus status, Date trnDate, UUID fromAccId, UUID toAccId,
       BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode, Period period, String comment) {
     this(id, status, trnDate, fromAccId, toAccId, amount, currencyCode, toAmount, toCurrencyCode, period, comment,
         null, null, null, null, null);
   }
 
-  public MoneyTrn(UUID id, MoneyOperStatus status, Date operDate,
+  public MoneyOperDto(UUID id, MoneyOperStatus status, Date operDate,
       UUID fromAccId, UUID toAccId, BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode,
       Period period, String comment, List<String> labels, Integer dateNum, UUID parentId, UUID templId, Timestamp createdTs) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
@@ -261,7 +258,7 @@ public class MoneyTrn {
   /**
    * Возвращает true, если поля операции, которые влияют на остатки в разрезе дат, одинаковые.
    */
-  public Boolean essentialEquals(MoneyTrn other) {
+  public Boolean essentialEquals(MoneyOperDto other) {
     if (!equals(other)) {
       throw new HmException(HmException.Code.IdentifiersDoNotMatch);
     }
@@ -277,9 +274,9 @@ public class MoneyTrn {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    MoneyTrn moneyTrn = (MoneyTrn) o;
+    MoneyOperDto moneyOperDto = (MoneyOperDto) o;
 
-    return getId() != null ? getId().equals(moneyTrn.getId()) : moneyTrn.getId() == null;
+    return getId() != null ? getId().equals(moneyOperDto.getId()) : moneyOperDto.getId() == null;
   }
 
   @Override
@@ -289,7 +286,7 @@ public class MoneyTrn {
 
   @Override
   public String toString() {
-    return "MoneyTrn{" +
+    return "MoneyOperDto{" +
         "id=" + id +
         ", status=" + status +
         ", operDate=" + operDate +

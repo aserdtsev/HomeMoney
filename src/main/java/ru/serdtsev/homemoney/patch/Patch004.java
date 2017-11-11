@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.moneyoper.Label;
+import ru.serdtsev.homemoney.moneyoper.model.Label;
 import ru.serdtsev.homemoney.moneyoper.LabelRepository;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;
 

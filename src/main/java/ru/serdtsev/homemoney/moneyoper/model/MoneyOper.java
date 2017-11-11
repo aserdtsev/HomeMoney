@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.moneyoper;
+package ru.serdtsev.homemoney.moneyoper.model;
 
 import org.apache.logging.log4j.util.Strings;
 import ru.serdtsev.homemoney.account.Account;
@@ -19,7 +19,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.*;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.*;
 import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
 
 @Entity
@@ -195,7 +195,7 @@ public class MoneyOper implements Serializable {
     return toAccId;
   }
 
-  void setAmount(BigDecimal amount) {
+  public void setAmount(BigDecimal amount) {
     this.amount = amount;
   }
 
@@ -224,7 +224,7 @@ public class MoneyOper implements Serializable {
     return getBalanceSheet().getCurrencyCode();
   }
 
-  void setToAmount(BigDecimal toAmount) {
+  public void setToAmount(BigDecimal toAmount) {
     this.toAmount = toAmount;
   }
 
@@ -328,7 +328,7 @@ public class MoneyOper implements Serializable {
     return item;
   }
 
-  void changeBalances(boolean revert) {
+  public void changeBalances(boolean revert) {
     BigDecimal factor = revert ? BigDecimal.ONE.negate() : BigDecimal.ONE;
     items.forEach(item -> item.getBalance().changeValue(item.getValue().multiply(factor), this));
   }
@@ -346,7 +346,7 @@ public class MoneyOper implements Serializable {
     return Objects.hash(id);
   }
 
-  boolean essentialEquals(MoneyOper other) {
+  public boolean essentialEquals(MoneyOper other) {
     assert this.equals(other);
     return itemsEssentialEquals(other);
   }

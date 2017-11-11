@@ -58,7 +58,7 @@ public class DbPatches {
 //          ? labelOpt.get()
 //          : LabelsDao.createLabel(conn, bs.getId(), category.getName(), rootId, true, category.getIsArc());
 //
-//      List<MoneyTrn> trns = MoneyTrnsDao.getMoneyTrns(conn, bs.getId(), category);
+//      List<MoneyOperDto> trns = MoneyTrnsDao.getMoneyTrns(conn, bs.getId(), category);
 //      trns.forEach(trn -> {
 //        try {
 //          addLabelToMoneyTrn(conn, bs, label, trn);
@@ -67,7 +67,7 @@ public class DbPatches {
 //        }
 //      });
 //
-//      List<MoneyTrnTempl> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(conn, bs.getId(), null);
+//      List<RecurrenceOperDto> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(conn, bs.getId(), null);
 //      templs.forEach(templ -> {
 //        try {
 //          addLabelToMoneyTrnTempl(conn, bs, label, templ);
@@ -82,7 +82,7 @@ public class DbPatches {
 //
 //  private static void splitMoneyTrns(Connection conn, BalanceSheet bs) throws SQLException {
 //    log.trace(">> splitMoneyTrns");
-//    List<MoneyTrn> trns = MoneyTrnsDao.getMoneyTrns(conn, bs.getId());
+//    List<MoneyOperDto> trns = MoneyTrnsDao.getMoneyTrns(conn, bs.getId());
 //    trns.forEach(trn -> {
 //      try {
 //        updateTrnAmountsIfNeed(conn, bs, trn);
@@ -96,7 +96,7 @@ public class DbPatches {
 //
 //  private static void splitMoneyTrnTempls(Connection conn, BalanceSheet bs) throws SQLException {
 //    log.trace(">> splitMoneyTrnTempls");
-//    List<MoneyTrnTempl> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(conn, bs.getId(), null);
+//    List<RecurrenceOperDto> templs = MoneyTrnTemplsDao.getMoneyTrnTempls(conn, bs.getId(), null);
 //    templs.forEach(templ -> {
 //      try {
 //        splitMoneyTrnTempl(conn, templ);
@@ -108,7 +108,7 @@ public class DbPatches {
 //  }
 //
 //
-//  private static void addLabelToMoneyTrn(Connection conn, BalanceSheet bs, Label label, MoneyTrn trn) throws SQLException {
+//  private static void addLabelToMoneyTrn(Connection conn, BalanceSheet bs, Label label, MoneyOperDto trn) throws SQLException {
 //    if (trn.getLabels().contains(label.getName())) {
 //      return;
 //    }
@@ -116,7 +116,7 @@ public class DbPatches {
 //    MoneyTrnsDao.updateMoneyTrn(conn, bs.getId(), trn);
 //  }
 //
-//  private static void addLabelToMoneyTrnTempl(Connection conn, BalanceSheet bs, Label label, MoneyTrnTempl templ) throws SQLException {
+//  private static void addLabelToMoneyTrnTempl(Connection conn, BalanceSheet bs, Label label, RecurrenceOperDto templ) throws SQLException {
 //    if (templ.getLabels().contains(label.getName())) {
 //      return;
 //    }
@@ -124,10 +124,10 @@ public class DbPatches {
 //    MoneyTrnTemplsDao.updateMoneyTrnTempl(conn, bs.getId(), templ);
 //  }
 //
-//  private static MoneyTrn updateTrnAmountsIfNeed(Connection conn, BalanceSheet bs, MoneyTrn trn) throws SQLException {
+//  private static MoneyOperDto updateTrnAmountsIfNeed(Connection conn, BalanceSheet bs, MoneyOperDto trn) throws SQLException {
 //    QueryRunner run = new QueryRunner();
 //    if (trn.isMonoCurrencies() && !Objects.equals(trn.getAmount(), trn.getToAmount())) {
-//      log.info("Updating MoneyTrn.toAmount ({}): expected {}, found {}, {}", trn.getType(), trn.getAmount(), trn.getToAmount(), trn);
+//      log.info("Updating MoneyOperDto.toAmount ({}): expected {}, found {}, {}", trn.getType(), trn.getAmount(), trn.getToAmount(), trn);
 //      run.update(conn, "" +
 //          "update money_trns set to_amount = ? where id = ?", trn.getAmount(), trn.getId()
 //      );
@@ -136,7 +136,7 @@ public class DbPatches {
 //    return trn;
 //  }
 //
-//  private static void splitMoneyTrn(Connection conn, MoneyTrn trn) throws SQLException {
+//  private static void splitMoneyTrn(Connection conn, MoneyOperDto trn) throws SQLException {
 //    assertNonNulls(conn, trn);
 //    List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, trn.getId());
 //    if (!balanceChanges.isEmpty()) {
@@ -165,7 +165,7 @@ public class DbPatches {
 //    }
 //  }
 //
-//  private static void splitMoneyTrnTempl(Connection conn, MoneyTrnTempl templ) throws SQLException {
+//  private static void splitMoneyTrnTempl(Connection conn, RecurrenceOperDto templ) throws SQLException {
 //    assertNonNulls(conn, templ);
 //    List<BalanceChange> balanceChanges = MoneyTrnsDao.getBalanceChanges(conn, templ.getId());
 //    if (!balanceChanges.isEmpty()) {

@@ -30,7 +30,7 @@ public class DbPatch005 {
 //    try (Connection conn = dataSource.getConnection()) {
 //      balanceSheetRepo.findAll().forEach(balanceSheet -> {
 //        try {
-//          List<MoneyTrnTempl> templs = moneyTrnsDao.getMoneyTrnTempls(conn, balanceSheet.getId(), null);
+//          List<RecurrenceOperDto> templs = moneyTrnsDao.getMoneyTrnTempls(conn, balanceSheet.getId(), null);
 //          templs.forEach(templ -> {
 //            List<MoneyOper> recurrenceOpers = moneyOperRepo
 //                .findByBalanceSheetAndTemplIdAndStatusOrderByPerformed(balanceSheet, templ.getId(), MoneyOperStatus.done)

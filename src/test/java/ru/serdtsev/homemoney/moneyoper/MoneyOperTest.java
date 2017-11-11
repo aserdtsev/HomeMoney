@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -16,9 +19,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.cancelled;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.done;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.pending;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.cancelled;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.done;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.pending;
 
 class MoneyOperTest {
   private BalanceSheet balanceSheet;

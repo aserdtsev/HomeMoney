@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -14,7 +16,7 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.pending;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.pending;
 
 class MoneyOperItemTest {
   private Balance cash;

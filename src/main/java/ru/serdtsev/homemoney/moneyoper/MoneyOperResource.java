@@ -13,8 +13,8 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
-import ru.serdtsev.homemoney.dto.MoneyTrn;
 import ru.serdtsev.homemoney.dto.PagedList;
+import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,14 +32,15 @@ import java.util.stream.Stream;
 import static java.util.Objects.*;
 import static ru.serdtsev.homemoney.common.HmResponse.getFail;
 import static ru.serdtsev.homemoney.common.HmResponse.getOk;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperStatus.*;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperType.expense;
-import static ru.serdtsev.homemoney.moneyoper.MoneyOperType.income;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.*;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperType.expense;
+import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperType.income;
 import static ru.serdtsev.homemoney.utils.Utils.nvl;
 
 @RestController
-@RequestMapping("/api/{bsId}/money-trns")
-public class MoneyTrnsResource {
+@RequestMapping("/api/{bsId}/money-opers")
+@Transactional
+public class MoneyOperResource {
   private static final String SEARCH_DATE_REGEX = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}";
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
@@ -52,7 +53,7 @@ public class MoneyTrnsResource {
   private final CategoryRepository categoryRepo;
 
   @Autowired
-  public MoneyTrnsResource(MoneyOperService moneyOperService, BalanceSheetRepository balanceSheetRepo,
+  public MoneyOperResource(MoneyOperService moneyOperService, BalanceSheetRepository balanceSheetRepo,
       AccountRepository accountRepo, MoneyOperRepo moneyOperRepo, LabelRepository labelRepo,
       MoneyOperItemRepo moneyOperItemRepo, CategoryRepository categoryRepo) {
     this.moneyOperService = moneyOperService;
@@ -66,54 +67,54 @@ public class MoneyTrnsResource {
 
   @RequestMapping
   @Transactional(readOnly = true)
-  public HmResponse getMoneyTrns(
+  public HmResponse getMoneyOpers(
       @PathVariable UUID bsId,
       @RequestParam(required = false, defaultValue = "") String search,
       @RequestParam(required = false, defaultValue = "10") int limit,
       @RequestParam(required = false, defaultValue = "0") int offset) {
     try {
-      ArrayList<MoneyTrn> trns = new ArrayList<>();
+      ArrayList<MoneyOperDto> opers = new ArrayList<>();
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
       if (offset == 0) {
-        List<MoneyTrn> pendingTrns = getMoneyOpers(balanceSheet, MoneyOperStatus.pending, search, limit + 1, offset)
+        List<MoneyOperDto> pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.pending, search, limit + 1, offset)
             .stream()
-            .map(this::moneyOperToMoneyTrn)
+            .map(this::moneyOperToDto)
             .collect(Collectors.toList());
-        trns.addAll(pendingTrns);
+        opers.addAll(pendingOpers);
 
         LocalDate beforeDate = LocalDate.now().plusDays(14L);
-        List<MoneyTrn> recurrenceTrns = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, Date.valueOf(beforeDate))
-            .map(this::moneyOperToMoneyTrn)
+        List<MoneyOperDto> recurrenceOpers = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, Date.valueOf(beforeDate))
+            .map(this::moneyOperToDto)
             .collect(Collectors.toList());
-        trns.addAll(recurrenceTrns);
+        opers.addAll(recurrenceOpers);
 
-        trns.sort(Comparator.comparing(MoneyTrn::getOperDate).reversed());
+        opers.sort(Comparator.comparing(MoneyOperDto::getOperDate).reversed());
       }
 
-      List<MoneyTrn> doneTrns = getMoneyOpers(balanceSheet, MoneyOperStatus.done, search, limit + 1, offset)
+      List<MoneyOperDto> doneOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.done, search, limit + 1, offset)
           .stream()
-          .map(this::moneyOperToMoneyTrn)
+          .map(this::moneyOperToDto)
           .collect(Collectors.toList());
-      boolean hasNext = doneTrns.size() > limit;
-      trns.addAll(hasNext ? doneTrns.subList(0, limit) : doneTrns);
-      PagedList<MoneyTrn> pagedList = new PagedList<>(trns, limit, offset, hasNext);
+      boolean hasNext = doneOpers.size() > limit;
+      opers.addAll(hasNext ? doneOpers.subList(0, limit) : doneOpers);
+      PagedList<MoneyOperDto> pagedList = new PagedList<>(opers, limit, offset, hasNext);
       return getOk(pagedList);
     } catch (HmException e) {
       return getFail(e.getCode());
     }
   }
 
-  private MoneyTrn moneyOperToMoneyTrn(MoneyOper moneyOper) {
-    MoneyTrn moneyTrn = new MoneyTrn(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(), moneyOper.getFromAccId(),
+  private MoneyOperDto moneyOperToDto(MoneyOper moneyOper) {
+    MoneyOperDto moneyOperDto = new MoneyOperDto(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(), moneyOper.getFromAccId(),
         moneyOper.getToAccId(), moneyOper.getAmount().abs(), moneyOper.getCurrencyCode(),
         moneyOper.getToAmount(), moneyOper.getToCurrencyCode(), moneyOper.getPeriod(), moneyOper.getComment(),
         moneyOperService.getStringsByLabels(moneyOper.getLabels()), moneyOper.getDateNum(), moneyOper.getParentOperId(),
         moneyOper.getRecurrenceId(), moneyOper.getCreated());
-    moneyTrn.setFromAccName(getAccountName(moneyOper.getFromAccId()));
-    moneyTrn.setToAccName(getAccountName(moneyOper.getToAccId()));
-    moneyTrn.setType(moneyOper.getType().name());
-    moneyTrn.setItems(moneyOper.getItems());
-    return moneyTrn;
+    moneyOperDto.setFromAccName(getAccountName(moneyOper.getFromAccId()));
+    moneyOperDto.setToAccName(getAccountName(moneyOper.getToAccId()));
+    moneyOperDto.setType(moneyOper.getType().name());
+    moneyOperDto.setItems(moneyOper.getItems());
+    return moneyOperDto;
   }
 
 
@@ -195,45 +196,43 @@ public class MoneyTrnsResource {
 
   @RequestMapping("/item")
   @Transactional(readOnly = true)
-  public HmResponse getMoneyTrn(
+  public HmResponse getMoneyOpers(
       @PathVariable UUID bsId,
       @RequestParam UUID id) {
     try {
       MoneyOper oper = moneyOperRepo.findOne(id);
       moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
-      return getOk(moneyOperToMoneyTrn(oper));
+      return getOk(moneyOperToDto(oper));
     } catch (HmException e) {
       return getFail(e.getCode());
     }
   }
 
   @RequestMapping("/create")
-  @Transactional
-  public HmResponse createMoneyTrn(
+  public HmResponse createMoneyOper(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrn moneyTrn) {
-    List<MoneyTrn> moneyTrns = createMoneyOperInternal(bsId, moneyTrn)
-        .map(this::moneyOperToMoneyTrn)
+      @RequestBody MoneyOperDto moneyOperDto) {
+    List<MoneyOperDto> moneyOperDtos = createMoneyOperInternal(bsId, moneyOperDto)
+        .map(this::moneyOperToDto)
         .collect(Collectors.toList());
-    return getOk(moneyTrns);
+    return getOk(moneyOperDtos);
   }
 
   @RequestMapping("/update")
-  @Transactional
-  public HmResponse updateMoneyTrn(
+  public HmResponse updateMoneyOper(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrn moneyTrn) {
+      @RequestBody MoneyOperDto moneyOperDto) {
     try {
-      MoneyOper origOper = moneyOperRepo.findOne(moneyTrn.getId());
+      MoneyOper origOper = moneyOperRepo.findOne(moneyOperDto.getId());
       if (isNull(origOper)) {
-        createMoneyOperInternal(bsId, moneyTrn);
+        createMoneyOperInternal(bsId, moneyOperDto);
         return getOk();
       }
 
       moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, bsId);
 
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      MoneyOper oper = newMoneyOper(balanceSheet, moneyTrn);
+      MoneyOper oper = newMoneyOper(balanceSheet, moneyOperDto);
 
       boolean essentialEquals = origOper.essentialEquals(oper);
       MoneyOperStatus origPrevStatus = origOper.getStatus();
@@ -251,7 +250,7 @@ public class MoneyTrnsResource {
       moneyOperService.updateAmount(origOper, oper.getAmount());
       moneyOperService.updateToAmount(origOper, oper.getToAmount());
 
-      if (!essentialEquals && origPrevStatus == done || origOper.getStatus() == pending && moneyTrn.getStatus() == done) {
+      if (!essentialEquals && origPrevStatus == done || origOper.getStatus() == pending && moneyOperDto.getStatus() == done) {
         origOper.complete();
       }
 
@@ -263,12 +262,11 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping("/delete")
-  @Transactional
-  public HmResponse deleteMoneyTrn(
+  public HmResponse deleteMoneyOper(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrn moneyTrn) {
+      @RequestBody MoneyOperDto moneyOperDto) {
     try {
-      MoneyOper oper = moneyOperRepo.findOne(moneyTrn.getId());
+      MoneyOper oper = moneyOperRepo.findOne(moneyOperDto.getId());
       requireNonNull(oper);
       moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
       oper.cancel();
@@ -280,16 +278,15 @@ public class MoneyTrnsResource {
   }
 
   @RequestMapping("/skip")
-  @Transactional
-  public HmResponse skipMoneyTrn(
+  public HmResponse skipMoneyOper(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrn moneyTrn) throws SQLException {
+      @RequestBody MoneyOperDto moneyOperDto) throws SQLException {
     try {
-      MoneyOperStatus status = moneyTrn.getStatus();
+      MoneyOperStatus status = moneyOperDto.getStatus();
       if (status == MoneyOperStatus.pending) {
-        skipPendingMoneyTrn(bsId, moneyTrn);
+        skipPendingMoneyOper(bsId, moneyOperDto);
       } else if (status == recurrence) {
-        skipRecurrenceMoneyTrn(bsId, moneyTrn);
+        skipRecurrenceMoneyOper(bsId, moneyOperDto);
       }
       return getOk();
     } catch (HmException e) {
@@ -297,8 +294,8 @@ public class MoneyTrnsResource {
     }
   }
 
-  private void skipPendingMoneyTrn(UUID bsId, MoneyTrn moneyTrn) {
-    MoneyOper oper = moneyOperRepo.findOne(moneyTrn.getId());
+  private void skipPendingMoneyOper(UUID bsId, MoneyOperDto moneyOperDto) {
+    MoneyOper oper = moneyOperRepo.findOne(moneyOperDto.getId());
     requireNonNull(oper);
     moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
     oper.cancel();
@@ -306,20 +303,19 @@ public class MoneyTrnsResource {
     moneyOperRepo.save(oper);
   }
 
-  private void skipRecurrenceMoneyTrn(UUID bsId, MoneyTrn moneyTrn) {
-    moneyOperService.findRecurrenceOper(moneyTrn.getTemplId()).ifPresent(recurrenceOper -> {
+  private void skipRecurrenceMoneyOper(UUID bsId, MoneyOperDto moneyOperDto) {
+    moneyOperService.findRecurrenceOper(moneyOperDto.getTemplId()).ifPresent(recurrenceOper -> {
       recurrenceOper.skipNextDate();
       moneyOperService.save(recurrenceOper);
     });
   }
 
   @RequestMapping("/up")
-  @Transactional
-  public HmResponse upMoneyTrn(
+  public HmResponse upMoneyOper(
       @PathVariable UUID bsId,
-      @RequestBody MoneyTrn moneyTrn) {
+      @RequestBody MoneyOperDto moneyOperDto) {
     try {
-      MoneyOper oper = moneyOperRepo.findOne(moneyTrn.getId());
+      MoneyOper oper = moneyOperRepo.findOne(moneyOperDto.getId());
       List<MoneyOper> opers = moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(oper.getBalanceSheet(),
           MoneyOperStatus.done, oper.getPerformed())
           .sorted(Comparator.comparing(MoneyOper::getDateNum))
@@ -341,21 +337,21 @@ public class MoneyTrnsResource {
     }
   }
 
-  private Stream<MoneyOper> createMoneyOperInternal(UUID bsId, MoneyTrn moneyTrn) {
+  private Stream<MoneyOper> createMoneyOperInternal(UUID bsId, MoneyOperDto moneyOperDto) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     List<MoneyOper> moneyOpers = new ArrayList<>();
 
-    MoneyOper mainOper = newMainMoneyOper(balanceSheet, moneyTrn);
+    MoneyOper mainOper = newMainMoneyOper(balanceSheet, moneyOperDto);
     moneyOperRepo.save(mainOper);
     moneyOpers.add(mainOper);
 
-    newReserveMoneyOper(balanceSheet, moneyTrn).ifPresent(moneyOpers::add);
+    newReserveMoneyOper(balanceSheet, moneyOperDto).ifPresent(moneyOpers::add);
 
     if (nonNull(mainOper.getRecurrenceId())) {
       moneyOperService.skipRecurrenceOper(balanceSheet, mainOper.getRecurrenceId());
     }
 
-    if ((moneyTrn.getStatus() == done || moneyTrn.getStatus() == doneNew) && !mainOper.getPerformed().toLocalDate().isAfter(LocalDate.now())) {
+    if ((moneyOperDto.getStatus() == done || moneyOperDto.getStatus() == doneNew) && !mainOper.getPerformed().toLocalDate().isAfter(LocalDate.now())) {
       moneyOpers.forEach(MoneyOper::complete);
     }
     moneyOpers.forEach(moneyOperService::save);
@@ -369,13 +365,13 @@ public class MoneyTrnsResource {
   }
 
   @Nonnull
-  private MoneyOper newMainMoneyOper(BalanceSheet balanceSheet, MoneyTrn moneyTrn) {
-    return newMoneyOper(balanceSheet, moneyTrn);
+  private MoneyOper newMainMoneyOper(BalanceSheet balanceSheet, MoneyOperDto moneyOperDto) {
+    return newMoneyOper(balanceSheet, moneyOperDto);
   }
 
-  private Optional<MoneyOper> newReserveMoneyOper(BalanceSheet balanceSheet, MoneyTrn moneyTrn) {
+  private Optional<MoneyOper> newReserveMoneyOper(BalanceSheet balanceSheet, MoneyOperDto moneyOperDto) {
     Account fromAcc = balanceSheet.getSvcRsv();
-    Account account = accountRepo.findOne(moneyTrn.getFromAccId());
+    Account account = accountRepo.findOne(moneyOperDto.getFromAccId());
     if (account.getType() == AccountType.debit) {
       Balance balance = (Balance) account;
       if (balance.getReserve() != null) {
@@ -384,7 +380,7 @@ public class MoneyTrnsResource {
     }
 
     Account toAcc = balanceSheet.getSvcRsv();
-    account = accountRepo.findOne(moneyTrn.getToAccId());
+    account = accountRepo.findOne(moneyOperDto.getToAccId());
     if (account.getType() == AccountType.debit) {
       Balance balance = (Balance) account;
       if (balance.getReserve() != null) {
@@ -394,36 +390,36 @@ public class MoneyTrnsResource {
 
     MoneyOper reserveMoneyOper = null;
     if (!Objects.equals(fromAcc, toAcc)) {
-      List<Label> labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyTrn.getLabels());
-      reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyTrn.getOperDate(),
-          nvl(moneyTrn.getDateNum(), 0), labels, moneyTrn.getComment(), moneyTrn.getPeriod(), fromAcc.getId(), toAcc.getId(),
-          moneyTrn.getAmount(), moneyTrn.getAmount(), moneyTrn.getId(), null);
+      List<Label> labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyOperDto.getLabels());
+      reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyOperDto.getOperDate(),
+          nvl(moneyOperDto.getDateNum(), 0), labels, moneyOperDto.getComment(), moneyOperDto.getPeriod(), fromAcc.getId(), toAcc.getId(),
+          moneyOperDto.getAmount(), moneyOperDto.getAmount(), moneyOperDto.getId(), null);
     }
     return Optional.ofNullable(reserveMoneyOper);
   }
 
   @Nonnull
-  private MoneyOper newMoneyOper(BalanceSheet balanceSheet, MoneyTrn moneyTrn) {
-    List<Label> labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyTrn.getLabels());
-    categoryToLabel(balanceSheet, moneyTrn).ifPresent(labels::add);
-    BigDecimal amount = moneyTrn.getAmount();
-    if (isNull(amount) && nonNull(moneyTrn.getToAmount())) {
-      amount = moneyTrn.getToAmount();
+  private MoneyOper newMoneyOper(BalanceSheet balanceSheet, MoneyOperDto moneyOperDto) {
+    List<Label> labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyOperDto.getLabels());
+    categoryToLabel(balanceSheet, moneyOperDto).ifPresent(labels::add);
+    BigDecimal amount = moneyOperDto.getAmount();
+    if (isNull(amount) && nonNull(moneyOperDto.getToAmount())) {
+      amount = moneyOperDto.getToAmount();
     }
     assert nonNull(amount);
-    MoneyOper templateOper = nonNull(moneyTrn.getTemplId()) ? moneyOperRepo.findOne(moneyTrn.getTemplId()) : null;
-    return moneyOperService.newMoneyOper(balanceSheet, moneyTrn.getId(), pending, moneyTrn.getOperDate(), nvl(moneyTrn.getDateNum(), 0),
-        labels, moneyTrn.getComment(), moneyTrn.getPeriod(), moneyTrn.getFromAccId(), moneyTrn.getToAccId(),
-        amount, nvl(moneyTrn.getToAmount(), amount), null, templateOper);
+    MoneyOper templateOper = nonNull(moneyOperDto.getTemplId()) ? moneyOperRepo.findOne(moneyOperDto.getTemplId()) : null;
+    return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.getId(), pending, moneyOperDto.getOperDate(), nvl(moneyOperDto.getDateNum(), 0),
+        labels, moneyOperDto.getComment(), moneyOperDto.getPeriod(), moneyOperDto.getFromAccId(), moneyOperDto.getToAccId(),
+        amount, nvl(moneyOperDto.getToAmount(), amount), null, templateOper);
   }
 
-  private Optional<Label> categoryToLabel(BalanceSheet balanceSheet, MoneyTrn trn) {
+  private Optional<Label> categoryToLabel(BalanceSheet balanceSheet, MoneyOperDto operDto) {
     Category category = null;
-    MoneyOperType operType = MoneyOperType.valueOf(trn.getType());
+    MoneyOperType operType = MoneyOperType.valueOf(operDto.getType());
     if (operType.equals(expense)) {
-      category = categoryRepo.findOne(trn.getToAccId());
+      category = categoryRepo.findOne(operDto.getToAccId());
     } else if (operType.equals(income)) {
-      category = categoryRepo.findOne(trn.getFromAccId());
+      category = categoryRepo.findOne(operDto.getFromAccId());
     }
     if (isNull(category)) {
       return Optional.empty();
