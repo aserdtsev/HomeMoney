@@ -253,6 +253,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.saveOper = function(oper) {
     delete oper.isEdited;
+    if (oper.currencyCode == oper.toCurrencyCode) {
+      oper.toAmount = oper.amount
+    }
     if (oper.status == 'doneNew') {
       $scope.createOper(oper);
     } else {
@@ -270,9 +273,6 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   };
 
   $scope.updateOper = function(oper) {
-    if (oper.currencyCode == oper.toCurrencyCode) {
-      oper.toAmount = oper.amount
-    }
     MoneyOpersSvc.update({bsId: $rootScope.bsId}, oper, function() {
       $scope.loadOpersFirstPage($scope.getOpersLength());
       $rootScope.$broadcast('refreshBalanceSheet');
