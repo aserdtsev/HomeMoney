@@ -30,7 +30,7 @@ class MoneyOperItemTest {
         "RUB", BigDecimal.TEN, null);
     checkingAccount = new Balance(balanceSheet, AccountType.debit, "Checking account", Date.valueOf(LocalDate.now()), false,
         "RUB", BigDecimal.valueOf(1000L), null);
-    oper = new MoneyOper(UUID.randomUUID(), balanceSheet, pending, Date.valueOf(LocalDate.now()), 0,
+    oper = new MoneyOper(UUID.randomUUID(), balanceSheet, pending, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
   }
 
@@ -47,7 +47,7 @@ class MoneyOperItemTest {
 
     item = SerializationUtils.clone(origItem);
     item.setBalance(checkingAccount);
-    item.setPerformed(Date.valueOf(LocalDate.now().minusDays(1L)));
+    item.setPerformed(LocalDate.now().minusDays(1L));
     item.setValue(item.getValue().add(BigDecimal.ONE));
     item.setIndex(item.getIndex() + 1);
     assertEquals(origItem.hashCode(), item.hashCode());
@@ -60,7 +60,7 @@ class MoneyOperItemTest {
     MoneyOperItem item = SerializationUtils.clone(origItem);
     assertTrue(item.essentialEquals(origItem));
 
-    item.setPerformed(Date.valueOf(LocalDate.now().minusDays(1L)));
+    item.setPerformed(LocalDate.now().minusDays(1L));
     item.setIndex(item.getIndex() + 1);
     assertTrue(item.essentialEquals(origItem));
 

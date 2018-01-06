@@ -3,7 +3,6 @@ package ru.serdtsev.homemoney.moneyoper.model;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
 import javax.persistence.*;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
@@ -23,7 +22,7 @@ public class RecurrenceOper {
   private MoneyOper template;
 
   @Column(name = "next_date")
-  private Date nextDate;
+  private LocalDate nextDate;
 
   @Column(name = "is_arc")
   private Boolean isArc;
@@ -31,7 +30,7 @@ public class RecurrenceOper {
   private RecurrenceOper() {
   }
 
-  public RecurrenceOper(UUID id, BalanceSheet balanceSheet, MoneyOper template, Date nextDate) {
+  public RecurrenceOper(UUID id, BalanceSheet balanceSheet, MoneyOper template, LocalDate nextDate) {
     this.id = id;
     this.balanceSheet = balanceSheet;
     this.template = template;
@@ -63,36 +62,36 @@ public class RecurrenceOper {
     this.template = template;
   }
 
-  public Date getNextDate() {
+  public LocalDate getNextDate() {
     return nextDate;
   }
 
-  public void setNextDate(Date nextDate) {
+  public void setNextDate(LocalDate nextDate) {
     this.nextDate = nextDate;
   }
 
-  public Date skipNextDate() {
+  public LocalDate skipNextDate() {
     nextDate = calcNextDate(nextDate);
     return nextDate;
   }
 
-  public Date calcNextDate(Date date) {
-    LocalDate dateAsLocalDate = date.toLocalDate();
-    LocalDate nextDateAsLocalDate;
+  public LocalDate calcNextDate(LocalDate date) {
+    LocalDate dateAsLocalDate = date;
+    LocalDate nextDate;
     switch (template.getPeriod()) {
       case month:
-        nextDateAsLocalDate = dateAsLocalDate.plusMonths(1);
+        nextDate = dateAsLocalDate.plusMonths(1);
         break;
       case quarter:
-        nextDateAsLocalDate = dateAsLocalDate.plusMonths(3);
+        nextDate = dateAsLocalDate.plusMonths(3);
         break;
       case year:
-        nextDateAsLocalDate =  dateAsLocalDate.plusYears(1);
+        nextDate =  dateAsLocalDate.plusYears(1);
         break;
       default:
-        nextDateAsLocalDate = date.toLocalDate();
+        nextDate = date;
     }
-    return Date.valueOf(nextDateAsLocalDate);
+    return nextDate;
   }
 
   public Boolean getArc() {

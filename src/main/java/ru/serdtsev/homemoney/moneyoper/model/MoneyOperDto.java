@@ -1,10 +1,11 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import ru.serdtsev.homemoney.common.HmException;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Currency;
@@ -14,7 +15,8 @@ import java.util.UUID;
 public class MoneyOperDto {
   private UUID id;
   private MoneyOperStatus status;
-  private Date operDate;
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  private LocalDate operDate;
   private Integer dateNum;
   private List<MoneyOperItem> items;
   private UUID fromAccId;
@@ -28,7 +30,7 @@ public class MoneyOperDto {
   private Timestamp createdTs;
   private Period period;
   private List<String> labels;
-  private UUID templId;
+  private UUID recurrenceId;
   private String fromAccName;
   private String toAccName;
   private String type;
@@ -36,15 +38,15 @@ public class MoneyOperDto {
   @SuppressWarnings({"unused", "WeakerAccess"})
   public MoneyOperDto() {}
 
-  public MoneyOperDto(UUID id, MoneyOperStatus status, Date trnDate, UUID fromAccId, UUID toAccId,
+  public MoneyOperDto(UUID id, MoneyOperStatus status, LocalDate operDate, UUID fromAccId, UUID toAccId,
       BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode, Period period, String comment) {
-    this(id, status, trnDate, fromAccId, toAccId, amount, currencyCode, toAmount, toCurrencyCode, period, comment,
+    this(id, status, operDate, fromAccId, toAccId, amount, currencyCode, toAmount, toCurrencyCode, period, comment,
         null, null, null, null, null);
   }
 
-  public MoneyOperDto(UUID id, MoneyOperStatus status, Date operDate,
+  public MoneyOperDto(UUID id, MoneyOperStatus status, LocalDate operDate,
       UUID fromAccId, UUID toAccId, BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode,
-      Period period, String comment, List<String> labels, Integer dateNum, UUID parentId, UUID templId, Timestamp createdTs) {
+      Period period, String comment, List<String> labels, Integer dateNum, UUID parentId, UUID recurrenceId, Timestamp createdTs) {
     if (amount.compareTo(BigDecimal.ZERO) == 0) {
       throw new HmException(HmException.Code.WrongAmount);
     }
@@ -63,7 +65,7 @@ public class MoneyOperDto {
     this.createdTs = createdTs != null ? createdTs : Timestamp.valueOf(LocalDateTime.now());
     this.period = period;
     this.labels = labels;
-    this.templId = templId;
+    this.recurrenceId = recurrenceId;
 
     this.items = new ArrayList<>();
   }
@@ -84,12 +86,12 @@ public class MoneyOperDto {
     this.status = status;
   }
 
-  public Date getOperDate() {
+  public LocalDate getOperDate() {
     return operDate;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setOperDate(Date trnDate) {
+  public void setOperDate(LocalDate trnDate) {
     this.operDate = trnDate;
   }
 
@@ -197,13 +199,13 @@ public class MoneyOperDto {
     this.labels = labels;
   }
 
-  public UUID getTemplId() {
-    return templId;
+  public UUID getRecurrenceId() {
+    return recurrenceId;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setTemplId(UUID templId) {
-    this.templId = templId;
+  public void setRecurrenceId(UUID recurrenceId) {
+    this.recurrenceId = recurrenceId;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
@@ -303,7 +305,7 @@ public class MoneyOperDto {
         ", createdTs=" + createdTs +
         ", period=" + period +
         ", labels=" + labels +
-        ", templId=" + templId +
+        ", recurrenceId=" + recurrenceId +
         ", fromAccName='" + fromAccName + '\'' +
         ", toAccName='" + toAccName + '\'' +
         ", type='" + type + '\'' +

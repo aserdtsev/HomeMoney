@@ -86,7 +86,7 @@ public class Balance extends Account {
       if (balance.getType() == AccountType.reserve) {
         balance.setValue(balance.getValue());
       } else {
-        MoneyOper moneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, java.sql.Date.valueOf(LocalDate.now()),
+        MoneyOper moneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, LocalDate.now(),
             0, new ArrayList<>(), "корректировка остатка", Period.single, fromAccId, toAccId, amount, amount,
             null, null);
         moneyOper.complete();
@@ -143,19 +143,19 @@ public class Balance extends Account {
         "after: " + value + ".");
   }
 
-  public BigDecimal getCreditLimit() {
+  private BigDecimal getCreditLimit() {
     return nvl(creditLimit, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
-  public void setCreditLimit(BigDecimal creditLimit) {
+  private void setCreditLimit(BigDecimal creditLimit) {
     this.creditLimit = creditLimit;
   }
 
-  public BigDecimal getMinValue() {
+  private BigDecimal getMinValue() {
     return nvl(minValue, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
-  public void setMinValue(BigDecimal minValue) {
+  private void setMinValue(BigDecimal minValue) {
     this.minValue = minValue;
   }
 
@@ -168,7 +168,7 @@ public class Balance extends Account {
    * Для сериализации в JSON.
    */
   @SuppressWarnings("unused")
-  public UUID getReserveId() {
+  private UUID getReserveId() {
     return reserve != null ? reserve.getId() : null;
   }
 

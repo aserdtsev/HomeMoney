@@ -9,10 +9,11 @@ import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import java.math.BigDecimal;
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,14 +32,16 @@ public class MoneyOperService {
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
   private final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final BalanceSheetRepository balanceSheetRepo;
   private final MoneyOperRepo moneyOperRepo;
   private final RecurrenceOperRepo recurrenceOperRepo;
   private final AccountRepository accountRepo;
   private final LabelRepository labelRepo;
 
   @Autowired
-  public MoneyOperService(MoneyOperRepo moneyOperRepo, RecurrenceOperRepo recurrenceOperRepo, AccountRepository accountRepo,
-      LabelRepository labelRepo) {
+  public MoneyOperService(BalanceSheetRepository balanceSheetRepo, MoneyOperRepo moneyOperRepo, RecurrenceOperRepo recurrenceOperRepo,
+      AccountRepository accountRepo, LabelRepository labelRepo) {
+    this.balanceSheetRepo = balanceSheetRepo;
     this.moneyOperRepo = moneyOperRepo;
     this.recurrenceOperRepo = recurrenceOperRepo;
     this.accountRepo = accountRepo;
@@ -64,9 +67,9 @@ public class MoneyOperService {
   /**
    * Возвращает следующие повторы операций.
    */
-  Stream<MoneyOper> getNextRecurrenceOpers(BalanceSheet balanceSheet, String search, Date beforeDate) {
+  Stream<MoneyOper> getNextRecurrenceOpers(BalanceSheet balanceSheet, String search, LocalDate beforeDate) {
     return getRecurrenceOpers(balanceSheet, search)
-        .filter(recurrenceOper -> recurrenceOper.getNextDate().before(beforeDate))
+        .filter(recurrenceOper -> recurrenceOper.getNextDate().isBefore(beforeDate))
         .map(recurrenceOper -> createMoneyOperByTemplate(balanceSheet, recurrenceOper));
   }
 
@@ -87,7 +90,7 @@ public class MoneyOperService {
       return true;
     } else if (search.matches(SEARCH_DATE_REGEX)) {
       // по дате в формате ISO
-      return recurrenceOper.getNextDate().compareTo(Date.valueOf(search)) == 0;
+      return recurrenceOper.getNextDate().isEqual(LocalDate.parse(search));
     } else if (search.matches(SEARCH_UUID_REGEX)) {
       // по идентификатору операции
       return template.getId().equals(UUID.fromString(search));
@@ -147,7 +150,7 @@ public class MoneyOperService {
   /**
    * Создает экземпляр MoneyOper.
    */
-  public MoneyOper newMoneyOper(BalanceSheet balanceSheet, UUID moneyOperId, MoneyOperStatus status, Date performed,
+  public MoneyOper newMoneyOper(BalanceSheet balanceSheet, UUID moneyOperId, MoneyOperStatus status, LocalDate performed,
       Integer dateNum, Collection<Label> labels, String comment, Period period, UUID fromAccId, UUID toAccId, BigDecimal amount,
       BigDecimal toAmount, UUID parentId, MoneyOper templateOper) {
     MoneyOper oper = new MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period);
@@ -181,19 +184,19 @@ public class MoneyOperService {
     return oper;
   }
 
-  public void updateRecurrenceOper(BalanceSheet balanceSheet, RecurrenceOperDto templ) {
-    RecurrenceOper recurrenceOper = recurrenceOperRepo.findOne(templ.getId());
-    recurrenceOper.setNextDate(templ.getNextDate());
+  public void updateRecurrenceOper(BalanceSheet balanceSheet, RecurrenceOperDto recurrenceOperDto) {
+    RecurrenceOper recurrenceOper = recurrenceOperRepo.findOne(recurrenceOperDto.getId());
+    recurrenceOper.setNextDate(recurrenceOperDto.getNextDate());
     MoneyOper template = recurrenceOper.getTemplate();
 
-    updateFromAccount(template, templ.getFromAccId());
-    updateToAccount(template, templ.getToAccId());
+    updateFromAccount(template, recurrenceOperDto.getFromAccId());
+    updateToAccount(template, recurrenceOperDto.getToAccId());
     updateAmount(template, template.getAmount());
     updateToAmount(template, template.getToAmount());
 
-    template.setComment(templ.getComment());
+    template.setComment(recurrenceOperDto.getComment());
 
-    Collection<Label> labels = getLabelsByStrings(balanceSheet, templ.getLabels());
+    Collection<Label> labels = getLabelsByStrings(balanceSheet, recurrenceOperDto.getLabels());
     template.setLabels(labels);
 
     recurrenceOperRepo.save(recurrenceOper);
@@ -264,5 +267,43 @@ public class MoneyOperService {
     return labels.stream()
         .map(Label::getName)
         .collect(Collectors.toList());
+  }
+
+  List<Label> getSuggestLabels(UUID bsId, MoneyOperDto moneyOper) {
+    // Найдем 10 наиболее часто используемых меток-категорий за последние 30 дней.
+    LocalDate startDate = LocalDate.now().minusDays(30);
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    return moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
+      .flatMap(oper -> oper.getLabels().stream())
+      .filter(label -> !moneyOper.getLabels().contains(label))
+      .collect(Collectors.groupingBy(label -> label, Collectors.counting()))
+      .entrySet()
+      .stream()
+      .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+  }
+
+  public MoneyOperDto moneyOperToDto(MoneyOper moneyOper) {
+    MoneyOperDto moneyOperDto = new MoneyOperDto(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(), moneyOper.getFromAccId(),
+        moneyOper.getToAccId(), moneyOper.getAmount().abs(), moneyOper.getCurrencyCode(),
+        moneyOper.getToAmount(), moneyOper.getToCurrencyCode(), moneyOper.getPeriod(), moneyOper.getComment(),
+        getStringsByLabels(moneyOper.getLabels()), moneyOper.getDateNum(), moneyOper.getParentOperId(),
+        moneyOper.getRecurrenceId(), moneyOper.getCreated());
+    moneyOperDto.setFromAccName(getAccountName(moneyOper.getFromAccId()));
+    moneyOperDto.setToAccName(getAccountName(moneyOper.getToAccId()));
+    moneyOperDto.setType(moneyOper.getType().name());
+    moneyOperDto.setItems(moneyOper.getItems());
+    return moneyOperDto;
+  }
+
+  public String getAccountName(UUID accountId) {
+    Account account = accountRepo.findOne(accountId);
+    return account.getName();
+  }
+
+  Stream<Label> getLabels(UUID bsId) {
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    return labelRepo.findByBalanceSheetOrderByName(balanceSheet);
   }
 }

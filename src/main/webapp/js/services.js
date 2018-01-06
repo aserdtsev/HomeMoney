@@ -86,7 +86,9 @@ hmServices.factory('MoneyOpersSvc', ['$resource',
       delete: { method: 'POST', url: baseUrl + '/delete' },
       update: { method: 'POST', url: baseUrl + '/update' },
       skip: {method: 'POST', url: baseUrl + '/skip' },
-      up: { method: 'POST', url: baseUrl + '/up' }
+      up: { method: 'POST', url: baseUrl + '/up' },
+      suggestLabels: {method: 'POST', url: baseUrl + '/suggest-labels'},
+      labels: {method: 'GET', url: baseUrl + '/labels'}
     })
   }
 ]);

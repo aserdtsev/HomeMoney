@@ -3,10 +3,10 @@ package ru.serdtsev.homemoney.dto;
 import ru.serdtsev.homemoney.account.AccountType;
 
 import java.math.BigDecimal;
-import java.sql.Date;
+import java.time.LocalDate;
 
 public class Turnover {
-  private Date trnDate;
+  private LocalDate operDate;
   private AccountType fromAccType;
   private AccountType toAccType;
   private BigDecimal amount = BigDecimal.ZERO;
@@ -15,19 +15,19 @@ public class Turnover {
   public Turnover() {
   }
 
-  public Turnover(Date trnDate, AccountType fromAccType, AccountType toAccType) {
-    this.trnDate = trnDate;
+  public Turnover(LocalDate operDate, AccountType fromAccType, AccountType toAccType) {
+    this.operDate = operDate;
     this.fromAccType = fromAccType;
     this.toAccType = toAccType;
   }
 
-  public Date getTrnDate() {
-    return trnDate;
+  public LocalDate getOperDate() {
+    return operDate;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setTrnDate(Date trnDate) {
-    this.trnDate = trnDate;
+  public void setOperDate(LocalDate trnDate) {
+    this.operDate = trnDate;
   }
 
   public AccountType getFromAccType() {
@@ -63,13 +63,13 @@ public class Turnover {
 
     Turnover turnover = (Turnover) o;
 
-    return (getTrnDate() != null ? getTrnDate().equals(turnover.getTrnDate()) : turnover.getTrnDate() == null)
+    return (getOperDate() != null ? getOperDate().equals(turnover.getOperDate()) : turnover.getOperDate() == null)
         && getFromAccType() == turnover.getFromAccType() && getToAccType() == turnover.getToAccType();
   }
 
   @Override
   public int hashCode() {
-    int result = getTrnDate() != null ? getTrnDate().hashCode() : 0;
+    int result = getOperDate() != null ? getOperDate().hashCode() : 0;
     result = 31 * result + (getFromAccType() != null ? getFromAccType().hashCode() : 0);
     result = 31 * result + (getToAccType() != null ? getToAccType().hashCode() : 0);
     return result;

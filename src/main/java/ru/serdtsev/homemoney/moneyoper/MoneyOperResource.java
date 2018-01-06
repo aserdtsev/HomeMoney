@@ -19,7 +19,6 @@ import ru.serdtsev.homemoney.moneyoper.model.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.*;
@@ -78,13 +77,13 @@ public class MoneyOperResource {
       if (offset == 0) {
         List<MoneyOperDto> pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.pending, search, limit + 1, offset)
             .stream()
-            .map(this::moneyOperToDto)
+            .map((MoneyOper moneyOper) -> moneyOperService.moneyOperToDto(moneyOper))
             .collect(Collectors.toList());
         opers.addAll(pendingOpers);
 
         LocalDate beforeDate = LocalDate.now().plusDays(14L);
-        List<MoneyOperDto> recurrenceOpers = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, Date.valueOf(beforeDate))
-            .map(this::moneyOperToDto)
+        List<MoneyOperDto> recurrenceOpers = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, beforeDate)
+            .map((MoneyOper moneyOper) -> moneyOperService.moneyOperToDto(moneyOper))
             .collect(Collectors.toList());
         opers.addAll(recurrenceOpers);
 
@@ -93,7 +92,7 @@ public class MoneyOperResource {
 
       List<MoneyOperDto> doneOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.done, search, limit + 1, offset)
           .stream()
-          .map(this::moneyOperToDto)
+          .map((MoneyOper moneyOper) -> moneyOperService.moneyOperToDto(moneyOper))
           .collect(Collectors.toList());
       boolean hasNext = doneOpers.size() > limit;
       opers.addAll(hasNext ? doneOpers.subList(0, limit) : doneOpers);
@@ -103,20 +102,6 @@ public class MoneyOperResource {
       return getFail(e.getCode());
     }
   }
-
-  private MoneyOperDto moneyOperToDto(MoneyOper moneyOper) {
-    MoneyOperDto moneyOperDto = new MoneyOperDto(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(), moneyOper.getFromAccId(),
-        moneyOper.getToAccId(), moneyOper.getAmount().abs(), moneyOper.getCurrencyCode(),
-        moneyOper.getToAmount(), moneyOper.getToCurrencyCode(), moneyOper.getPeriod(), moneyOper.getComment(),
-        moneyOperService.getStringsByLabels(moneyOper.getLabels()), moneyOper.getDateNum(), moneyOper.getParentOperId(),
-        moneyOper.getRecurrenceId(), moneyOper.getCreated());
-    moneyOperDto.setFromAccName(getAccountName(moneyOper.getFromAccId()));
-    moneyOperDto.setToAccName(getAccountName(moneyOper.getToAccId()));
-    moneyOperDto.setType(moneyOper.getType().name());
-    moneyOperDto.setItems(moneyOper.getItems());
-    return moneyOperDto;
-  }
-
 
   private List<MoneyOper> getMoneyOpers(BalanceSheet balanceSheet, MoneyOperStatus status, @Nullable String search,
       Integer limit, Integer offset) {
@@ -148,7 +133,7 @@ public class MoneyOperResource {
 
     if (search.matches(SEARCH_DATE_REGEX)) {
       // по дате в формате ISO
-      pager = pageable -> moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(balanceSheet, status, Date.valueOf(search), pageable);
+      pager = pageable -> moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(balanceSheet, status, LocalDate.parse(search), pageable);
       //noinspection unchecked
       adder = p -> opers.addAll(p.getContent());
     } else if (search.matches(SEARCH_UUID_REGEX)) {
@@ -202,7 +187,7 @@ public class MoneyOperResource {
     try {
       MoneyOper oper = moneyOperRepo.findOne(id);
       moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
-      return getOk(moneyOperToDto(oper));
+      return getOk(moneyOperService.moneyOperToDto(oper));
     } catch (HmException e) {
       return getFail(e.getCode());
     }
@@ -213,7 +198,7 @@ public class MoneyOperResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyOperDto moneyOperDto) {
     List<MoneyOperDto> moneyOperDtos = createMoneyOperInternal(bsId, moneyOperDto)
-        .map(this::moneyOperToDto)
+        .map((MoneyOper moneyOper) -> moneyOperService.moneyOperToDto(moneyOper))
         .collect(Collectors.toList());
     return getOk(moneyOperDtos);
   }
@@ -304,7 +289,7 @@ public class MoneyOperResource {
   }
 
   private void skipRecurrenceMoneyOper(UUID bsId, MoneyOperDto moneyOperDto) {
-    moneyOperService.findRecurrenceOper(moneyOperDto.getTemplId()).ifPresent(recurrenceOper -> {
+    moneyOperService.findRecurrenceOper(moneyOperDto.getRecurrenceId()).ifPresent(recurrenceOper -> {
       recurrenceOper.skipNextDate();
       moneyOperService.save(recurrenceOper);
     });
@@ -351,17 +336,12 @@ public class MoneyOperResource {
       moneyOperService.skipRecurrenceOper(balanceSheet, mainOper.getRecurrenceId());
     }
 
-    if ((moneyOperDto.getStatus() == done || moneyOperDto.getStatus() == doneNew) && !mainOper.getPerformed().toLocalDate().isAfter(LocalDate.now())) {
+    if ((moneyOperDto.getStatus() == done || moneyOperDto.getStatus() == doneNew) && !mainOper.getPerformed().isAfter(LocalDate.now())) {
       moneyOpers.forEach(MoneyOper::complete);
     }
     moneyOpers.forEach(moneyOperService::save);
 
     return moneyOpers.stream();
-  }
-
-  private String getAccountName(UUID accountId) {
-    Account account = accountRepo.findOne(accountId);
-    return account.getName();
   }
 
   @Nonnull
@@ -407,7 +387,7 @@ public class MoneyOperResource {
       amount = moneyOperDto.getToAmount();
     }
     assert nonNull(amount);
-    MoneyOper templateOper = nonNull(moneyOperDto.getTemplId()) ? moneyOperRepo.findOne(moneyOperDto.getTemplId()) : null;
+    MoneyOper templateOper = nonNull(moneyOperDto.getRecurrenceId()) ? moneyOperRepo.findOne(moneyOperDto.getRecurrenceId()) : null;
     return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.getId(), pending, moneyOperDto.getOperDate(), nvl(moneyOperDto.getDateNum(), 0),
         labels, moneyOperDto.getComment(), moneyOperDto.getPeriod(), moneyOperDto.getFromAccId(), moneyOperDto.getToAccId(),
         amount, nvl(moneyOperDto.getToAmount(), amount), null, templateOper);
@@ -442,4 +422,24 @@ public class MoneyOperResource {
     return Optional.of(label);
   }
 
+  @RequestMapping(value = "/suggest-labels", method = RequestMethod.POST)
+  @Transactional(readOnly = true)
+  public HmResponse suggestLabels(
+      @PathVariable UUID bsId,
+      @RequestBody MoneyOperDto moneyOperDto) {
+    List<String> labels = moneyOperService.getSuggestLabels(bsId, moneyOperDto).stream()
+        .map(Label::getName)
+        .collect(Collectors.toList());
+    return getOk(labels);
+  }
+
+  @RequestMapping(value = "/labels")
+  @Transactional(readOnly = true)
+  public HmResponse labels(
+      @PathVariable UUID bsId) {
+    List<String> labels = moneyOperService.getLabels(bsId)
+        .map(Label::getName)
+        .collect(Collectors.toList());
+    return getOk(labels);
+  }
 }

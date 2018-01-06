@@ -10,12 +10,14 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.search = '';
   $scope.opers;
   $scope.recurrenceOpers;
+  $scope.labels;
 
   $scope.$on('login', function() {
     $scope.loadRecurrenceOpers();
     $scope.loadOpersFirstPage($scope.pageSize);
     $scope.loadAccounts();
     $scope.loadBalances();
+    $scope.loadLabels();
   });
 
   $scope.$on('logout', function() {
@@ -49,6 +51,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.refreshOpers = function() {
     $scope.loadOpersFirstPage($scope.getOpersLength());
+    $scope.loadLabels();
   }
 
   $scope.loadAccounts = function() {
@@ -209,6 +212,12 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     });
   }
 
+  $scope.loadLabels = function() {
+    var response = MoneyOpersSvc.labels({bsId: $rootScope.bsId}, function() {
+      $scope.labels = response.data;
+    });
+  }
+
   $scope.getAccount = function(id) {
     return $scope.accounts.filter(function(account) {
       return account.id == id;
@@ -305,12 +314,17 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   // item - экземпляр Oper или RecurrenceOper.
   $scope.newLabelKeyPressed = function(event, label, item) {
     if (event.keyCode == 13) {
-      var labels = item['labels'];
-      if (typeof label != 'undefined' && label.length > 0) {
-        labels.splice(labels.length, 0, label);
-      }
+      addLabel(item, label);
     }
   };
+
+  // item - экземпляр Oper или RecurrenceOper.
+  function addLabel(item, label) {
+    if (typeof label != 'undefined' && label.length > 0) {
+      var labels = item['labels'];
+      labels.splice(labels.length, 0, label);
+    }
+  }
 
   // item - экземпляр Oper или RecurrenceOper.
   $scope.editLabelKeyPressed = function(event, index, label, item) {

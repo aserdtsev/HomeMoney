@@ -1,13 +1,15 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -33,7 +35,8 @@ public class MoneyOperItem implements Serializable {
 
   private BigDecimal value;
 
-  private Date performed;
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  private LocalDate performed;
 
   private int index;
 
@@ -41,7 +44,7 @@ public class MoneyOperItem implements Serializable {
   public MoneyOperItem() {
   }
 
-  MoneyOperItem(UUID id, MoneyOper moneyOper, Balance balance, BigDecimal value, Date performed, int index) {
+  MoneyOperItem(UUID id, MoneyOper moneyOper, Balance balance, BigDecimal value, LocalDate performed, int index) {
     this.id = id;
     this.moneyOper = moneyOper;
     this.balanceSheet = moneyOper.getBalanceSheet();
@@ -97,11 +100,12 @@ public class MoneyOperItem implements Serializable {
     this.value = value;
   }
 
-  public Date getPerformed() {
+  @JsonProperty
+  public LocalDate getPerformed() {
     return performed;
   }
 
-  public void setPerformed(Date performed) {
+  public void setPerformed(LocalDate performed) {
     this.performed = performed;
   }
 

@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.filter;
 
-import org.apache.catalina.connector.RequestFacade;
 import org.apache.log4j.NDC;
 import org.springframework.web.filter.AbstractRequestLoggingFilter;
 
@@ -14,11 +13,11 @@ import java.util.Optional;
 public class RequestLoggingFilter extends AbstractRequestLoggingFilter {
   @Override
   protected void beforeRequest(HttpServletRequest request, String message) {
-    Optional<Cookie> userIdCookie = Arrays.stream(((RequestFacade) request).getCookies())
-        .filter(c -> "userId".equals(c.getName()))
-        .findFirst();
-    userIdCookie.ifPresent(c -> {
-      NDC.push("userId:" + c.getValue());
+    Optional.ofNullable(request.getCookies()).ifPresent(cookies -> {
+      Optional<Cookie> userIdCookie = Arrays.stream(cookies)
+          .filter(c -> "userId".equals(c.getName()))
+          .findFirst();
+      userIdCookie.ifPresent(c -> NDC.push("userId:" + c.getValue()));
     });
   }
 

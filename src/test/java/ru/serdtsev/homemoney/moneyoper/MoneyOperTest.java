@@ -113,21 +113,21 @@ class MoneyOperTest {
   }
 
   private MoneyOper createExpenseFromCash(MoneyOperStatus status) {
-    MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, Date.valueOf(LocalDate.now()), 0,
+    MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
     oper.addItem(cash, BigDecimal.ONE.negate());
     return oper;
   }
 
   private MoneyOper createIncomeToCash(MoneyOperStatus status) {
-    MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, Date.valueOf(LocalDate.now()), 0,
+    MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
     oper.addItem(cash, BigDecimal.ONE);
     return oper;
   }
 
   private MoneyOper createTransferFromCheckingAccountToCash(MoneyOperStatus status) {
-    MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, Date.valueOf(LocalDate.now()), 0,
+    MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
     BigDecimal amount = BigDecimal.ONE;
     oper.addItem(checkingAccount, amount.negate());

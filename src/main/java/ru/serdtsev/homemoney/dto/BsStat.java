@@ -1,18 +1,21 @@
 package ru.serdtsev.homemoney.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import ru.serdtsev.homemoney.account.AccountType;
 
 import java.math.BigDecimal;
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
 public class BsStat {
   private UUID bsId;
-  private Date fromDate;
-  private Date toDate;
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  private LocalDate fromDate;
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  private LocalDate toDate;
   private BigDecimal incomeAmount = BigDecimal.ZERO;
   private BigDecimal chargesAmount = BigDecimal.ZERO;
   private List<BsDayStat> dayStats;
@@ -25,7 +28,7 @@ public class BsStat {
   public BsStat() {
   }
 
-  public BsStat(UUID bsId, Date fromDate, Date toDate) {
+  public BsStat(UUID bsId, LocalDate fromDate, LocalDate toDate) {
     this.bsId = bsId;
     this.fromDate = fromDate;
     this.toDate = toDate;
@@ -40,12 +43,12 @@ public class BsStat {
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public Date getFromDate() {
+  public LocalDate getFromDate() {
     return fromDate;
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})
-  public Date getToDate() {
+  public LocalDate getToDate() {
     return toDate;
   }
 

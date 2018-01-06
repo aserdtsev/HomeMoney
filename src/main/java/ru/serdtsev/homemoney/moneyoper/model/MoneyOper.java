@@ -13,7 +13,6 @@ import javax.persistence.*;
 import javax.validation.constraints.AssertTrue;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -36,7 +35,7 @@ public class MoneyOper implements Serializable {
   private MoneyOperStatus status;
 
   @Column(name = "trn_date")
-  private Date performed;
+  private LocalDate performed;
 
   @Column(name = "date_num")
   private Integer dateNum;
@@ -84,7 +83,7 @@ public class MoneyOper implements Serializable {
   public MoneyOper() {
   }
 
-  public MoneyOper(UUID id, BalanceSheet balanceSheet, MoneyOperStatus status, Date performed, Integer dateNum,
+  public MoneyOper(UUID id, BalanceSheet balanceSheet, MoneyOperStatus status, LocalDate performed, Integer dateNum,
       Collection<Label> labels, String comment, Period period) {
     this.id = id;
     this.balanceSheet = balanceSheet;
@@ -114,11 +113,11 @@ public class MoneyOper implements Serializable {
     return status;
   }
 
-  public Date getPerformed() {
+  public LocalDate getPerformed() {
     return performed;
   }
 
-  public void setPerformed(Date performed) {
+  public void setPerformed(LocalDate performed) {
     this.performed = performed;
   }
 
@@ -292,7 +291,7 @@ public class MoneyOper implements Serializable {
 
   public void complete() {
     assert getStatus() == pending || getStatus() == cancelled : getStatus();
-    assert !getPerformed().toLocalDate().isAfter(LocalDate.now());
+    assert !performed.isAfter(LocalDate.now());
     changeBalances(false);
     setStatus(done);
   }
@@ -310,10 +309,10 @@ public class MoneyOper implements Serializable {
   }
 
   public MoneyOperItem addItem(Balance balance, BigDecimal value) {
-    return addItem(balance, value, Date.valueOf(LocalDate.now()));
+    return addItem(balance, value, LocalDate.now());
   }
 
-  public MoneyOperItem addItem(Balance balance, BigDecimal value, @Nullable Date performed) {
+  public MoneyOperItem addItem(Balance balance, BigDecimal value, @Nullable LocalDate performed) {
     assertNonNulls(balance, value);
     assert value.compareTo(BigDecimal.ZERO) != 0 : this.toString();
     MoneyOperItem item = new MoneyOperItem(UUID.randomUUID(), this, balance, value, performed, items.size());
@@ -368,9 +367,13 @@ public class MoneyOper implements Serializable {
         '}';
   }
 
-  @SuppressWarnings("unused")
   @AssertTrue(message = "Fields amount and toAmount is different.")
   public boolean isAmountsValid() {
     return !Objects.equals(getCurrencyCode(), getToCurrencyCode()) || amount.compareTo(toAmount) == 0;
+  }
+
+  @AssertTrue(message = "Field recurrenceId of template is null.")
+  public boolean isRecurrenceIdNotNullForTemplate() {
+    return status != MoneyOperStatus.template || Objects.nonNull(recurrenceId);
   }
 }

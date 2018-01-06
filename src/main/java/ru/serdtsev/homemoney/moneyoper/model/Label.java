@@ -97,12 +97,17 @@ public class Label {
     if (this == o) return true;
     if (!(o instanceof Label)) return false;
     Label label = (Label) o;
-    return Objects.equals(id, label.id);
+    return Objects.equals(balanceSheet, label.balanceSheet) &&
+        Objects.equals(name, label.name) &&
+        Objects.equals(rootId, label.rootId) &&
+        Objects.equals(isCategory, label.isCategory) &&
+        Objects.equals(isArc, label.isArc);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id);
+
+    return Objects.hash(balanceSheet, name, rootId, isCategory, isArc);
   }
 
   @Override

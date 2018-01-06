@@ -58,7 +58,7 @@ class MoneyOperResourceTest {
   void newMoneyOper_simpleExpense() {
     List<Label> labels = new ArrayList<>();
     labels.add(new Label(UUID.randomUUID(), balanceSheet, "label", null, false));
-    java.sql.Date performed = java.sql.Date.valueOf(LocalDate.now());
+    LocalDate performed = LocalDate.now();
     String comment = "my comment";
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, labels,
         comment, Period.month, cash.getId(), balanceSheet.getUncatCosts().getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
@@ -87,7 +87,7 @@ class MoneyOperResourceTest {
 
   @Test
   void newMoneyOper_simpleIncome() {
-    java.sql.Date performed = java.sql.Date.valueOf(LocalDate.now());
+    LocalDate performed = LocalDate.now();
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
         "", Period.month, balanceSheet.getUncatIncome().getId(), currentAccount.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
 
@@ -101,7 +101,7 @@ class MoneyOperResourceTest {
 
   @Test
   void newMoneyOper_simpleTransfer() {
-    java.sql.Date performed = java.sql.Date.valueOf(LocalDate.now());
+    LocalDate performed = LocalDate.now();
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
         "", Period.month, currentAccount.getId(), cash.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
 

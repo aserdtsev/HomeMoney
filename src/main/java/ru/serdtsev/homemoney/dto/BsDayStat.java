@@ -1,14 +1,18 @@
 package ru.serdtsev.homemoney.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import ru.serdtsev.homemoney.account.AccountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 
 public class BsDayStat {
-  private Long date;
+  @JsonIgnore
+  private LocalDate localDate;
   private BigDecimal incomeAmount = BigDecimal.ZERO;
   private BigDecimal chargeAmount = BigDecimal.ZERO;
   private HashMap<AccountType, BigDecimal> saldoMap = new HashMap<>();
@@ -18,16 +22,22 @@ public class BsDayStat {
   public BsDayStat() {
   }
 
-  public BsDayStat(Long date) {
-    this.date = date;
+  public BsDayStat(LocalDate localDate) {
+    this.localDate = localDate;
   }
 
+  public LocalDate getLocalDate() {
+    return localDate;
+  }
+
+  public void setDate(LocalDate localDate) {
+    this.localDate = localDate;
+  }
+
+  @JsonProperty("date")
   public Long getDate() {
-    return date;
-  }
-
-  public void setDate(Long date) {
-    this.date = date;
+    ZoneOffset zoneOffset = OffsetDateTime.now().getOffset();
+    return localDate.atStartOfDay().toInstant(zoneOffset).toEpochMilli();
   }
 
   public BigDecimal getIncomeAmount() {
@@ -44,11 +54,6 @@ public class BsDayStat {
 
   public void setChargeAmount(BigDecimal chargeAmount) {
     this.chargeAmount = chargeAmount;
-  }
-
-  @JsonIgnore
-  public LocalDate getDateAsLocalDate() {
-    return (new java.sql.Date(date)).toLocalDate();
   }
 
   @SuppressWarnings({"unused", "WeakerAccess"})

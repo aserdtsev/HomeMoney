@@ -1,10 +1,9 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
-import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem;
-import ru.serdtsev.homemoney.moneyoper.model.Period;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.math.BigDecimal;
-import java.sql.Date;
+import java.time.LocalDate;
 import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +13,8 @@ public class RecurrenceOperDto {
   private Status status;
   private UUID sampleId;
   private UUID lastMoneyTrnId;
-  private Date nextDate;
+  @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  private LocalDate nextDate;
   private Period period;
   private List<MoneyOperItem> items;
   private UUID fromAccId;
@@ -33,7 +33,7 @@ public class RecurrenceOperDto {
   public RecurrenceOperDto() {
   }
 
-  public RecurrenceOperDto(UUID id, UUID sampleId, UUID lastMoneyTrnId, Date nextDate, Period period,
+  public RecurrenceOperDto(UUID id, UUID sampleId, UUID lastMoneyTrnId, LocalDate nextDate, Period period,
       UUID fromAccId, UUID toAccId, BigDecimal amount, String comment, List<String> labels,
       String currencyCode, String toCurrencyCode, String fromAccName, String toAccName) {
     this.id = id;
@@ -86,11 +86,11 @@ public class RecurrenceOperDto {
     this.lastMoneyTrnId = lastMoneyTrnId;
   }
 
-  public Date getNextDate() {
+  public LocalDate getNextDate() {
     return nextDate;
   }
 
-  public void setNextDate(Date nextDate) {
+  public void setNextDate(LocalDate nextDate) {
     this.nextDate = nextDate;
   }
 
