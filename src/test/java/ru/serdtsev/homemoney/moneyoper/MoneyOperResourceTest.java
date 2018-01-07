@@ -57,7 +57,7 @@ class MoneyOperResourceTest {
   @Test
   void newMoneyOper_simpleExpense() {
     List<Label> labels = new ArrayList<>();
-    labels.add(new Label(UUID.randomUUID(), balanceSheet, "label", null, false));
+    labels.add(new Label(UUID.randomUUID(), balanceSheet, "label"));
     LocalDate performed = LocalDate.now();
     String comment = "my comment";
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, labels,

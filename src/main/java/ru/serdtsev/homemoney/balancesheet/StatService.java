@@ -38,15 +38,15 @@ public class StatService {
     calcCurrentSaldo(bsStat);
 
     TreeMap<LocalDate, BsDayStat> map = new TreeMap<>();
-    fillBsDayStatMap(map, getRealTurnovers(bsId, MoneyOperStatus.done, fromDate, toDate));
+    List<Turnover> realTurnovers = getRealTurnovers(bsId, MoneyOperStatus.done, fromDate, toDate);
+    fillBsDayStatMap(map, realTurnovers);
     calcPastSaldoNTurnovers(bsStat, map);
 
     LocalDate trendFromDate = today.plusDays(1).minusMonths(1);
     LocalDate trendToDate = trendFromDate.plusDays(interval - 1);
     TreeMap<LocalDate, BsDayStat> trendMap = new TreeMap<>();
     fillBsDayStatMap(trendMap, getTrendTurnovers(bsId, trendFromDate, trendToDate));
-    fillBsDayStatMap(trendMap, getRealTurnovers(bsId, MoneyOperStatus.pending,
-            LocalDate.MIN, today.plusDays(interval)));
+    fillBsDayStatMap(trendMap, getRealTurnovers(bsId, MoneyOperStatus.pending, LocalDate.MIN, today.plusDays(interval)));
     fillBsDayStatMap(trendMap, getRecurrenceTurnovers(bsId, today.plusDays(interval)));
     calcTrendSaldoNTurnovers(bsStat, trendMap);
 

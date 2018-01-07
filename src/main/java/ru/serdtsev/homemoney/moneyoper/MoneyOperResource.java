@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.moneyoper;
 
+import lombok.val;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -411,12 +412,14 @@ public class MoneyOperResource {
       if (nonNull(rootCategory)) {
         rootLabel = labelRepo.findByBalanceSheetAndName(balanceSheet, rootCategory.getName());
         if (isNull(rootLabel)) {
-          rootLabel = new Label(UUID.randomUUID(), balanceSheet, rootCategory.getName(), null, true);
+          val rootCategoryType = CategoryType.valueOf(rootCategory.getType().name());
+          rootLabel = new Label(UUID.randomUUID(), balanceSheet, rootCategory.getName(), null, true, rootCategoryType);
           labelRepo.save(rootLabel);
         }
       }
       UUID rootLabelId = nonNull(rootLabel) ? rootLabel.getId() : null;
-      label = new Label(UUID.randomUUID(), balanceSheet, category.getName(), rootLabelId, true);
+      val categoryType = CategoryType.valueOf(rootCategory.getType().name());
+      label = new Label(UUID.randomUUID(), balanceSheet, category.getName(), rootLabelId, true, categoryType);
       labelRepo.save(label);
     }
     return Optional.of(label);
