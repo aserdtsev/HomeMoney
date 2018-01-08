@@ -143,19 +143,20 @@ public class Balance extends Account {
         "after: " + value + ".");
   }
 
-  private BigDecimal getCreditLimit() {
+
+  public BigDecimal getCreditLimit() {
     return nvl(creditLimit, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
-  private void setCreditLimit(BigDecimal creditLimit) {
+  public void setCreditLimit(BigDecimal creditLimit) {
     this.creditLimit = creditLimit;
   }
 
-  private BigDecimal getMinValue() {
+  public BigDecimal getMinValue() {
     return nvl(minValue, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
   }
 
-  private void setMinValue(BigDecimal minValue) {
+  public void setMinValue(BigDecimal minValue) {
     this.minValue = minValue;
   }
 
@@ -168,7 +169,7 @@ public class Balance extends Account {
    * Для сериализации в JSON.
    */
   @SuppressWarnings("unused")
-  private UUID getReserveId() {
+  public UUID getReserveId() {
     return reserve != null ? reserve.getId() : null;
   }
 
