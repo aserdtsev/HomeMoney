@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
+import javax.annotation.Nonnull;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -23,19 +24,24 @@ public class MoneyOperItem implements Serializable {
 
   @ManyToOne
   @JoinColumn(name = "bs_id")
+  @Nonnull
   private BalanceSheet balanceSheet;
 
   @ManyToOne
   @JoinColumn(name = "oper_id")
+  @Nonnull
   private MoneyOper moneyOper;
 
   @ManyToOne
   @JoinColumn(name = "balance_id")
+  @Nonnull
   private Balance balance;
 
+  @Nonnull
   private BigDecimal value;
 
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+  @Nonnull
   private LocalDate performed;
 
   private int index;

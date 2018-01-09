@@ -1,77 +1,46 @@
 package ru.serdtsev.homemoney.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import ru.serdtsev.homemoney.account.AccountType;
 
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
+/**
+ * Обороты за день по типу счета
+ */
+@Data
+@AllArgsConstructor
 public class Turnover {
-  private LocalDate operDate;
-  private AccountType fromAccType;
-  private AccountType toAccType;
-  private BigDecimal amount = BigDecimal.ZERO;
+  @Nonnull private LocalDate operDate;
+  @Nonnull private AccountType accountType;
+  /** Сумма оборотов со знаком */
+  @Nonnull private BigDecimal amount = BigDecimal.ZERO;
 
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public Turnover() {
-  }
-
-  public Turnover(LocalDate operDate, AccountType fromAccType, AccountType toAccType) {
+  public Turnover(LocalDate operDate, AccountType accountType) {
     this.operDate = operDate;
-    this.fromAccType = fromAccType;
-    this.toAccType = toAccType;
+    this.accountType = accountType;
   }
 
-  public LocalDate getOperDate() {
-    return operDate;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setOperDate(LocalDate trnDate) {
-    this.operDate = trnDate;
-  }
-
-  public AccountType getFromAccType() {
-    return fromAccType;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setFromAccType(AccountType fromAccType) {
-    this.fromAccType = fromAccType;
-  }
-
-  public AccountType getToAccType() {
-    return toAccType;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setToAccType(AccountType toAccType) {
-    this.toAccType = toAccType;
-  }
-
-  public BigDecimal getAmount() {
-    return amount;
-  }
-
-  public void setAmount(BigDecimal amount) {
-    this.amount = amount;
+  public void plus(BigDecimal value) {
+    amount = amount.add(value);
   }
 
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
+    if (!(o instanceof Turnover)) return false;
+    if (!super.equals(o)) return false;
     Turnover turnover = (Turnover) o;
-
-    return (getOperDate() != null ? getOperDate().equals(turnover.getOperDate()) : turnover.getOperDate() == null)
-        && getFromAccType() == turnover.getFromAccType() && getToAccType() == turnover.getToAccType();
+    return Objects.equals(operDate, turnover.operDate) &&
+        accountType == turnover.accountType;
   }
 
   @Override
   public int hashCode() {
-    int result = getOperDate() != null ? getOperDate().hashCode() : 0;
-    result = 31 * result + (getFromAccType() != null ? getFromAccType().hashCode() : 0);
-    result = 31 * result + (getToAccType() != null ? getToAccType().hashCode() : 0);
-    return result;
+    return Objects.hash(super.hashCode(), operDate, accountType);
   }
 }

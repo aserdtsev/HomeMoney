@@ -8,10 +8,10 @@ import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.dto.*;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo;
+import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;
 import ru.serdtsev.homemoney.moneyoper.RecurrenceOperRepo;
-import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
-import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
-import ru.serdtsev.homemoney.moneyoper.model.RecurrenceOper;
+import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
@@ -20,12 +20,18 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+
 @Service
 @RequiredArgsConstructor
 public class StatService {
   private final BalanceSheetRepository balanceSheetRepo;
   private final RecurrenceOperRepo recurrenceOperRepo;
   private final AccountRepository accountRepo;
+  private final MoneyOperRepo moneyOperRepo;
+  private final MoneyOperItemRepo moneyOperItemRepo;
   private final DataSource dataSource;
   private final JdbcTemplate jdbcTemplate;
 
@@ -38,17 +44,17 @@ public class StatService {
     calcCurrentSaldo(bsStat);
 
     TreeMap<LocalDate, BsDayStat> map = new TreeMap<>();
-    List<Turnover> realTurnovers = getRealTurnovers(bsId, MoneyOperStatus.done, fromDate, toDate);
+    Collection<Turnover> realTurnovers = getRealTurnovers(bsId, MoneyOperStatus.done, fromDate, toDate);
     fillBsDayStatMap(map, realTurnovers);
-    calcPastSaldoNTurnovers(bsStat, map);
+    calcPastSaldoAndTurnovers(bsStat, map);
 
     LocalDate trendFromDate = today.plusDays(1).minusMonths(1);
     LocalDate trendToDate = trendFromDate.plusDays(interval - 1);
     TreeMap<LocalDate, BsDayStat> trendMap = new TreeMap<>();
     fillBsDayStatMap(trendMap, getTrendTurnovers(bsId, trendFromDate, trendToDate));
-    fillBsDayStatMap(trendMap, getRealTurnovers(bsId, MoneyOperStatus.pending, LocalDate.MIN, today.plusDays(interval)));
+    fillBsDayStatMap(trendMap, getRealTurnovers(bsId, MoneyOperStatus.pending, LocalDate.of(1970, 1, 1), today.plusDays(interval)));
     fillBsDayStatMap(trendMap, getRecurrenceTurnovers(bsId, today.plusDays(interval)));
-    calcTrendSaldoNTurnovers(bsStat, trendMap);
+    calcTrendSaldoAndTurnovers(bsStat, trendMap);
 
     map.putAll(trendMap);
     bsStat.setDayStats(new ArrayList<>(map.values()));
@@ -73,22 +79,23 @@ public class StatService {
     aggrAccSaldo.forEach(saldo -> bsStat.getSaldoMap().put(saldo.getType(), saldo.getSaldo()));
   }
 
-  private void calcPastSaldoNTurnovers(BsStat bsStat, Map<LocalDate, BsDayStat> map) {
+  private void calcPastSaldoAndTurnovers(BsStat bsStat, Map<LocalDate, BsDayStat> map) {
     Map<AccountType, BigDecimal> saldoMap = new HashMap<>(AccountType.values().length);
     bsStat.getSaldoMap().forEach((type, value) -> saldoMap.put(type, value.plus()));
     List<BsDayStat> dayStats = new ArrayList<>(map.values());
     dayStats.sort((e1, e2) -> (e1.getLocalDate().isAfter(e2.getLocalDate())) ? -1 : 1);
     dayStats.forEach(dayStat -> {
       Arrays.asList(AccountType.values()).forEach(type -> {
-        dayStat.setSaldo(type, saldoMap.getOrDefault(type, BigDecimal.ZERO));
-        saldoMap.put(type, (saldoMap).getOrDefault(type, BigDecimal.ZERO).subtract(dayStat.getDelta(type)));
+        BigDecimal saldo = saldoMap.getOrDefault(type, BigDecimal.ZERO);
+        dayStat.setSaldo(type, saldo);
+        saldoMap.put(type, saldo.subtract(dayStat.getDelta(type)));
       });
       bsStat.setIncomeAmount(bsStat.getIncomeAmount().add(dayStat.getIncomeAmount()));
       bsStat.setChargesAmount(bsStat.getChargesAmount().add(dayStat.getChargeAmount()));
     });
   }
 
-  private void calcTrendSaldoNTurnovers(BsStat bsStat, Map<LocalDate, BsDayStat> trendMap) {
+  private void calcTrendSaldoAndTurnovers(BsStat bsStat, Map<LocalDate, BsDayStat> trendMap) {
     List<BsDayStat> dayStats = new ArrayList<>(trendMap.values());
     Map<AccountType, BigDecimal> saldoMap = new HashMap<>(AccountType.values().length);
     bsStat.getSaldoMap().forEach((type, value) -> saldoMap.put(type, value.plus()));
@@ -104,40 +111,43 @@ public class StatService {
   /**
    * Заполняет карту экземпляров BsDayStat суммами из оборотов.
    */
-  private void fillBsDayStatMap(Map<LocalDate, BsDayStat> map, List<Turnover> turnovers) {
+  private void fillBsDayStatMap(Map<LocalDate, BsDayStat> map, Collection<Turnover> turnovers) {
     turnovers.forEach(t -> {
       BsDayStat dayStat = map.computeIfAbsent(t.getOperDate(), k -> new BsDayStat(t.getOperDate()));
-      dayStat.setDelta(t.getFromAccType(), dayStat.getDelta(t.getFromAccType()).subtract(t.getAmount()));
-      dayStat.setDelta(t.getToAccType(), dayStat.getDelta(t.getToAccType()).add(t.getAmount()));
-      if (AccountType.income == t.getFromAccType()) {
+      dayStat.setDelta(t.getAccountType(), dayStat.getDelta(t.getAccountType()).add(t.getAmount()));
+      if (t.getAccountType() == AccountType.income) {
         dayStat.setIncomeAmount(dayStat.getIncomeAmount().add(t.getAmount()));
-      }
-      if (AccountType.expense == t.getToAccType()) {
+      } else if (t.getAccountType() == AccountType.expense) {
         dayStat.setChargeAmount(dayStat.getChargeAmount().add(t.getAmount()));
       }
     });
   }
 
-  private List<Turnover> getRealTurnovers(UUID bsId, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
-    return jdbcTemplate.query("" +
-        "select trn_date as operDate, from_acc_type as fromAccType, to_acc_type as toAccType, " +
-        "sum(amount) as amount " +
-        "from v_trns_by_base_crn " +
-        "where bs_id = ? and status = ? and trn_date between ? and ? " +
-        "group by trn_date, from_acc_type, to_acc_type ",
-        (rs, rowNum) -> {
-          val operDate = rs.getObject("operDate", LocalDate.class);
-          val fromType = AccountType.valueOf(rs.getString("fromAccType"));
-          val toType = AccountType.valueOf(rs.getString("toAccType"));
-          Turnover turnover = new Turnover(operDate, fromType, toType) {{
-            setAmount(rs.getBigDecimal("amount"));
-          }};
-          return turnover;
-        },
-        bsId, status.name(), fromDate, toDate);
+  private Collection<Turnover> getRealTurnovers(UUID bsId, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
+        .filter(item -> item.getMoneyOper().getStatus() == status)
+        .flatMap(item -> {
+          List<Turnover> list = new ArrayList<>();
+
+          Turnover t = new Turnover(item.getPerformed(), item.getBalance().getType(), item.getValue());
+          list.add(t);
+
+          MoneyOper oper = item.getMoneyOper();
+          if (oper.getType() != MoneyOperType.transfer) {
+            list.add(new Turnover(item.getPerformed(), AccountType.valueOf(oper.getType().name()), item.getValue().abs()));
+          }
+          return list.stream();
+        })
+        .collect(groupingBy(t -> new Turnover(t.getOperDate(), t.getAccountType()), Collectors.toList()));
+
+    turnovers.forEach((t, list) ->
+        list.forEach(ti -> t.plus(ti.getAmount())));
+
+    return turnovers.keySet();
   }
 
-  private List<Turnover> getTrendTurnovers(UUID bsId, LocalDate fromDate, LocalDate toDate) {
+  private Collection<Turnover> getTrendTurnovers(UUID bsId, LocalDate fromDate, LocalDate toDate) {
     return jdbcTemplate.query("" +
         "select trn_date as operDate, " +
         "from_acc_type as fromAccType, to_acc_type as toAccType, " +
@@ -149,15 +159,18 @@ public class StatService {
           val operDate = rs.getObject("operDate", LocalDate.class).plusMonths(1);
           val fromType = AccountType.valueOf(rs.getString("fromAccType"));
           val toType = AccountType.valueOf(rs.getString("toAccType"));
-          Turnover turnover = new Turnover(operDate, fromType, toType) {{
-            setAmount(rs.getBigDecimal("amount"));
-          }};
-          return turnover;
+          BigDecimal amount = rs.getBigDecimal("amount");
+          return Stream.of(
+              new Turnover(operDate, fromType, fromType.isBalance() ? amount.negate() : amount),
+              new Turnover(operDate, toType, amount));
         },
-        bsId, MoneyOperStatus.done.name(), fromDate, toDate);
+        bsId, MoneyOperStatus.done.name(), fromDate, toDate)
+        .stream()
+        .flatMap(s -> s)
+        .collect(toList());
   }
 
-  private List<Turnover> getRecurrenceTurnovers(UUID bsId, LocalDate toDate) {
+  private Collection<Turnover> getRecurrenceTurnovers(UUID bsId, LocalDate toDate) {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
     Stream<RecurrenceOper> recurrenceOpers =  recurrenceOperRepo.findByBalanceSheet(balanceSheet);
     Set<Turnover> turnovers = new HashSet<>();
@@ -169,19 +182,26 @@ public class StatService {
         Account fromAcc = accountRepo.findOne(template.getFromAccId());
         Account toAcc = accountRepo.findOne(template.getToAccId());
         LocalDate nextDate = (roNextDate.isBefore(today)) ? today : roNextDate;
-        Turnover newTurnover = new Turnover(nextDate, fromAcc.getType(), toAcc.getType());
-        Optional<Turnover> turnover = turnovers.stream()
-            .filter(t1 -> t1.equals(newTurnover))
-            .findFirst();
-        if (!turnover.isPresent()) {
-          turnover = Optional.of(newTurnover);
-          turnovers.add(newTurnover);
-        }
-        turnover.get().setAmount(turnover.get().getAmount().add(template.getAmount()));
+
+        putRecurrenceTurnover(turnovers, fromAcc.getType().isBalance() ? template.getAmount().negate() : template.getAmount(), fromAcc.getType(), nextDate);
+        putRecurrenceTurnover(turnovers, template.getAmount(), toAcc.getType(), nextDate);
+
         roNextDate = ro.calcNextDate(nextDate);
       }
     });
     return new ArrayList<>(turnovers);
+  }
+
+  private void putRecurrenceTurnover(Set<Turnover> turnovers, BigDecimal amount, AccountType accountType, LocalDate nextDate) {
+    Turnover turnover = new Turnover(nextDate, accountType);
+    Optional<Turnover> turnoverOpt = turnovers.stream()
+        .filter(t1 -> t1.equals(turnover))
+        .findFirst();
+    if (!turnoverOpt.isPresent()) {
+      turnoverOpt = Optional.of(turnover);
+      turnovers.add(turnover);
+    }
+    turnoverOpt.get().setAmount(turnoverOpt.get().getAmount().add(amount));
   }
 
   private List<CategoryStat> getCategoies(UUID bsId, LocalDate fromDate, LocalDate toDate) {
@@ -201,7 +221,7 @@ public class StatService {
         (rs, rowNum) -> {
           UUID id = UUID.fromString(rs.getString("id"));
           String rootIdAsStr = rs.getString("rootId");
-          UUID rootId = Objects.nonNull(rootIdAsStr) ? UUID.fromString(rootIdAsStr) : null;
+          UUID rootId = nonNull(rootIdAsStr) ? UUID.fromString(rootIdAsStr) : null;
           return new CategoryStat(id, rootId, rs.getString("name"), rs.getBigDecimal("amount"));
         },
         fromDate, toDate, bsId);

@@ -8,6 +8,7 @@ import ru.serdtsev.homemoney.account.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.utils.Utils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.persistence.*;
 import javax.validation.constraints.AssertTrue;
@@ -29,12 +30,15 @@ public class MoneyOper implements Serializable {
 
   @ManyToOne
   @JoinColumn(name = "balance_sheet_id")
+  @Nonnull
   private BalanceSheet balanceSheet;
 
   @Enumerated(EnumType.STRING)
+  @Nonnull
   private MoneyOperStatus status;
 
   @Column(name = "trn_date")
+  @Nonnull
   private LocalDate performed;
 
   @Column(name = "date_num")
@@ -42,6 +46,7 @@ public class MoneyOper implements Serializable {
 
   @OneToMany(cascade = CascadeType.ALL)
   @JoinColumn(name = "oper_id")
+  @Nonnull
   private List<MoneyOperItem> items;
 
   @ManyToMany
@@ -56,6 +61,7 @@ public class MoneyOper implements Serializable {
   private Period period;
 
   @Column(name = "created_ts")
+  @Nonnull
   private Timestamp created;
 
   @OneToOne
@@ -277,6 +283,7 @@ public class MoneyOper implements Serializable {
     return MoneyOperType.transfer;
   }
 
+  @Deprecated
   public MoneyOperType getType(AccountRepository accountRepo) {
     Account fromAcc = accountRepo.findOne(fromAccId);
     Account toAcc = accountRepo.findOne(toAccId);
