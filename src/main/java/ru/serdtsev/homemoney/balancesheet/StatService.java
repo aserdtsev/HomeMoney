@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.balancesheet;
 
 import lombok.RequiredArgsConstructor;
-import lombok.val;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import ru.serdtsev.homemoney.account.Account;
@@ -20,9 +19,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -148,26 +147,40 @@ public class StatService {
   }
 
   private Collection<Turnover> getTrendTurnovers(UUID bsId, LocalDate fromDate, LocalDate toDate) {
-    return jdbcTemplate.query("" +
-        "select trn_date as operDate, " +
-        "from_acc_type as fromAccType, to_acc_type as toAccType, " +
-        "sum(case when period = 'single' or recurrence_id is not null then 0 else amount end) as amount " +
-        "from v_trns_by_base_crn " +
-        "where bs_id = ? and status = ? and trn_date between ? and ? " +
-        "group by trn_date, from_acc_type, to_acc_type ",
-        (rs, rowNum) -> {
-          val operDate = rs.getObject("operDate", LocalDate.class).plusMonths(1);
-          val fromType = AccountType.valueOf(rs.getString("fromAccType"));
-          val toType = AccountType.valueOf(rs.getString("toAccType"));
-          BigDecimal amount = rs.getBigDecimal("amount");
-          return Stream.of(
-              new Turnover(operDate, fromType, fromType.isBalance() ? amount.negate() : amount),
-              new Turnover(operDate, toType, amount));
-        },
-        bsId, MoneyOperStatus.done.name(), fromDate, toDate)
-        .stream()
-        .flatMap(s -> s)
-        .collect(toList());
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
+        .filter(item -> {
+          MoneyOper oper = item.getMoneyOper();
+          Period period = oper.getPeriod();
+          return oper.getStatus() == MoneyOperStatus.done && period == Period.month && isNull(oper.getRecurrenceId());
+        })
+        .flatMap(item -> {
+          List<Turnover> list = new ArrayList<>();
+
+          MoneyOper oper = item.getMoneyOper();
+          LocalDate trendDate = item.getPerformed().plusMonths(1);
+          assert trendDate.isAfter(toDate) : item;
+          Turnover t = new Turnover(trendDate, item.getBalance().getType(), item.getValue());
+          list.add(t);
+
+          if (oper.getType() != MoneyOperType.transfer) {
+            list.add(new Turnover(trendDate, AccountType.valueOf(oper.getType().name()), item.getValue().abs()));
+          }
+          return list.stream();
+        })
+        .collect(groupingBy(t -> new Turnover(t.getOperDate(), t.getAccountType()), Collectors.toList()));
+
+    turnovers.forEach((t, list) ->
+        list.forEach(ti -> t.plus(ti.getAmount())));
+
+    return turnovers.keySet();
+  }
+
+  private LocalDate getTrendDate(LocalDate performed, Period period) {
+    return period == Period.month ? performed.plusMonths(1)
+                : period == Period.quarter ? performed.plusMonths(3)
+                : period == Period.year ? performed.plusYears(1)
+                : LocalDate.MAX;
   }
 
   private Collection<Turnover> getRecurrenceTurnovers(UUID bsId, LocalDate toDate) {
