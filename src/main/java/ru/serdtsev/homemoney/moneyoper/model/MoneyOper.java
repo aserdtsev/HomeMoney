@@ -188,6 +188,7 @@ public class MoneyOper implements Serializable {
     this.fromAccId = fromAccId;
   }
 
+  @Deprecated
   public UUID getFromAccId() {
     return fromAccId;
   }
@@ -196,6 +197,7 @@ public class MoneyOper implements Serializable {
     this.toAccId = toAccId;
   }
 
+  @Deprecated
   public UUID getToAccId() {
     return toAccId;
   }
@@ -204,6 +206,7 @@ public class MoneyOper implements Serializable {
     this.amount = amount;
   }
 
+  @Deprecated
   public BigDecimal getAmount() {
     return items.stream()
         .map(MoneyOperItem::getValue)
@@ -213,6 +216,7 @@ public class MoneyOper implements Serializable {
         .orElse(amount);
   }
 
+  @Deprecated
   public String getCurrencyCode() {
     return items.stream()
         .sorted(Comparator.comparingInt(item -> item.getValue().signum()))
@@ -221,6 +225,7 @@ public class MoneyOper implements Serializable {
         .orElse(getBalanceSheet().getCurrencyCode());
   }
 
+  @Deprecated
   public String getCurrencyCode(AccountRepository accountRepo) {
     Account account = accountRepo.findOne(getFromAccId());
     if (account instanceof Balance) {
@@ -233,6 +238,7 @@ public class MoneyOper implements Serializable {
     this.toAmount = toAmount;
   }
 
+  @Deprecated
   public BigDecimal getToAmount() {
     return items.stream()
         .map(MoneyOperItem::getValue)
@@ -242,6 +248,7 @@ public class MoneyOper implements Serializable {
         .orElse(toAmount);
   }
 
+  @Deprecated
   public String getToCurrencyCode() {
     return items.stream()
         .sorted(Comparator.comparingInt(item -> item.getValue().signum() * -1))
@@ -250,6 +257,7 @@ public class MoneyOper implements Serializable {
         .orElse(getBalanceSheet().getCurrencyCode());
   }
 
+  @Deprecated
   public String getToCurrencyCode(AccountRepository accountRepo) {
     Account account = accountRepo.findOne(getToAccId());
     if (account instanceof Balance) {

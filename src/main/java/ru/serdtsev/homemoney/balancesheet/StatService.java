@@ -3,7 +3,6 @@ package ru.serdtsev.homemoney.balancesheet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import ru.serdtsev.homemoney.account.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.AccountType;
 import ru.serdtsev.homemoney.dto.*;
@@ -192,13 +191,14 @@ public class StatService {
       MoneyOper template = ro.getTemplate();
       LocalDate roNextDate = ro.getNextDate();
       while (roNextDate.isBefore(toDate)) {
-        Account fromAcc = accountRepo.findOne(template.getFromAccId());
-        Account toAcc = accountRepo.findOne(template.getToAccId());
         LocalDate nextDate = (roNextDate.isBefore(today)) ? today : roNextDate;
-
-        putRecurrenceTurnover(turnovers, fromAcc.getType().isBalance() ? template.getAmount().negate() : template.getAmount(), fromAcc.getType(), nextDate);
-        putRecurrenceTurnover(turnovers, template.getAmount(), toAcc.getType(), nextDate);
-
+        template.getItems().forEach(item -> {
+          putRecurrenceTurnover(turnovers, item.getValue(), item.getBalance().getType(), nextDate);
+          MoneyOperType operType = template.getType();
+          if (operType != MoneyOperType.transfer) {
+            putRecurrenceTurnover(turnovers, item.getValue().abs(), AccountType.valueOf(operType.name()), nextDate);
+          }
+        });
         roNextDate = ro.calcNextDate(nextDate);
       }
     });
