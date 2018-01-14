@@ -6,6 +6,8 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import javax.persistence.*;
 import java.util.UUID;
 
+import static java.util.Objects.nonNull;
+
 @Entity
 @Table(name = "labels")
 @Getter
@@ -50,4 +52,7 @@ public class Label {
     this.isArc = false;
   }
 
+  public Boolean getIsCategory() {
+    return nonNull(isCategory) ? isCategory : false;
+  }
 }

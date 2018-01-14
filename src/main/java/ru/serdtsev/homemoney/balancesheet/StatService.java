@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +34,8 @@ public class StatService {
   private final JdbcTemplate jdbcTemplate;
 
   public BsStat getBsStat(UUID bsId, Long interval) {
+    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+
     LocalDate today = LocalDate.now();
     LocalDate toDate = today;
     LocalDate fromDate = today.minusDays(interval);
@@ -42,21 +44,21 @@ public class StatService {
     calcCurrentSaldo(bsStat);
 
     TreeMap<LocalDate, BsDayStat> map = new TreeMap<>();
-    Collection<Turnover> realTurnovers = getRealTurnovers(bsId, MoneyOperStatus.done, fromDate, toDate);
+    Collection<Turnover> realTurnovers = getRealTurnovers(balanceSheet, MoneyOperStatus.done, fromDate, toDate);
     fillBsDayStatMap(map, realTurnovers);
     calcPastSaldoAndTurnovers(bsStat, map);
 
     LocalDate trendFromDate = today.plusDays(1).minusMonths(1);
     LocalDate trendToDate = trendFromDate.plusDays(interval - 1);
     TreeMap<LocalDate, BsDayStat> trendMap = new TreeMap<>();
-    fillBsDayStatMap(trendMap, getTrendTurnovers(bsId, trendFromDate, trendToDate));
-    fillBsDayStatMap(trendMap, getRealTurnovers(bsId, MoneyOperStatus.pending, LocalDate.of(1970, 1, 1), today.plusDays(interval)));
-    fillBsDayStatMap(trendMap, getRecurrenceTurnovers(bsId, today.plusDays(interval)));
+    fillBsDayStatMap(trendMap, getTrendTurnovers(balanceSheet, trendFromDate, trendToDate));
+    fillBsDayStatMap(trendMap, getRealTurnovers(balanceSheet, MoneyOperStatus.pending, LocalDate.of(1970, 1, 1), today.plusDays(interval)));
+    fillBsDayStatMap(trendMap, getRecurrenceTurnovers(balanceSheet, today.plusDays(interval)));
     calcTrendSaldoAndTurnovers(bsStat, trendMap);
 
     map.putAll(trendMap);
     bsStat.setDayStats(new ArrayList<>(map.values()));
-    bsStat.setCategories(getCategoies(bsId, fromDate, toDate));
+    bsStat.setCategories(getCategories(balanceSheet, fromDate, toDate));
 
     return bsStat;
   }
@@ -121,8 +123,7 @@ public class StatService {
     });
   }
 
-  private Collection<Turnover> getRealTurnovers(UUID bsId, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+  private Collection<Turnover> getRealTurnovers(BalanceSheet balanceSheet, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
     Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
         .filter(item -> item.getMoneyOper().getStatus() == status)
         .flatMap(item -> {
@@ -137,7 +138,7 @@ public class StatService {
           }
           return list.stream();
         })
-        .collect(groupingBy(t -> new Turnover(t.getOperDate(), t.getAccountType()), Collectors.toList()));
+        .collect(groupingBy(t -> new Turnover(t.getOperDate(), t.getAccountType()), toList()));
 
     turnovers.forEach((t, list) ->
         list.forEach(ti -> t.plus(ti.getAmount())));
@@ -145,8 +146,7 @@ public class StatService {
     return turnovers.keySet();
   }
 
-  private Collection<Turnover> getTrendTurnovers(UUID bsId, LocalDate fromDate, LocalDate toDate) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+  private Collection<Turnover> getTrendTurnovers(BalanceSheet balanceSheet, LocalDate fromDate, LocalDate toDate) {
     Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
         .filter(item -> {
           MoneyOper oper = item.getMoneyOper();
@@ -167,7 +167,7 @@ public class StatService {
           }
           return list.stream();
         })
-        .collect(groupingBy(t -> new Turnover(t.getOperDate(), t.getAccountType()), Collectors.toList()));
+        .collect(groupingBy(t -> new Turnover(t.getOperDate(), t.getAccountType()), toList()));
 
     turnovers.forEach((t, list) ->
         list.forEach(ti -> t.plus(ti.getAmount())));
@@ -182,8 +182,7 @@ public class StatService {
                 : LocalDate.MAX;
   }
 
-  private Collection<Turnover> getRecurrenceTurnovers(UUID bsId, LocalDate toDate) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+  private Collection<Turnover> getRecurrenceTurnovers(BalanceSheet balanceSheet, LocalDate toDate) {
     Stream<RecurrenceOper> recurrenceOpers =  recurrenceOperRepo.findByBalanceSheet(balanceSheet);
     Set<Turnover> turnovers = new HashSet<>();
     LocalDate today = LocalDate.now();
@@ -217,27 +216,34 @@ public class StatService {
     turnoverOpt.get().setAmount(turnoverOpt.get().getAmount().add(amount));
   }
 
-  private List<CategoryStat> getCategoies(UUID bsId, LocalDate fromDate, LocalDate toDate) {
-    List<CategoryStat> list = jdbcTemplate.query("" +
-            "SELECT" +
-            "  c.id," +
-            "  c.root_id AS rootId," +
-            "  a.name," +
-            "  sum(t.amount) as amount " +
-            "FROM" +
-            "  accounts a," +
-            "  categories c" +
-            "    LEFT JOIN v_trns_by_base_crn t ON t.to_acc_id = c.id AND t.trn_date between ? AND ? " +
-            "WHERE a.balance_sheet_id = ? " +
-            "  AND a.id = c.id AND a.type = 'expense' AND t.status = 'done' " +
-            "GROUP BY c.id, a.name, coalesce(c.root_id, c.id)",
-        (rs, rowNum) -> {
-          UUID id = UUID.fromString(rs.getString("id"));
-          String rootIdAsStr = rs.getString("rootId");
-          UUID rootId = nonNull(rootIdAsStr) ? UUID.fromString(rootIdAsStr) : null;
-          return new CategoryStat(id, rootId, rs.getString("name"), rs.getBigDecimal("amount"));
-        },
-        fromDate, toDate, bsId);
+  private List<CategoryStat> getCategories(BalanceSheet balanceSheet, LocalDate fromDate, LocalDate toDate) {
+    UUID absentCatId = UUID.randomUUID();
+    Map<CategoryStat, List<CategoryStat>> map = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
+        .filter(item -> {
+          MoneyOper oper = item.getMoneyOper();
+          return oper.getType() == MoneyOperType.expense && oper.getStatus() == MoneyOperStatus.done;
+        })
+        .map(item -> {
+          MoneyOper oper = item.getMoneyOper();
+          Optional<Label> catOpt = oper.getLabels().stream()
+              .filter(Label::getIsCategory)
+              .findAny();
+          UUID id = catOpt.isPresent() ? catOpt.get().getId() : absentCatId;
+          UUID rootId = catOpt.isPresent() ? catOpt.get().getRootId() : null;
+          String name = catOpt.isPresent() ? catOpt.get().getName() : "<Без категории>";
+          return new CategoryStat(id, rootId, name, item.getValue().abs());
+        })
+        .collect(groupingBy(cat -> cat));
+
+     map.forEach((c, l) -> {
+          BigDecimal sum = l.stream()
+              .map(CategoryStat::getAmount)
+              .reduce(BigDecimal.ZERO, BigDecimal::add);
+          c.setAmount(sum);
+        });
+
+    List<CategoryStat> list = new ArrayList<>(map.keySet());
+
     list.stream()
         .filter(cs -> cs.getRootId() == null)
         .forEach(root -> {
