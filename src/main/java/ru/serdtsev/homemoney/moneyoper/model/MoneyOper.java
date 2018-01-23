@@ -225,15 +225,6 @@ public class MoneyOper implements Serializable {
         .orElse(getBalanceSheet().getCurrencyCode());
   }
 
-  @Deprecated
-  public String getCurrencyCode(AccountRepository accountRepo) {
-    Account account = accountRepo.findOne(getFromAccId());
-    if (account instanceof Balance) {
-      return ((Balance) account).getCurrencyCode();
-    }
-    return getBalanceSheet().getCurrencyCode();
-  }
-
   public void setToAmount(BigDecimal toAmount) {
     this.toAmount = toAmount;
   }
@@ -248,22 +239,12 @@ public class MoneyOper implements Serializable {
         .orElse(toAmount);
   }
 
-  @Deprecated
   public String getToCurrencyCode() {
     return items.stream()
         .sorted(Comparator.comparingInt(item -> item.getValue().signum() * -1))
         .map(item -> item.getBalance().getCurrencyCode())
         .findFirst()
         .orElse(getBalanceSheet().getCurrencyCode());
-  }
-
-  @Deprecated
-  public String getToCurrencyCode(AccountRepository accountRepo) {
-    Account account = accountRepo.findOne(getToAccId());
-    if (account instanceof Balance) {
-      return ((Balance) account).getCurrencyCode();
-    }
-    return getBalanceSheet().getCurrencyCode();
   }
 
   public UUID getRecurrenceId() {
