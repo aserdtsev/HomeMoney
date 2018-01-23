@@ -73,13 +73,13 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.getGroupList = function(caption) {
     var result;
     $scope.opers.data.forEach(function(groupList) {
-      if (typeof result == 'undefined' && groupList.caption == caption) {
+      if (typeof result === 'undefined' && groupList.caption === caption) {
         result = groupList;
       }
     });
-    if (typeof result == 'undefined') {
-      result = {caption: caption, isDone: caption != 'Новые' && caption != 'Ближайшие', expanded: true, items: []};
-      if (caption == 'Ближайшие') {
+    if (typeof result === 'undefined') {
+      result = {caption: caption, isDone: caption !== 'Новые' && caption !== 'Ближайшие', expanded: true, items: []};
+      if (caption === 'Ближайшие') {
         result.expanded = false;
       }
       $scope.opers.data.splice(0, 0, result);
@@ -94,10 +94,10 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.addToOpers = function(list) {
     var today = $scope.getToday();
     list.forEach(function(oper) {
-      var groupName = (oper.status == "done") ? oper.operDate : "Ближайшие";
+      var groupName = (oper.status === "done") ? oper.operDate : "Ближайшие";
       var groupList = $scope.getGroupList(groupName);
       groupList.items = groupList.items.concat(oper);
-      if (groupName == 'Ближайшие' && (new Date(oper.operDate) - today) == 0) {
+      if (groupName === 'Ближайшие' && (new Date(oper.operDate) - today) === 0) {
         groupList.expanded = true;
       }
     });
@@ -113,7 +113,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.loadOpersFirstPage = function(limit) {
     if (!$scope.isLogged()) return;
     var qLimit = limit;
-    if (typeof limit == 'undefined') {
+    if (typeof limit === 'undefined') {
       qLimit = $scope.pageSize;
     }
     var response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search, limit: qLimit, offset: 0}, function() {
@@ -140,14 +140,14 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.hasOpersNextPage = function() {
-    if (typeof $scope.opers == 'undefined' || typeof $scope.opers.data == 'undefined') {
+    if (typeof $scope.opers === 'undefined' || typeof $scope.opers.data === 'undefined') {
       return false;
     }
     return $scope.opers.hasNext;
   };
 
   $scope.getDefaultDate = function() {
-    if (typeof $scope.defaultDate == 'undefined') {
+    if (typeof $scope.defaultDate === 'undefined') {
       $scope.defaultDate = $scope.getToday();
     }
     return $scope.defaultDate;
@@ -160,54 +160,54 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.getFirstAccounts = function(oper) {
-    if (typeof $scope.accounts == 'undefined') {
+    if (typeof $scope.accounts === 'undefined') {
       return [];
     }
     return $scope.accounts.filter(function(account) {
-      if (oper.type == 'transfer') {
-        if (account.type == 'expense' || account.type == 'income') {
+      if (oper.type === 'transfer') {
+        if (account.type === 'expense' || account.type === 'income') {
           return false;
         }
         var result = true;
-        if (typeof oper.toAccId != 'undefined') {
-          result = account.id != oper.toAccId;
+        if (typeof oper.toAccId !== 'undefined') {
+          result = account.id !== oper.toAccId;
           if (result) {
             var toAccount = $scope.getAccount(oper.toAccId);
-            if (toAccount.type == 'reserve' || toAccount.type == 'service') {
-              result = account.type == 'reserve' || account.type == 'service';
+            if (toAccount.type === 'reserve' || toAccount.type === 'service') {
+              result = account.type === 'reserve' || account.type === 'service';
             } else {
-              result = account.type != 'reserve' && account.type != 'service';
+              result = account.type !== 'reserve' && account.type !== 'service';
             }
           }
         }
         return result;
       } else {
-        return account.type == 'debit' || account.type == 'credit' || account.type == 'asset';
+        return account.type === 'debit' || account.type === 'credit' || account.type === 'asset';
       }
     });
   }
 
   $scope.getSecondAccounts = function(oper) {
-    if (typeof $scope.accounts == 'undefined') {
+    if (typeof $scope.accounts === 'undefined') {
       return [];
     }
     return $scope.accounts.filter(function(account) {
-      if (oper.type == 'transfer') {
+      if (oper.type === 'transfer') {
         var result = true;
-        if (typeof oper.fromAccId != 'undefined') {
-          result = account.id != oper.fromAccId;
+        if (typeof oper.fromAccId !== 'undefined') {
+          result = account.id !== oper.fromAccId;
           if (result) {
             var fromAccount = $scope.getAccount(oper.fromAccId);
-            if (fromAccount.type == 'reserve' || fromAccount.type == 'service') {
-              result = account.type == 'reserve' || account.type == 'service';
+            if (fromAccount.type === 'reserve' || fromAccount.type === 'service') {
+              result = account.type === 'reserve' || account.type === 'service';
             } else {
-              result = account.type == 'debit' || account.type == 'credit';
+              result = account.type === 'debit' || account.type === 'credit';
             }
           }
         }
         return result;
       } else {
-        return account.type == oper.type;
+        return account.type === oper.type;
       }
     });
   }
@@ -220,25 +220,24 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.getAccount = function(id) {
     return $scope.accounts.filter(function(account) {
-      return account.id == id;
+      return account.id === id;
     })[0];
   }
 
   $scope.getBalance = function(id) {
     return $scope.balances.filter(function(balance) {
-      return balance.id == id
+      return balance.id === id
     })[0]
   }
 
   $scope.newOper = function(param) {
     var oper;
-    if (typeof param.id != 'undefined') {
+    if (typeof param.id !== 'undefined') {
       var recurrenceOper = param;
       oper = {type: recurrenceOper.type, fromAccId: recurrenceOper.fromAccId, amount: recurrenceOper.amount, toAccId: recurrenceOper.toAccId,
         comment: recurrenceOper.comment, labels: recurrenceOper.labels, period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
     } else {
-      var type = param;
-      oper = {type: type, labels: []};
+      oper = {type: param, labels: []};
     }
     oper.status = 'doneNew';
     oper.operDate = formatDate($scope.getDefaultDate());
@@ -252,7 +251,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     if (oper.operDate > today) {
       oper.operDate = today;
     }
-    oper.status = oper.status == 'recurrence' ? 'doneNew' : 'done';
+    oper.status = oper.status === 'recurrence' ? 'doneNew' : 'done';
     oper.isEdited = true;
   }
 
@@ -265,7 +264,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     if (oper.currencyCode == oper.toCurrencyCode) {
       oper.toAmount = oper.amount
     }
-    if (oper.status == 'doneNew') {
+    if (oper.status === 'doneNew') {
       $scope.createOper(oper);
     } else {
       $scope.updateOper(oper);
@@ -313,14 +312,14 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   // item - экземпляр Oper или RecurrenceOper.
   $scope.newLabelKeyPressed = function(event, label, item) {
-    if (event.keyCode == 13) {
+    if (event.keyCode === 13) {
       addLabel(item, label);
     }
   };
 
   // item - экземпляр Oper или RecurrenceOper.
   function addLabel(item, label) {
-    if (typeof label != 'undefined' && label.length > 0) {
+    if (typeof label !== 'undefined' && label.length > 0) {
       var labels = item['labels'];
       labels.splice(labels.length, 0, label);
     }
@@ -328,9 +327,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   // item - экземпляр Oper или RecurrenceOper.
   $scope.editLabelKeyPressed = function(event, index, label, item) {
-    if (event.keyCode == 13) {
+    if (event.keyCode === 13) {
       var labels = item['labels'];
-      if (typeof label != 'undefined' && label.length > 0) {
+      if (typeof label !== 'undefined' && label.length > 0) {
         labels[index] = label;
       } else {
         labels.splice(index, 1);
@@ -339,15 +338,15 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   };
 
   $scope.getSignedAmount = function(oper) {
-    return oper['amount'] * (oper['type'] == 'e' ? -1 : 1);
+    return oper['amount'] * (oper['type'] === 'e' ? -1 : 1);
   };
 
   $scope.getPeriodName = function(oper) {
     var period = oper['period'];
-    return (period == 'month') ? 'Месяц' :
-        (period == 'quarter') ? 'Квартал' :
-        (period == 'year') ? 'Год' :
-        (period == 'single') ? 'Разовая' : '?';
+    return (period === 'month') ? 'Месяц' :
+        (period === 'quarter') ? 'Квартал' :
+        (period === 'year') ? 'Год' :
+        (period === 'single') ? 'Разовая' : '?';
   }
 
   $scope.formatMoney = function(amount, currencySymbol) {
@@ -401,20 +400,20 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
    * Если хотя бы один из счетов не определен или счета в одной валюте, возвращает false.
    */
   $scope.balanceCysIsNotEqual = function(id1, id2) {
-    if (typeof id1 == 'undefined' || typeof id2 == 'undefined') {
+    if (typeof id1 === 'undefined' || typeof id2 === 'undefined') {
       return false;
     }
     var balance1 = $scope.getBalance(id1);
     var balance2 = $scope.getBalance(id2);
-    if (typeof balance1 == 'undefined' || typeof balance2 == 'undefined') {
+    if (typeof balance1 === 'undefined' || typeof balance2 === 'undefined') {
       return false;
     }
-    return balance1['currencyCode'] != balance2['currencyCode'];
+    return balance1['currencyCode'] !== balance2['currencyCode'];
   }
 
   $scope.getAmountAsHtml = function(oper) {
     var result = $scope.formatMoney($scope.getSignedAmount(oper), oper['currencySymbol'])
-    if (oper['currencyCode'] != oper['toCurrencyCode'])
+    if (oper['currencyCode'] !== oper['toCurrencyCode'])
       result = result + " (" + $scope.formatMoney(oper['toAmount'], oper['toCurrencySymbol']) + ")"
     return result
   }
