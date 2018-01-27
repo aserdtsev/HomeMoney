@@ -132,6 +132,12 @@ public class MoneyOperService {
     recurrenceOper.skipNextDate();
     moneyOperRepo.save(template);
     recurrenceOperRepo.save(recurrenceOper);
+
+    // todo поправить эту косоту
+    template.setRecurrenceId(recurrenceOper.getId());
+    moneyOperRepo.save(template);
+    sample.setRecurrenceId(recurrenceOper.getId());
+    moneyOperRepo.save(sample);
   }
 
   public void deleteRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {

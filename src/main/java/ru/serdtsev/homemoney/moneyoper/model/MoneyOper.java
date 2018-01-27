@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 
+import static java.util.Objects.nonNull;
 import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.*;
 import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
 
@@ -370,6 +371,6 @@ public class MoneyOper implements Serializable {
 
   @AssertTrue(message = "Field recurrenceId of template is null.")
   public boolean isRecurrenceIdNotNullForTemplate() {
-    return status != MoneyOperStatus.template || Objects.nonNull(recurrenceId);
+    return status != MoneyOperStatus.template || nonNull(recurrenceId);
   }
 }
