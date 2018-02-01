@@ -388,10 +388,9 @@ public class MoneyOperResource {
       amount = moneyOperDto.getToAmount();
     }
     assert nonNull(amount);
-    MoneyOper templateOper = nonNull(moneyOperDto.getRecurrenceId()) ? moneyOperRepo.findOne(moneyOperDto.getRecurrenceId()) : null;
     return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.getId(), pending, moneyOperDto.getOperDate(), nvl(moneyOperDto.getDateNum(), 0),
         labels, moneyOperDto.getComment(), moneyOperDto.getPeriod(), moneyOperDto.getFromAccId(), moneyOperDto.getToAccId(),
-        amount, nvl(moneyOperDto.getToAmount(), amount), null, templateOper);
+        amount, nvl(moneyOperDto.getToAmount(), amount), null, moneyOperDto.getRecurrenceId());
   }
 
   private Optional<Label> categoryToLabel(BalanceSheet balanceSheet, MoneyOperDto operDto) {

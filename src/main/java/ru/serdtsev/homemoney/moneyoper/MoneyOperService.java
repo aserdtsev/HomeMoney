@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.springframework.util.Assert.isTrue;
 
@@ -158,11 +157,9 @@ public class MoneyOperService {
    */
   public MoneyOper newMoneyOper(BalanceSheet balanceSheet, UUID moneyOperId, MoneyOperStatus status, LocalDate performed,
       Integer dateNum, Collection<Label> labels, String comment, Period period, UUID fromAccId, UUID toAccId, BigDecimal amount,
-      BigDecimal toAmount, UUID parentId, MoneyOper templateOper) {
+      BigDecimal toAmount, UUID parentId, UUID recurrenceId) {
     MoneyOper oper = new MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period);
-    if (nonNull(templateOper)) {
-      oper.setRecurrenceId(templateOper.getRecurrenceId());
-    }
+    oper.setRecurrenceId(recurrenceId);
 
     oper.setFromAccId(fromAccId);
     Account fromAcc = accountRepo.findOne(fromAccId);
