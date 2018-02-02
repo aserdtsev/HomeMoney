@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.balancesheet;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -83,7 +84,6 @@ public class StatData {
 
           MoneyOper oper = item.getMoneyOper();
           LocalDate trendDate = item.getPerformed().plusMonths(1);
-          assert trendDate.isAfter(toDate) : item;
           Turnover t = new Turnover(trendDate, item.getBalance().getType(), item.getValue());
           list.add(t);
 
@@ -97,8 +97,10 @@ public class StatData {
     turnovers.forEach((t, list) ->
         list.forEach(ti -> t.plus(ti.getAmount())));
 
+    val list = new ArrayList<Turnover>(turnovers.keySet());
+    list.sort(Comparator.comparing(Turnover::getOperDate));
     log.info("getTrendTurnovers finish");
-    return turnovers.keySet();
+    return list;
   }
 
   private LocalDate getTrendDate(LocalDate performed, Period period) {
@@ -117,23 +119,27 @@ public class StatData {
     Stream<RecurrenceOper> recurrenceOpers = recurrenceOperRepo.findByBalanceSheet(balanceSheet);
     Set<Turnover> turnovers = new HashSet<>();
     LocalDate today = LocalDate.now();
-    recurrenceOpers.forEach(ro -> {
-      MoneyOper template = ro.getTemplate();
-      LocalDate roNextDate = ro.getNextDate();
-      while (roNextDate.isBefore(toDate)) {
-        LocalDate nextDate = (roNextDate.isBefore(today)) ? today : roNextDate;
-        template.getItems().forEach(item -> {
-          putRecurrenceTurnover(turnovers, item.getValue(), item.getBalance().getType(), nextDate);
-          MoneyOperType operType = template.getType();
-          if (operType != MoneyOperType.transfer) {
-            putRecurrenceTurnover(turnovers, item.getValue().abs(), AccountType.valueOf(operType.name()), nextDate);
+    recurrenceOpers
+        .filter(ro -> !ro.getArc())
+        .forEach(ro -> {
+          MoneyOper template = ro.getTemplate();
+          LocalDate roNextDate = ro.getNextDate();
+          while (roNextDate.isBefore(toDate)) {
+            LocalDate nextDate = (roNextDate.isBefore(today)) ? today : roNextDate;
+            template.getItems().forEach(item -> {
+              putRecurrenceTurnover(turnovers, item.getValue(), item.getBalance().getType(), nextDate);
+              MoneyOperType operType = template.getType();
+              if (operType != MoneyOperType.transfer) {
+                putRecurrenceTurnover(turnovers, item.getValue().abs(), AccountType.valueOf(operType.name()), nextDate);
+              }
+            });
+            roNextDate = ro.calcNextDate(nextDate);
           }
         });
-        roNextDate = ro.calcNextDate(nextDate);
-      }
-    });
+    val list = new ArrayList<Turnover>(turnovers);
+    list.sort(Comparator.comparing(Turnover::getOperDate));
     log.info("getRecurrenceTurnovers finish");
-    return new ArrayList<>(turnovers);
+    return list;
   }
 
   private void putRecurrenceTurnover(Set<Turnover> turnovers, BigDecimal amount, AccountType accountType, LocalDate nextDate) {
