@@ -126,6 +126,7 @@ public class MoneyOper implements Serializable {
 
   public void setPerformed(LocalDate performed) {
     this.performed = performed;
+    items.forEach(item -> item.setPerformed(performed));
   }
 
   public List<MoneyOperItem> getItems() {

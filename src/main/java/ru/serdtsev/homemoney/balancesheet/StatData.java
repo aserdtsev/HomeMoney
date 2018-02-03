@@ -16,6 +16,7 @@ import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
@@ -40,8 +41,10 @@ public class StatData {
   }
 
   Collection<Turnover> getRealTurnovers(BalanceSheet balanceSheet, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
-    log.info("getRealTurnovers start");
-    Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
+    log.info("getRealTurnovers start by {}, {} - {}", status,
+        fromDate.format(DateTimeFormatter.ISO_DATE), toDate.format(DateTimeFormatter.ISO_DATE));
+    Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
+        fromDate, toDate, status)
         .stream()
         .filter(item -> item.getMoneyOper().getStatus() == status)
         .flatMap(item -> {
@@ -52,7 +55,8 @@ public class StatData {
 
           MoneyOper oper = item.getMoneyOper();
           if (oper.getType() != MoneyOperType.transfer) {
-            list.add(new Turnover(item.getPerformed(), AccountType.valueOf(oper.getType().name()), item.getValue().abs()));
+            AccountType accountType = AccountType.valueOf(oper.getType().name());
+            list.add(new Turnover(item.getPerformed(), accountType, item.getValue().abs()));
           }
           return list.stream();
         })
@@ -72,13 +76,10 @@ public class StatData {
 
   private Collection<Turnover> getTrendTurnovers(BalanceSheet balanceSheet, LocalDate fromDate, LocalDate toDate) {
     log.info("getTrendTurnovers start");
-    Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
+    Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
+        fromDate, toDate, MoneyOperStatus.done)
         .stream()
-        .filter(item -> {
-          MoneyOper oper = item.getMoneyOper();
-          Period period = oper.getPeriod();
-          return oper.getStatus() == MoneyOperStatus.done && period == Period.month && isNull(oper.getRecurrenceId());
-        })
+        .filter(item -> item.getMoneyOper().getPeriod() == Period.month && isNull(item.getMoneyOper().getRecurrenceId()))
         .flatMap(item -> {
           List<Turnover> list = new ArrayList<>();
 

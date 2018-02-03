@@ -143,12 +143,10 @@ public class StatService {
   @SneakyThrows
   private List<CategoryStat> getCategories(BalanceSheet balanceSheet, LocalDate fromDate, LocalDate toDate) {
     UUID absentCatId = UUID.randomUUID();
-    Map<CategoryStat, List<CategoryStat>> map = moneyOperItemRepo.findByBalanceSheetAndPerformedBetween(balanceSheet, fromDate, toDate)
+    Map<CategoryStat, List<CategoryStat>> map = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
+        fromDate, toDate, MoneyOperStatus.done)
         .stream()
-        .filter(item -> {
-          MoneyOper oper = item.getMoneyOper();
-          return oper.getType() == MoneyOperType.expense && oper.getStatus() == MoneyOperStatus.done;
-        })
+        .filter(item -> item.getMoneyOper().getType() == MoneyOperType.expense)
         .map(item -> {
           MoneyOper oper = item.getMoneyOper();
           Optional<Label> catOpt = oper.getLabels().stream()
