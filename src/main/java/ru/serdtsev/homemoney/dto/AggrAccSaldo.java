@@ -2,7 +2,7 @@ package ru.serdtsev.homemoney.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.account.model.AccountType;
 
 import java.math.BigDecimal;
 

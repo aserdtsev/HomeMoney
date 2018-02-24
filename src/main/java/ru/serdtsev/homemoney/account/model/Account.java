@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.account;
+package ru.serdtsev.homemoney.account.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

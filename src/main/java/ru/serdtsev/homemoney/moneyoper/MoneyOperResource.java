@@ -9,7 +9,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import ru.serdtsev.homemoney.account.*;
+import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.CategoryRepository;
+import ru.serdtsev.homemoney.account.model.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
@@ -417,7 +419,7 @@ public class MoneyOperResource {
         }
       }
       UUID rootLabelId = nonNull(rootLabel) ? rootLabel.getId() : null;
-      val categoryType = CategoryType.valueOf(rootCategory.getType().name());
+      val categoryType = CategoryType.valueOf(category.getType().name());
       label = new Label(UUID.randomUUID(), balanceSheet, category.getName(), rootLabelId, true, categoryType);
       labelRepo.save(label);
     }

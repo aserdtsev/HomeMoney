@@ -1,5 +1,6 @@
-package ru.serdtsev.homemoney.account;
+package ru.serdtsev.homemoney.account.model;
 
+import ru.serdtsev.homemoney.account.ReserveRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 import ru.serdtsev.homemoney.utils.Utils;

@@ -1,7 +1,7 @@
 package ru.serdtsev.homemoney.balancesheet;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ru.serdtsev.homemoney.account.*;
+import ru.serdtsev.homemoney.account.model.*;
 
 import javax.annotation.Nullable;
 import javax.persistence.*;

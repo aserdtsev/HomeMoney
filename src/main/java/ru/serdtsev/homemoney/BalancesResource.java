@@ -1,48 +1,29 @@
 package ru.serdtsev.homemoney;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.serdtsev.homemoney.account.*;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
+import ru.serdtsev.homemoney.account.BalanceService;
+import ru.serdtsev.homemoney.account.model.Balance;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/{bsId}/balances")
+@RequiredArgsConstructor
 public class BalancesResource {
-  private final BalanceSheetRepository balanceSheetRepo;
-  private final BalanceRepository balanceRepo;
-  private final ReserveRepository reserveRepo;
-  private final MoneyOperService moneyOperService;
-
-  @Autowired
-  public BalancesResource(BalanceSheetRepository balanceSheetRepo, BalanceRepository balanceRepo,
-      ReserveRepository reserveRepo, MoneyOperService moneyOperService) {
-    this.balanceSheetRepo = balanceSheetRepo;
-    this.balanceRepo = balanceRepo;
-    this.reserveRepo = reserveRepo;
-    this.moneyOperService = moneyOperService;
-  }
+  private final BalanceService balanceService;
 
   @RequestMapping
   @Transactional(readOnly = true)
   public HmResponse getBalances(@PathVariable UUID bsId) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-    List<Balance> balances = ((List<Balance>) balanceRepo.findByBalanceSheet(balanceSheet)).stream()
-        .filter(balance -> balance.getType() != AccountType.reserve)
-        .sorted(Comparator.comparing(Balance::getNum))
-        .collect(Collectors.toList());
+    List<Balance> balances = balanceService.getBalances(bsId);
     return HmResponse.getOk(balances);
   }
 
@@ -52,10 +33,7 @@ public class BalancesResource {
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
-      balance.setBalanceSheet(balanceSheet);
-      balance.init(reserveRepo);
-      balanceRepo.save(balance);
+      balanceService.createBalance(bsId, balance.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -69,9 +47,7 @@ public class BalancesResource {
       // todo Заменить BalanceDto на Balance.
       @RequestBody Balance balance) {
     try {
-      Balance currBalance = balanceRepo.findOne(balance.getId());
-      currBalance.merge(balance, reserveRepo, moneyOperService);
-      balanceRepo.save(currBalance);
+      balanceService.updateBalance(balance);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -80,14 +56,11 @@ public class BalancesResource {
 
   @RequestMapping("/delete")
   @Transactional
-  public HmResponse deleteBalance(
+  public HmResponse deleteOrArchiveBalance(
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
-      Balance currBalance = balanceRepo.findOne(balance.getId());
-      if (!AccountsDao.isTrnExists(currBalance.getId())) {
-        balanceRepo.delete(currBalance);
-      }
+      balanceService.deleteOrArchiveBalance(balance.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());
@@ -99,32 +72,8 @@ public class BalancesResource {
   public HmResponse upBalance(
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
-    // todo работает неправильно, исправить
     try {
-      Balance currBalance = balanceRepo.findOne(balance.getId());
-      BalanceSheet bs = currBalance.getBalanceSheet();
-
-      List<Balance> balances = bs.getBalances().stream()
-          .sorted((b1, b2) -> b1.getNum() < b2.getNum() ? -1 : (b1.getNum() > b2.getNum() ? 1 : 0))
-          .collect(Collectors.toList());
-      assert !balances.isEmpty();
-
-      Balance prev;
-      do {
-        int index = balances.indexOf(currBalance);
-        assert index > -1;
-        prev = null;
-        if (index > 0) {
-          prev = balances.get(index - 1);
-          balances.set(index - 1, currBalance);
-          balances.set(index, prev);
-          long i = 0;
-          for (Balance b : balances) {
-            b.setNum(i++);
-          }
-        }
-      } while (prev != null && prev.getArc());
-      balances.forEach(b -> balanceRepo.save(b));
+      balanceService.upBalance(bsId, balance.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

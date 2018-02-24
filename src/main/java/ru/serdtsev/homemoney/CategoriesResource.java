@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.AccountsDao;
-import ru.serdtsev.homemoney.account.Category;
+import ru.serdtsev.homemoney.account.model.Category;
 import ru.serdtsev.homemoney.account.CategoryRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;

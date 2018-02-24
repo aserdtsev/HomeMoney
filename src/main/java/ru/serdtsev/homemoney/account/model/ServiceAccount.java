@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.account;
+package ru.serdtsev.homemoney.account.model;
 
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 

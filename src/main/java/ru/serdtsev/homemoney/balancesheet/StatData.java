@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serdtsev.homemoney.account.AccountRepository;
-import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.dto.Turnover;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;

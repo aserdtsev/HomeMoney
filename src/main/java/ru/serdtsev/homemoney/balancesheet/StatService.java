@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.serdtsev.homemoney.account.AccountRepository;
-import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.dto.*;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;

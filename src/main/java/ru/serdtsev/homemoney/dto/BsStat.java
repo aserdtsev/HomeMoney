@@ -2,7 +2,7 @@ package ru.serdtsev.homemoney.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import ru.serdtsev.homemoney.account.AccountType;
+import ru.serdtsev.homemoney.account.model.AccountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

@@ -3,7 +3,7 @@ package ru.serdtsev.homemoney.moneyoper.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import ru.serdtsev.homemoney.account.Balance;
+import ru.serdtsev.homemoney.account.model.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 
 import javax.annotation.Nonnull;

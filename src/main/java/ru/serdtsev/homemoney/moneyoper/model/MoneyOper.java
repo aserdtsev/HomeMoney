@@ -1,10 +1,10 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
 import org.apache.logging.log4j.util.Strings;
-import ru.serdtsev.homemoney.account.Account;
+import ru.serdtsev.homemoney.account.model.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
-import ru.serdtsev.homemoney.account.AccountType;
-import ru.serdtsev.homemoney.account.Balance;
+import ru.serdtsev.homemoney.account.model.AccountType;
+import ru.serdtsev.homemoney.account.model.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.utils.Utils;
 

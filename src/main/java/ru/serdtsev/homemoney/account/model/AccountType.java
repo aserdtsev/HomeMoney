@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.account;
+package ru.serdtsev.homemoney.account.model;
 
 public enum AccountType {
   debit, credit, expense, income, reserve, asset, service;

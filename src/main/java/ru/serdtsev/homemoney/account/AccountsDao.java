@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 @Component
+// todo удалить класс
 public class AccountsDao {
   public static boolean isTrnExists(UUID id) {
     try (Connection conn = MainDao.getConnection()) {

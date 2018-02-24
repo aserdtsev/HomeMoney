@@ -5,7 +5,7 @@ import lombok.extern.java.Log;
 import lombok.val;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import ru.serdtsev.homemoney.account.Category;
+import ru.serdtsev.homemoney.account.model.Category;
 import ru.serdtsev.homemoney.account.CategoryRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;

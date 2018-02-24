@@ -1,8 +1,9 @@
-package ru.serdtsev.homemoney.account;
+package ru.serdtsev.homemoney.account.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.serdtsev.homemoney.account.ReserveRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
