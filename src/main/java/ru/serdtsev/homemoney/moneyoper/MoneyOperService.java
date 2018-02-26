@@ -194,8 +194,8 @@ public class MoneyOperService {
 
     updateFromAccount(template, recurrenceOperDto.getFromAccId());
     updateToAccount(template, recurrenceOperDto.getToAccId());
-    updateAmount(template, template.getAmount());
-    updateToAmount(template, template.getToAmount());
+    updateAmount(template, recurrenceOperDto.getAmount());
+    updateToAmount(template, recurrenceOperDto.getToAmount());
 
     template.setComment(recurrenceOperDto.getComment());
 

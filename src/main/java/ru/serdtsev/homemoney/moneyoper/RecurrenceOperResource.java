@@ -55,7 +55,8 @@ public class RecurrenceOperResource {
     String toAccName = accountRepo.findOne(oper.getToAccId()).getName();
     return new RecurrenceOperDto(recurrenceOper.getId(), oper.getId(), oper.getId(),
         recurrenceOper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getComment(),
-        getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName, toAccName);
+        getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName, toAccName,
+        oper.getType().name());
   }
 
   private List<String> getStringsByLabels(Collection<Label> labels) {
