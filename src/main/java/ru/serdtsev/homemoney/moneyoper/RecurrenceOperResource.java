@@ -41,7 +41,7 @@ public class RecurrenceOperResource {
       BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
       List<RecurrenceOperDto> list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
           .sorted(Comparator.comparing(RecurrenceOper::getNextDate))
-          .map(this::moneyOperToMoneyTrnTempl)
+          .map(this::recurrenceOperToDto)
           .collect(Collectors.toList());
       return HmResponse.getOk(list);
     } catch (HmException e) {
@@ -49,14 +49,14 @@ public class RecurrenceOperResource {
     }
   }
 
-  private RecurrenceOperDto moneyOperToMoneyTrnTempl(RecurrenceOper recurrenceOper) {
+  private RecurrenceOperDto recurrenceOperToDto(RecurrenceOper recurrenceOper) {
     MoneyOper oper = recurrenceOper.getTemplate();
     String fromAccName = accountRepo.findOne(oper.getFromAccId()).getName();
     String toAccName = accountRepo.findOne(oper.getToAccId()).getName();
     return new RecurrenceOperDto(recurrenceOper.getId(), oper.getId(), oper.getId(),
-        recurrenceOper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getComment(),
-        getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName, toAccName,
-        oper.getType().name());
+        recurrenceOper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getToAmount(),
+        oper.getComment(), getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName,
+        toAccName, oper.getType().name());
   }
 
   private List<String> getStringsByLabels(Collection<Label> labels) {

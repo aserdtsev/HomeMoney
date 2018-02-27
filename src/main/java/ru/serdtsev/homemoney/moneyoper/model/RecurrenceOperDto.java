@@ -34,7 +34,7 @@ public class RecurrenceOperDto {
   }
 
   public RecurrenceOperDto(UUID id, UUID sampleId, UUID lastMoneyTrnId, LocalDate nextDate, Period period,
-      UUID fromAccId, UUID toAccId, BigDecimal amount, String comment, List<String> labels,
+      UUID fromAccId, UUID toAccId, BigDecimal amount, BigDecimal toAmount, String comment, List<String> labels,
       String currencyCode, String toCurrencyCode, String fromAccName, String toAccName, String type) {
     this.id = id;
     this.sampleId = sampleId;
@@ -44,6 +44,7 @@ public class RecurrenceOperDto {
     this.fromAccId = fromAccId;
     this.toAccId = toAccId;
     this.amount = amount;
+    this.toAmount = toAmount;
     this.comment = comment;
     this.labels = labels;
     this.currencyCode = currencyCode;

@@ -383,6 +383,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.updateRecurrenceOper = function(recurrenceOper) {
     delete recurrenceOper.isEdited;
+    recurrenceOper.toAmount = recurrenceOper.amount;
     RecurrenceOpersSvc.update({bsId: $rootScope.bsId}, recurrenceOper, function() {
       $scope.refresh();
     });

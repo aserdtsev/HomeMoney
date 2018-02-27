@@ -1,8 +1,9 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
-import ru.serdtsev.homemoney.account.model.Account;
 import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.model.Account;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
@@ -25,6 +26,7 @@ import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
 
 @Entity
 @Table(name = "money_oper")
+@Slf4j
 public class MoneyOper implements Serializable {
   @Id
   private UUID id;
@@ -241,6 +243,7 @@ public class MoneyOper implements Serializable {
         .orElse(toAmount);
   }
 
+  @Deprecated
   public String getToCurrencyCode() {
     return items.stream()
         .sorted(Comparator.comparingInt(item -> item.getValue().signum() * -1))
@@ -367,7 +370,7 @@ public class MoneyOper implements Serializable {
 
   @AssertTrue(message = "Fields amount and toAmount is different.")
   public boolean isAmountsValid() {
-    return !Objects.equals(getCurrencyCode(), getToCurrencyCode()) || amount.compareTo(toAmount) == 0;
+    return Objects.equals(getCurrencyCode(), getToCurrencyCode()) && amount.compareTo(toAmount) == 0;
   }
 
   @AssertTrue(message = "Field recurrenceId of template is null.")
