@@ -38,7 +38,7 @@ public class CheckAuthTokenFilter implements Filter {
       Optional<Cookie> userIdCookie = cookies.stream().filter(c -> "userId".equals(c.getName())).findFirst();
       Optional<Cookie> authTokenCookie = cookies.stream().filter(c -> "authToken".equals(c.getName())).findFirst();
       if (!userIdCookie.isPresent() || !authTokenCookie.isPresent()) {
-        throw new HmException(HmException.Code.WrongAuth);
+        return;
       }
 
       UUID userId = UUID.fromString(userIdCookie.get().getValue());
