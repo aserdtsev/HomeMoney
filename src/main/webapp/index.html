@@ -238,13 +238,13 @@
             <div>
               <input class="date" ng-model="recurrenceOper.nextDate" placeholder="Дата"/>
               <select
-                  ng-model="recurrenceOper.fromAccId"
+                  ng-model="recurrenceOper.type === 'income' ? recurrenceOper.toAccId : recurrenceOper.fromAccId"
                   ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)"
                   ng-click="refreshToAccounts(recurrenceOper.fromAccId)">
               </select>
               <input class="amount" ng-model="recurrenceOper.amount" placeholder="Сумма"/>
               <select
-                  ng-model="recurrenceOper.toAccId"
+                  ng-model="recurrenceOper.type === 'income' ? recurrenceOper.fromAccId : recurrenceOper.toAccId"
                   ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)"
                   ng-click="refreshFromAccounts(recurrenceOper.toAccId)">
               </select>
