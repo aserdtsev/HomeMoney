@@ -5,7 +5,6 @@ import com.google.common.hash.Hashing;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.user.Authentication;
 import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
-import ru.serdtsev.homemoney.user.User;
-import ru.serdtsev.homemoney.user.UserAuthToken;
-import ru.serdtsev.homemoney.user.UserAuthTokenRepository;
-import ru.serdtsev.homemoney.user.UserRepository;
+import ru.serdtsev.homemoney.user.*;
 
+import javax.validation.constraints.NotNull;
 import java.util.Set;
 import java.util.UUID;
 
@@ -117,7 +113,8 @@ public class UserResource {
     balanceSheetRepo.delete(id);
   }
 
-  @NotNull User createUserNBalanceSheet(String email, String pwdHash) {
+  @NotNull
+  User createUserNBalanceSheet(String email, String pwdHash) {
     BalanceSheet bs = BalanceSheet.newInstance();
     balanceSheetRepo.save(bs);
     User user = new User(UUID.randomUUID(), bs.getId(), email, pwdHash);
