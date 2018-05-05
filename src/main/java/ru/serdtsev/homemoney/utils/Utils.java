@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 public class Utils {
   @Nonnull
-  public static <T> T nvl(@Nullable T value1, @Nonnull T value2) {
+  public static <T> T nvl(@Nullable T value1, @Nullable T value2) {
     assert value2 != null;
     if (value1 != null)
       return value1;

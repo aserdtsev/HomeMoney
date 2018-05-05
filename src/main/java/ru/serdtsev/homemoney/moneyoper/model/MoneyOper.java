@@ -368,9 +368,13 @@ public class MoneyOper implements Serializable {
         '}';
   }
 
-  @AssertTrue(message = "Fields amount and toAmount is different.")
+  @AssertTrue(message = "Fields amount and toAmount is wrong.")
   public boolean isAmountsValid() {
-    return Objects.equals(getCurrencyCode(), getToCurrencyCode()) && amount.compareTo(toAmount) == 0;
+    if (Objects.equals(getCurrencyCode(), getToCurrencyCode())) {
+      return amount.compareTo(toAmount) == 0;
+    } else {
+      return amount.compareTo(toAmount) != 0;
+    }
   }
 
   @AssertTrue(message = "Field recurrenceId of template is null.")

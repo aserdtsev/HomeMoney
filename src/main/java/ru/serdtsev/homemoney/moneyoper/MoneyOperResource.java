@@ -236,7 +236,12 @@ public class MoneyOperResource {
       moneyOperService.updateFromAccount(origOper, oper.getFromAccId());
       moneyOperService.updateToAccount(origOper, oper.getToAccId());
       moneyOperService.updateAmount(origOper, oper.getAmount());
-      moneyOperService.updateToAmount(origOper, oper.getToAmount());
+
+      val toCurrencyCode = nvl(oper.getToCurrencyCode(), oper.getCurrencyCode());
+      BigDecimal toAmount = Objects.equals(oper.getCurrencyCode(), toCurrencyCode)
+          ? oper.getAmount() 
+          : oper.getToAmount();
+      moneyOperService.updateToAmount(origOper, toAmount);
 
       if (!essentialEquals && origPrevStatus == done || origOper.getStatus() == pending && moneyOperDto.getStatus() == done) {
         origOper.complete();
@@ -390,9 +395,11 @@ public class MoneyOperResource {
       amount = moneyOperDto.getToAmount();
     }
     assert nonNull(amount);
+    val toCurrencyCode = nvl(moneyOperDto.getCurrencyCode(), moneyOperDto.getToCurrencyCode());
+    val toAmount = Objects.equals(moneyOperDto.getCurrencyCode(), toCurrencyCode) ? amount : moneyOperDto.getToAmount();
     return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.getId(), pending, moneyOperDto.getOperDate(), nvl(moneyOperDto.getDateNum(), 0),
         labels, moneyOperDto.getComment(), moneyOperDto.getPeriod(), moneyOperDto.getFromAccId(), moneyOperDto.getToAccId(),
-        amount, nvl(moneyOperDto.getToAmount(), amount), null, moneyOperDto.getRecurrenceId());
+        amount, toAmount, null, moneyOperDto.getRecurrenceId());
   }
 
   private Optional<Label> categoryToLabel(BalanceSheet balanceSheet, MoneyOperDto operDto) {
