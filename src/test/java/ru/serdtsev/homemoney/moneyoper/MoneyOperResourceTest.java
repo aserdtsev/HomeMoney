@@ -38,7 +38,7 @@ class MoneyOperResourceTest {
   private Balance currentAccount;
 
   public MoneyOperResourceTest() {
-    this.mtRes = new MoneyOperResource(moneyOperService, balanceSheetRepo, accountRepo, moneyOperRepo, labelRepo,
+    this.mtRes = new MoneyOperResource(moneyOperService, balanceSheetRepo, accountRepo, balanceRepo, moneyOperRepo, labelRepo,
         moneyOperItemRepo, categoryRepo);
     when(accountRepo.findOne(balanceSheet.getUncatCosts().getId())).thenReturn(balanceSheet.getUncatCosts());
     when(accountRepo.findOne(balanceSheet.getUncatIncome().getId())).thenReturn(balanceSheet.getUncatIncome());

@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.BalanceRepository;
 import ru.serdtsev.homemoney.account.CategoryRepository;
 import ru.serdtsev.homemoney.account.model.*;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
@@ -49,6 +50,7 @@ public class MoneyOperResource {
   private final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final AccountRepository accountRepo;
+  private final BalanceRepository balanceRepo;
   private final MoneyOperRepo moneyOperRepo;
   private final LabelRepository labelRepo;
   private final MoneyOperItemRepo moneyOperItemRepo;
@@ -56,11 +58,12 @@ public class MoneyOperResource {
 
   @Autowired
   public MoneyOperResource(MoneyOperService moneyOperService, BalanceSheetRepository balanceSheetRepo,
-      AccountRepository accountRepo, MoneyOperRepo moneyOperRepo, LabelRepository labelRepo,
+      AccountRepository accountRepo, BalanceRepository balanceRepo, MoneyOperRepo moneyOperRepo, LabelRepository labelRepo,
       MoneyOperItemRepo moneyOperItemRepo, CategoryRepository categoryRepo) {
     this.moneyOperService = moneyOperService;
     this.balanceSheetRepo = balanceSheetRepo;
     this.accountRepo = accountRepo;
+    this.balanceRepo = balanceRepo;
     this.moneyOperRepo = moneyOperRepo;
     this.labelRepo = labelRepo;
     this.moneyOperItemRepo = moneyOperItemRepo;
@@ -395,8 +398,11 @@ public class MoneyOperResource {
       amount = moneyOperDto.getToAmount();
     }
     assert nonNull(amount);
-    val toCurrencyCode = nvl(moneyOperDto.getCurrencyCode(), moneyOperDto.getToCurrencyCode());
-    val toAmount = Objects.equals(moneyOperDto.getCurrencyCode(), toCurrencyCode) ? amount : moneyOperDto.getToAmount();
+    val fromBalance = balanceRepo.findOne(moneyOperDto.getFromAccId());
+    val toBalance = balanceRepo.findOne(moneyOperDto.getToAccId());
+    val currencyCode = fromBalance != null ? fromBalance.getCurrencyCode() : toBalance.getCurrencyCode();
+    val toCurrencyCode = toBalance != null ? toBalance.getCurrencyCode() : currencyCode;
+    val toAmount = Objects.equals(currencyCode, toCurrencyCode) ? amount : moneyOperDto.getToAmount();
     return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.getId(), pending, moneyOperDto.getOperDate(), nvl(moneyOperDto.getDateNum(), 0),
         labels, moneyOperDto.getComment(), moneyOperDto.getPeriod(), moneyOperDto.getFromAccId(), moneyOperDto.getToAccId(),
         amount, toAmount, null, moneyOperDto.getRecurrenceId());

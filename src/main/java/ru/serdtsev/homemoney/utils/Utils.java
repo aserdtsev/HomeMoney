@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.utils;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,9 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Utils {
-  @Nonnull
   public static <T> T nvl(@Nullable T value1, @Nullable T value2) {
-    assert value2 != null;
     if (value1 != null)
       return value1;
     else
