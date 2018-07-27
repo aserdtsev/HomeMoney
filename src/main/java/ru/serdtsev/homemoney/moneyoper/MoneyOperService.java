@@ -1,8 +1,11 @@
 package ru.serdtsev.homemoney.moneyoper;
 
+import lombok.val;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import ru.serdtsev.homemoney.account.AccountRepository;
@@ -31,6 +34,7 @@ public class MoneyOperService {
   private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
   private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
   private final Logger log = LoggerFactory.getLogger(this.getClass());
+  private final ConversionService conversionService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final MoneyOperRepo moneyOperRepo;
   private final RecurrenceOperRepo recurrenceOperRepo;
@@ -38,8 +42,10 @@ public class MoneyOperService {
   private final LabelRepository labelRepo;
 
   @Autowired
-  public MoneyOperService(BalanceSheetRepository balanceSheetRepo, MoneyOperRepo moneyOperRepo, RecurrenceOperRepo recurrenceOperRepo,
+  public MoneyOperService(@Qualifier("conversionService") ConversionService conversionService,
+      BalanceSheetRepository balanceSheetRepo, MoneyOperRepo moneyOperRepo, RecurrenceOperRepo recurrenceOperRepo,
       AccountRepository accountRepo, LabelRepository labelRepo) {
+    this.conversionService = conversionService;
     this.balanceSheetRepo = balanceSheetRepo;
     this.moneyOperRepo = moneyOperRepo;
     this.recurrenceOperRepo = recurrenceOperRepo;
@@ -296,7 +302,11 @@ public class MoneyOperService {
     moneyOperDto.setFromAccName(getAccountName(moneyOper.getFromAccId()));
     moneyOperDto.setToAccName(getAccountName(moneyOper.getToAccId()));
     moneyOperDto.setType(moneyOper.getType().name());
-    moneyOperDto.setItems(moneyOper.getItems());
+    val items = moneyOper.getItems().stream()
+        .map(item -> conversionService.convert(item, MoneyOperItemDto.class))
+        .sorted(Comparator.comparing(MoneyOperItemDto::getValue))
+        .collect(Collectors.toList());
+    moneyOperDto.setItems(items);
     return moneyOperDto;
   }
 

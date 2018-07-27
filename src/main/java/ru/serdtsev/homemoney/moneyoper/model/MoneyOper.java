@@ -261,17 +261,14 @@ public class MoneyOper implements Serializable {
   }
 
   public MoneyOperType getType() {
-    if (items.stream().findFirst().orElseThrow(IllegalStateException::new).getBalance().getType() == AccountType.reserve) {
-      return MoneyOperType.transfer;
-    }
-    Optional<Integer> valueSignumSumOpt = items.stream()
+    Optional<Integer> valueSignedSumOpt = items.stream()
         .map(item -> item.getValue().signum())
         .reduce((a, s) -> a += s);
-    int valueSignumSum = valueSignumSumOpt.orElseThrow(() ->
+    int valueSignedSum = valueSignedSumOpt.orElseThrow(() ->
         new IllegalStateException("items is empty: " + id));
-    if (valueSignumSum > 0) {
+    if (valueSignedSum > 0) {
       return MoneyOperType.income;
-    } else if (valueSignumSum < 0) {
+    } else if (valueSignedSum < 0) {
       return MoneyOperType.expense;
     }
     return MoneyOperType.transfer;

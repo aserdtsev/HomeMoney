@@ -1,10 +1,12 @@
 package ru.serdtsev.homemoney.moneyoper;
 
+import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.serdtsev.homemoney.account.model.Account;
+import org.springframework.core.convert.ConversionService;
 import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.model.Account;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Balance;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
@@ -40,7 +42,8 @@ class MoneyOperServiceTest {
 
     moneyOperRepo = mock(MoneyOperRepo.class);
     accountRepo = mock(AccountRepository.class);
-    service = new MoneyOperService(balanceSheetRepo, moneyOperRepo, mock(RecurrenceOperRepo.class),
+    val conversionService = mock(ConversionService.class);
+    service = new MoneyOperService(conversionService, balanceSheetRepo, moneyOperRepo, mock(RecurrenceOperRepo.class),
         accountRepo, mock(LabelRepository.class));
   }
 

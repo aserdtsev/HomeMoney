@@ -18,7 +18,7 @@ public class MoneyOperDto {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   private LocalDate operDate;
   private Integer dateNum;
-  private List<MoneyOperItem> items;
+  private List<MoneyOperItemDto> items;
   private UUID fromAccId;
   private UUID toAccId;
   private UUID parentId;
@@ -249,11 +249,11 @@ public class MoneyOperDto {
     return currencyCode.equals(toCurrencyCode);
   }
 
-  public List<MoneyOperItem> getItems() {
+  public List<MoneyOperItemDto> getItems() {
     return items;
   }
 
-  public void setItems(List<MoneyOperItem> items) {
+  public void setItems(List<MoneyOperItemDto> items) {
     this.items = items;
   }
 
