@@ -33,7 +33,7 @@ public class BalancesResource {
       @PathVariable UUID bsId,
       @RequestBody Balance balance) {
     try {
-      balanceService.createBalance(bsId, balance.getId());
+      balanceService.createBalance(bsId, balance);
       return HmResponse.getOk();
     } catch (HmException e) {
       return HmResponse.getFail(e.getCode());

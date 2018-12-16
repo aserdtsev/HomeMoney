@@ -34,9 +34,8 @@ public class BalanceService {
         .collect(Collectors.toList());
   }
 
-  public void createBalance(UUID bsId, UUID balanceId) {
+  public void createBalance(UUID bsId, Balance balance) {
     val balanceSheet = balanceSheetRepo.findOne(bsId);
-    val balance = balanceRepo.findOne(balanceId);
     balance.setBalanceSheet(balanceSheet);
     balance.init(reserveRepo);
     balanceRepo.save(balance);
