@@ -221,9 +221,9 @@
             <span ng-bind-html="getAmountAsHtml(recurrenceOper)"
                   class="{{recurrenceOper.type == 'transfer' ? 'money' : (recurrenceOper.type == 'income' ? 'positive-money' : 'negative-money')}}">
         </span>
-            <span ng-bind="recurrenceOper[recurrenceOper.type == 'income' ? 'toAccName' : 'fromAccName']"></span>
-            <span ng-bind="recurrenceOper.type == 'income' ? '&larr;' : '&rarr;'"></span>
-            <span ng-bind="recurrenceOper[recurrenceOper.type == 'income' ? 'fromAccName' : 'toAccName']"></span>
+            <span ng-bind="recurrenceOper.items[0].balanceName"></span>
+            <span ng-show="recurrenceOper.items.length > 1">&rarr;</span>
+            <span ng-show="recurrenceOper.items.length > 1" ng-bind="recurrenceOper.items[1].balanceName"></span>
             <span>Периодичность: {{getPeriodName(recurrenceOper)}}</span>
             <div>
               <span>{{recurrenceOper['comment']}}</span>

@@ -16,7 +16,7 @@ public class RecurrenceOperDto {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   private LocalDate nextDate;
   private Period period;
-  private List<MoneyOperItem> items;
+  private List<MoneyOperItemDto> items;
   private UUID fromAccId;
   private UUID toAccId;
   private BigDecimal amount;
@@ -104,11 +104,11 @@ public class RecurrenceOperDto {
     this.period = period;
   }
 
-  public List<MoneyOperItem> getItems() {
+  public List<MoneyOperItemDto> getItems() {
     return items;
   }
 
-  public void setItems(List<MoneyOperItem> items) {
+  public void setItems(List<MoneyOperItemDto> items) {
     this.items = items;
   }
 

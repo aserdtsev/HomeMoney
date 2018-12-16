@@ -41,7 +41,7 @@ public class ReservesResource {
   }
 
   @RequestMapping("/create")
-  @Transactional(readOnly = true)
+  @Transactional
   public HmResponse createReserve(
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
