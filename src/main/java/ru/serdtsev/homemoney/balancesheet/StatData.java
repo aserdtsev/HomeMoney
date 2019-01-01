@@ -32,8 +32,6 @@ import static java.util.stream.Collectors.toList;
 public class StatData {
   private final MoneyOperItemRepo moneyOperItemRepo;
   private final RecurrenceOperRepo recurrenceOperRepo;
-  private final AccountRepository accountRepo;
-  private final MoneyOperRepo moneyOperRepo;
 
   @Async
   public CompletableFuture<Collection<Turnover>> getRealTurnoversFuture(BalanceSheet balanceSheet, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
@@ -47,6 +45,7 @@ public class StatData {
         fromDate, toDate, status)
         .stream()
         .filter(item -> item.getMoneyOper().getStatus() == status)
+        .filter(item -> item.getBalance().getType().isTurnover())
         .flatMap(item -> {
           List<Turnover> list = new ArrayList<>();
 
@@ -80,6 +79,7 @@ public class StatData {
         fromDate, toDate, MoneyOperStatus.done)
         .stream()
         .filter(item -> item.getMoneyOper().getPeriod() == Period.month && isNull(item.getMoneyOper().getRecurrenceId()))
+        .filter(item -> item.getBalance().getType().isTurnover())
         .flatMap(item -> {
           List<Turnover> list = new ArrayList<>();
 

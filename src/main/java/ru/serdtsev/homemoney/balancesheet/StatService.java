@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.dto.*;
+import ru.serdtsev.homemoney.moneyoper.LabelRepository;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;
 import ru.serdtsev.homemoney.moneyoper.RecurrenceOperRepo;
@@ -34,11 +35,8 @@ import static java.util.stream.Collectors.groupingBy;
 @Transactional(readOnly = true)
 public class StatService {
   private final BalanceSheetRepository balanceSheetRepo;
-  private final RecurrenceOperRepo recurrenceOperRepo;
-  private final AccountRepository accountRepo;
-  private final MoneyOperRepo moneyOperRepo;
+  private final LabelRepository labelRepository;
   private final MoneyOperItemRepo moneyOperItemRepo;
-  private final DataSource dataSource;
   private final JdbcTemplate jdbcTemplate;
   private final StatData statData;
 
@@ -151,15 +149,18 @@ public class StatService {
           MoneyOper oper = item.getMoneyOper();
           Optional<Label> catOpt = oper.getLabels().stream()
               .filter(Label::getIsCategory)
-              .findAny();
+              .findFirst();
+          UUID rootId = catOpt.map(Label::getRootId).orElse(null);
+          if (rootId != null) {
+            catOpt = Optional.of(labelRepository.findOne(rootId));
+          }
           UUID id = catOpt.isPresent() ? catOpt.get().getId() : absentCatId;
-          UUID rootId = catOpt.isPresent() ? catOpt.get().getRootId() : null;
           String name = catOpt.isPresent() ? catOpt.get().getName() : "<Без категории>";
-          return new CategoryStat(id, rootId, name, item.getValue().abs());
+          return new CategoryStat(id, null, name, item.getValue().abs());
         })
         .collect(groupingBy(cat -> cat));
 
-     map.forEach((c, l) -> {
+    map.forEach((c, l) -> {
           BigDecimal sum = l.stream()
               .map(CategoryStat::getAmount)
               .reduce(BigDecimal.ZERO, BigDecimal::add);
