@@ -41,10 +41,9 @@ public class StatService {
     BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
 
     LocalDate today = LocalDate.now();
-    LocalDate toDate = today;
     LocalDate fromDate = today.minusDays(interval);
 
-    BsStat bsStat = new BsStat(bsId, fromDate, toDate);
+    BsStat bsStat = new BsStat(bsId, fromDate, today);
     calcCurrentSaldo(bsStat);
 
     LocalDate trendFromDate = today.plusDays(1).minusMonths(1);
@@ -52,7 +51,7 @@ public class StatService {
 
     TreeMap<LocalDate, BsDayStat> trendMap = new TreeMap<>();
 
-    CompletableFuture<Collection<Turnover>> realTurnovers = statData.getRealTurnoversFuture(balanceSheet, MoneyOperStatus.done, fromDate, toDate);
+    CompletableFuture<Collection<Turnover>> realTurnovers = statData.getRealTurnoversFuture(balanceSheet, MoneyOperStatus.done, fromDate, today);
     CompletableFuture<Collection<Turnover>> pendingTurnovers = statData.getRealTurnoversFuture(balanceSheet, MoneyOperStatus.pending,
         LocalDate.of(1970, 1, 1), today.plusDays(interval));
     CompletableFuture<Collection<Turnover>> trendTurnovers = statData.getTrendTurnoversFuture(balanceSheet, trendFromDate, trendToDate);
@@ -69,7 +68,7 @@ public class StatService {
 
     map.putAll(trendMap);
     bsStat.setDayStats(new ArrayList<>(map.values()));
-    bsStat.setCategories(getCategories(balanceSheet, fromDate, toDate));
+    bsStat.setCategories(getCategories(balanceSheet, fromDate, today));
 
     return bsStat;
   }
@@ -175,7 +174,7 @@ public class StatService {
     list.stream()
         .filter(cs -> cs.getRootId() == null)
         .forEach(root -> {
-          Double sum = list.stream()
+          double sum = list.stream()
               .filter(cs -> Objects.equals(cs.getRootId(), root.getId()))
               .mapToDouble(cs -> cs.getAmount().doubleValue())
               .reduce(0d, (s, d) -> s += d);

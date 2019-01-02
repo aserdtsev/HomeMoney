@@ -29,22 +29,13 @@ public class BalanceSheet implements Serializable {
   @JoinColumn(name = "svc_rsv_id", insertable = false)
   private ServiceAccount svcRsv;
 
-  @Transient
-  private UUID svcRsvId;
-
   @OneToOne
   @JoinColumn(name = "uncat_costs_id", insertable = false)
   private Category uncatCosts;
 
-  @Transient
-  private UUID uncatCostsId;
-
   @OneToOne
   @JoinColumn(name = "uncat_income_id", insertable = false)
   private Category uncatIncome;
-
-  @Transient
-  private UUID uncatIncomeId;
 
   @OneToMany
   @JoinColumn(name = "balance_sheet_id")
@@ -94,38 +85,14 @@ public class BalanceSheet implements Serializable {
     return svcRsv;
   }
 
-  public UUID getSvcRsvId() {
-    return svcRsv.getId();
-  }
-
-  public void setSvcRsvId(UUID svcRsvId) {
-    this.svcRsvId = svcRsvId;
-  }
-
   @JsonIgnore
   public Category getUncatCosts() {
     return uncatCosts;
   }
 
-  public UUID getUncatCostsId() {
-    return uncatCosts.getId();
-  }
-
-  public void setUncatCostsId(UUID uncatCostsId) {
-    this.uncatCostsId = uncatCostsId;
-  }
-
   @JsonIgnore
   public Category getUncatIncome() {
     return uncatIncome;
-  }
-
-  public UUID getUncatIncomeId() {
-    return uncatIncome.getId();
-  }
-
-  public void setUncatIncomeId(UUID uncatIncomeId) {
-    this.uncatIncomeId = uncatIncomeId;
   }
 
   @JsonIgnore

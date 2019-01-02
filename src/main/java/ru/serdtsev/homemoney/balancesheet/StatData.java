@@ -37,7 +37,7 @@ public class StatData {
     return CompletableFuture.completedFuture(getRealTurnovers(balanceSheet, status, fromDate, toDate));
   }
 
-  Collection<Turnover> getRealTurnovers(BalanceSheet balanceSheet, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
+  private Collection<Turnover> getRealTurnovers(BalanceSheet balanceSheet, MoneyOperStatus status, LocalDate fromDate, LocalDate toDate) {
     log.info("getRealTurnovers start by {}, {} - {}", status,
         fromDate.format(DateTimeFormatter.ISO_DATE), toDate.format(DateTimeFormatter.ISO_DATE));
     Map<Turnover, List<Turnover>> turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
@@ -109,14 +109,7 @@ public class StatData {
     return list;
   }
 
-  private LocalDate getTrendDate(LocalDate performed, Period period) {
-    return period == Period.month ? performed.plusMonths(1)
-        : period == Period.quarter ? performed.plusMonths(3)
-        : period == Period.year ? performed.plusYears(1)
-        : LocalDate.MAX;
-  }
-
-  public CompletableFuture<Collection<Turnover>> getRecurrenceTurnoversFuture(BalanceSheet balanceSheet, LocalDate toDate) {
+  CompletableFuture<Collection<Turnover>> getRecurrenceTurnoversFuture(BalanceSheet balanceSheet, LocalDate toDate) {
     return CompletableFuture.completedFuture(getRecurrenceTurnovers(balanceSheet, toDate));
   }
 
