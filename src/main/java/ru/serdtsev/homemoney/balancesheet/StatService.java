@@ -7,19 +7,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.dto.*;
 import ru.serdtsev.homemoney.moneyoper.LabelRepository;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;
-import ru.serdtsev.homemoney.moneyoper.RecurrenceOperRepo;
 import ru.serdtsev.homemoney.moneyoper.model.Label;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperType;
 
-import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
@@ -132,7 +128,7 @@ public class StatService {
       dayStat.setDelta(t.getAccountType(), dayStat.getDelta(t.getAccountType()).add(t.getAmount()));
       if (t.getAccountType() == AccountType.income) {
         dayStat.setIncomeAmount(dayStat.getIncomeAmount().add(t.getAmount()));
-      } else if (t.getAccountType() == AccountType.expense) {
+      } else if (t.getAccountType() == AccountType.expense || t.getAccountType() == AccountType.reserve) {
         dayStat.setChargeAmount(dayStat.getChargeAmount().add(t.getAmount()));
       }
     });
@@ -144,7 +140,7 @@ public class StatService {
     Map<CategoryStat, List<CategoryStat>> map = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
         fromDate, toDate, MoneyOperStatus.done)
         .stream()
-        .filter(item -> item.getMoneyOper().getType() == MoneyOperType.expense)
+        .filter(item -> item.getMoneyOper().getType() == MoneyOperType.expense || item.getBalance().getType() == AccountType.reserve)
         .map(item -> {
           MoneyOper oper = item.getMoneyOper();
           Optional<Label> catOpt = oper.getLabels().stream()
@@ -154,8 +150,15 @@ public class StatService {
           if (rootId != null) {
             catOpt = Optional.of(labelRepository.findOne(rootId));
           }
-          UUID id = catOpt.isPresent() ? catOpt.get().getId() : absentCatId;
-          String name = catOpt.isPresent() ? catOpt.get().getName() : "<Без категории>";
+
+          boolean isReserveIncrease = item.getBalance().getType() == AccountType.reserve && item.getValue().signum() > 0;
+
+          UUID id = catOpt.isPresent()
+                  ? catOpt.get().getId()
+                  : isReserveIncrease ? item.getBalance().getId() : absentCatId;
+          String name = catOpt.isPresent()
+                  ? catOpt.get().getName()
+                  : isReserveIncrease ? item.getBalance().getName() : "<Без категории>";
           return new CategoryStat(id, null, name, item.getValue().abs());
         })
         .collect(groupingBy(cat -> cat));

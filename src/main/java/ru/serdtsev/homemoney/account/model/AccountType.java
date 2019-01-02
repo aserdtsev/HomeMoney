@@ -5,7 +5,4 @@ public enum AccountType {
   public boolean isBalance() {
     return this.equals(debit) || this.equals(credit) || this.equals(reserve);
   }
-  public boolean isTurnover() {
-    return this.equals(debit) || this.equals(credit);
-  }
 }

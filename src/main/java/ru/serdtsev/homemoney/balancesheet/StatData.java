@@ -6,11 +6,10 @@ import lombok.val;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.model.AccountType;
+import ru.serdtsev.homemoney.account.model.Balance;
 import ru.serdtsev.homemoney.dto.Turnover;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperRepo;
 import ru.serdtsev.homemoney.moneyoper.RecurrenceOperRepo;
 import ru.serdtsev.homemoney.moneyoper.model.*;
 
@@ -45,18 +44,24 @@ public class StatData {
         fromDate, toDate, status)
         .stream()
         .filter(item -> item.getMoneyOper().getStatus() == status)
-        .filter(item -> item.getBalance().getType().isTurnover())
+        .filter(item -> item.getBalance().getType().isBalance())
         .flatMap(item -> {
           List<Turnover> list = new ArrayList<>();
 
-          Turnover t = new Turnover(item.getPerformed(), item.getBalance().getType(), item.getValue());
+          Balance balance = item.getBalance();
+          Turnover t = new Turnover(item.getPerformed(), balance.getType(), item.getValue());
           list.add(t);
 
-          MoneyOper oper = item.getMoneyOper();
-          if (oper.getType() != MoneyOperType.transfer) {
-            AccountType accountType = AccountType.valueOf(oper.getType().name());
-            list.add(new Turnover(item.getPerformed(), accountType, item.getValue().abs()));
-          }
+          item.getMoneyOper().getLabels().stream()
+                  .filter(Label::getIsCategory)
+                  .findFirst()
+                  .ifPresent(label -> {
+                      if (balance.getType() == AccountType.debit) {
+                          AccountType accountType = item.getValue().signum() < 0 ? AccountType.expense : AccountType.income;
+                          list.add(new Turnover(item.getPerformed(), accountType, item.getValue().abs()));
+                      }
+                  });
+
           return list.stream();
         })
         .collect(groupingBy(t -> new Turnover(t.getOperDate(), t.getAccountType()), toList()));
@@ -79,7 +84,7 @@ public class StatData {
         fromDate, toDate, MoneyOperStatus.done)
         .stream()
         .filter(item -> item.getMoneyOper().getPeriod() == Period.month && isNull(item.getMoneyOper().getRecurrenceId()))
-        .filter(item -> item.getBalance().getType().isTurnover())
+        .filter(item -> item.getBalance().getType().isBalance() && item.getBalance().getType() != AccountType.reserve)
         .flatMap(item -> {
           List<Turnover> list = new ArrayList<>();
 
