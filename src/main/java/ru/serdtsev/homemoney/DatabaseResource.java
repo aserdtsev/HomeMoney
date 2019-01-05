@@ -13,6 +13,6 @@ public class DatabaseResource {
   @Transactional
   public final BalanceSheet clearDatabaseNCreateBalanceSheet() {
     MainDao.clearDatabase();
-    return BalanceSheet.newInstance().init();
+    return BalanceSheet.Companion.newInstance().init();
   }
 }

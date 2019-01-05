@@ -37,7 +37,7 @@ class MoneyOperServiceTest {
   @BeforeEach
   void setUp() {
     balanceSheetRepo = mock(BalanceSheetRepository.class);
-    balanceSheet = BalanceSheet.newInstance();
+    balanceSheet = BalanceSheet.Companion.newInstance();
     doReturn(balanceSheet).when(balanceSheetRepo).findOne(any());
 
     moneyOperRepo = mock(MoneyOperRepo.class);

@@ -17,26 +17,26 @@ import static java.util.Objects.nonNull;
 @NoArgsConstructor
 public class Label {
   @Id
-  private UUID id;
+  public UUID id;
 
   @ManyToOne
   @JoinColumn(name = "bs_id")
-  private BalanceSheet balanceSheet;
+  public BalanceSheet balanceSheet;
 
-  private String name;
+  public String name;
 
   @Column(name = "root_id")
-  private UUID rootId;
+  public UUID rootId;
 
   @Column(name = "is_category")
   private Boolean isCategory;
 
   @Column(name = "cat_type")
   @Enumerated(EnumType.STRING)
-  private CategoryType categoryType;
+  public CategoryType categoryType;
 
   @Column(name = "is_arc")
-  private Boolean isArc;
+  public Boolean isArc;
 
   public Label(UUID id, BalanceSheet balanceSheet, String name) {
     this(id, balanceSheet, name, null, false, null);

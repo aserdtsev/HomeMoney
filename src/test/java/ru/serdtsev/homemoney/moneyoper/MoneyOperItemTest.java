@@ -25,7 +25,7 @@ class MoneyOperItemTest {
 
   @BeforeEach
   void setUp() {
-    BalanceSheet balanceSheet = BalanceSheet.newInstance();
+    BalanceSheet balanceSheet = BalanceSheet.Companion.newInstance();
     cash = new Balance(balanceSheet, AccountType.debit, "Cash", Date.valueOf(LocalDate.now()), false,
         "RUB", BigDecimal.TEN, null);
     checkingAccount = new Balance(balanceSheet, AccountType.debit, "Checking account", Date.valueOf(LocalDate.now()), false,

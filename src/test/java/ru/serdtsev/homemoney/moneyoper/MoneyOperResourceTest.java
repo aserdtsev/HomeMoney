@@ -33,7 +33,7 @@ class MoneyOperResourceTest {
   private LabelRepository labelRepo = mock(LabelRepository.class);
   private MoneyOperItemRepo moneyOperItemRepo = mock(MoneyOperItemRepo.class);
   private CategoryRepository categoryRepo = mock(CategoryRepository.class);
-  private BalanceSheet balanceSheet = BalanceSheet.newInstance();
+  private BalanceSheet balanceSheet = BalanceSheet.Companion.newInstance();
   private Balance cash;
   private Balance currentAccount;
 

@@ -30,7 +30,7 @@ class MoneyOperTest {
 
   @BeforeEach
   void setUp() {
-    balanceSheet = BalanceSheet.newInstance();
+    balanceSheet = BalanceSheet.Companion.newInstance();
     cash = new Balance(balanceSheet, AccountType.debit, "Cash", Date.valueOf(LocalDate.now()), false,
         "RUB", BigDecimal.TEN, null);
     checkingAccount = new Balance(balanceSheet, AccountType.debit, "Checking account", Date.valueOf(LocalDate.now()), false,

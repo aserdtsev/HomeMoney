@@ -115,7 +115,7 @@ public class UserResource {
 
   @NotNull
   User createUserNBalanceSheet(String email, String pwdHash) {
-    BalanceSheet bs = BalanceSheet.newInstance();
+    BalanceSheet bs = BalanceSheet.Companion.newInstance();
     balanceSheetRepo.save(bs);
     User user = new User(UUID.randomUUID(), bs.getId(), email, pwdHash);
     userRepo.save(user);
