@@ -23,6 +23,8 @@ open class StatService(
         private val jdbcTemplate: JdbcTemplate,
         private val statData: StatData) {
 
+    data class AggrAccountSaldo(var type: AccountType, var saldo: BigDecimal)
+
     open fun getBsStat(bsId: UUID, interval: Long?): BsStat {
         val balanceSheet = balanceSheetRepo.findOne(bsId)
 
