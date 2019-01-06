@@ -9,7 +9,7 @@ import java.math.BigDecimal
 import java.sql.Date
 import java.time.Instant
 import java.time.LocalDate
-import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.*
 import javax.persistence.*
 
@@ -113,12 +113,10 @@ data class BsDayStat(@JsonIgnore val localDate: LocalDate) {
     private val saldoMap = HashMap<AccountType, BigDecimal>()
     private val deltaMap = HashMap<AccountType, BigDecimal>()
 
+    // Unix-дата и время конца дня в UTC. Так нужно для визуального компонента.
     val date: Long
         @JsonProperty("date")
-        get() {
-            val zoneOffset = OffsetDateTime.now().offset
-            return localDate.atStartOfDay().toInstant(zoneOffset).toEpochMilli()
-        }
+        get() = localDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli() - 1
 
     @Suppress("unused")
     val totalSaldo: BigDecimal
