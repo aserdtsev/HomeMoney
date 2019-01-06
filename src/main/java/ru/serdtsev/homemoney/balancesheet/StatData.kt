@@ -67,19 +67,14 @@ open class StatData(
         val turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
                 fromDate, toDate, MoneyOperStatus.done)
                 .filter { it.moneyOper.period == Period.month && it.moneyOper.recurrenceId == null }
+                .filter { it.moneyOper.type != MoneyOperType.transfer }
                 .filter { it.balance.type.isBalance && it.balance.type != AccountType.reserve }
+                .sortedBy { it.performed }
                 .flatMap { item ->
-                    val itemTurnovers = ArrayList<Turnover>()
-
-                    val oper = item.moneyOper
                     val trendDate = item.performed.plusMonths(1)
-                    val turnover = Turnover(trendDate, item.balance.type, item.value)
-                    itemTurnovers.add(turnover)
-
-                    if (oper.type != MoneyOperType.transfer) {
-                        itemTurnovers.add(Turnover(trendDate, AccountType.valueOf(oper.type.name), item.value.abs()))
-                    }
-                    itemTurnovers
+                    val turnover1 = Turnover(trendDate, item.balance.type, item.value)
+                    val turnover2 = Turnover(trendDate, AccountType.valueOf(item.moneyOper.type.name), item.value.abs())
+                    listOf(turnover1, turnover2)
                 }
                 .groupBy { Turnover(it.operDate, it.accountType) }
 
