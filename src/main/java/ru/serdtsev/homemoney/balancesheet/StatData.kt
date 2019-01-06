@@ -103,12 +103,15 @@ open class StatData(
         val turnovers = HashSet<Turnover>()
         val today = LocalDate.now()
         recurrenceOpers
-                .filter { ro -> !ro.arc }
-                .forEach { ro ->
-                    val template = ro.template
-                    var roNextDate = ro.nextDate
+                .filter { !it.arc }
+                .forEach {
+                    val template = it.template
+                    var roNextDate = it.nextDate
                     while (roNextDate.isBefore(toDate)) {
-                        val nextDate = if (roNextDate.isBefore(today)) today else roNextDate
+                        // Если дата повторяющейся операции раньше или равно текущему дню, то считаем, что она будет
+                        // выполнена завтра, а не сегодня. Чтобы в графике не искажать баланс текущего дня операциями,
+                        // которые с большей вероятностью сегодня не будут выполнены.
+                        val nextDate = if (roNextDate.isBefore(today)) today.plusDays(1) else roNextDate
                         template.items.forEach { item ->
                             putRecurrenceTurnover(turnovers, item.value, item.balance.type, nextDate)
                             val operType = template.type
@@ -116,7 +119,7 @@ open class StatData(
                                 putRecurrenceTurnover(turnovers, item.value.abs(), AccountType.valueOf(operType.name), nextDate)
                             }
                         }
-                        roNextDate = ro.calcNextDate(nextDate)
+                        roNextDate = it.calcNextDate(nextDate)
                     }
                 }
 
