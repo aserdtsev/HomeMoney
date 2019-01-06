@@ -76,16 +76,16 @@ open class StatService(
         aggrAccSaldoList.forEach { bsStat.saldoMap[it.type] = it.saldo }
     }
 
-    private fun calcPastSaldoAndTurnovers(bsStat: BsStat, map: Map<LocalDate, BsDayStat>) {
-        val saldoMap = HashMap<AccountType, BigDecimal>(AccountType.values().size)
-        bsStat.saldoMap.forEach { type, value -> saldoMap[type] = value.plus() }
-        val dayStats = ArrayList(map.values)
+    private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>) {
+        val cursorSaldoMap =  HashMap<AccountType, BigDecimal>(AccountType.values().size)
+        bsStat.saldoMap.forEach { type, value -> cursorSaldoMap[type] = value }
+        val dayStats = ArrayList(bsDayStatMap.values)
         dayStats.sortByDescending { it.localDate }
         dayStats.forEach { dayStat ->
-            Arrays.asList(*AccountType.values()).forEach { type ->
-                val saldo = (saldoMap as Map<AccountType, BigDecimal>).getOrDefault(type, BigDecimal.ZERO)
+            AccountType.values().forEach { type ->
+                val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO)
                 dayStat.setSaldo(type, saldo)
-                saldoMap[type] = saldo.subtract(dayStat.getDelta(type))
+                cursorSaldoMap[type] = saldo.subtract(dayStat.getDelta(type))
             }
             bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
             bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
@@ -114,7 +114,7 @@ open class StatService(
             dayStat.setDelta(accountType, dayStat.getDelta(accountType).add(amount))
             if (accountType == AccountType.income) {
                 dayStat.incomeAmount = dayStat.incomeAmount.add(amount)
-            } else if (accountType == AccountType.expense || accountType == AccountType.reserve) {
+            } else if (accountType in arrayOf(AccountType.expense, AccountType.reserve)) {
                 dayStat.chargeAmount = dayStat.chargeAmount.add(amount)
             }
         }
