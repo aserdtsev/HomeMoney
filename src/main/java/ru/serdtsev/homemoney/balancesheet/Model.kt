@@ -82,20 +82,24 @@ data class BsStat(
     val freeAmount: BigDecimal
         get() = debitSaldo.subtract(reserveSaldo)
 
-    private val reserveSaldo: BigDecimal
+    @Suppress("MemberVisibilityCanBePrivate")
+    val reserveSaldo: BigDecimal
         get() = saldoMap.getOrDefault(AccountType.reserve, BigDecimal.ZERO)
 
     @Suppress("unused")
     val totalSaldo: BigDecimal
         get() = debitSaldo.add(creditSaldo).add(assetSaldo)
 
-    private val debitSaldo: BigDecimal
+    @Suppress("MemberVisibilityCanBePrivate")
+    val debitSaldo: BigDecimal
         get() = getSaldo(AccountType.debit)
 
-    private val creditSaldo: BigDecimal
+    @Suppress("MemberVisibilityCanBePrivate")
+    val creditSaldo: BigDecimal
         get() = getSaldo(AccountType.credit)
 
-    private val assetSaldo: BigDecimal
+    @Suppress("MemberVisibilityCanBePrivate")
+    val assetSaldo: BigDecimal
         get() = getSaldo(AccountType.asset)
 
     private fun getSaldo(type: AccountType): BigDecimal {
