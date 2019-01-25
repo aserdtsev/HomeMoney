@@ -1,6 +1,9 @@
 package ru.serdtsev.homemoney.moneyoper;
 
+import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import ru.serdtsev.homemoney.account.AccountRepository;
@@ -23,13 +26,15 @@ public class RecurrenceOperResource {
   private final MoneyOperService moneyOperService;
   private final BalanceSheetRepository balanceSheetRepo;
   private final AccountRepository accountRepo;
+  private final ConversionService conversionService;
 
   @Autowired
-  public RecurrenceOperResource(MoneyOperService moneyOperService,
-      BalanceSheetRepository balanceSheetRepo, AccountRepository accountRepo) {
+  public RecurrenceOperResource(MoneyOperService moneyOperService, BalanceSheetRepository balanceSheetRepo,
+       AccountRepository accountRepo, @Qualifier("conversionService") ConversionService conversionService) {
     this.moneyOperService = moneyOperService;
     this.balanceSheetRepo = balanceSheetRepo;
     this.accountRepo = accountRepo;
+    this.conversionService = conversionService;
   }
 
   @RequestMapping
@@ -53,10 +58,16 @@ public class RecurrenceOperResource {
     MoneyOper oper = recurrenceOper.getTemplate();
     String fromAccName = accountRepo.findOne(oper.getFromAccId()).getName();
     String toAccName = accountRepo.findOne(oper.getToAccId()).getName();
-    return new RecurrenceOperDto(recurrenceOper.getId(), oper.getId(), oper.getId(),
-        recurrenceOper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getToAmount(),
-        oper.getComment(), getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName,
-        toAccName, oper.getType().name());
+    RecurrenceOperDto dto = new RecurrenceOperDto(recurrenceOper.getId(), oper.getId(), oper.getId(),
+            recurrenceOper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getToAmount(),
+            oper.getComment(), getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName,
+            toAccName, oper.getType().name());
+    val items = oper.getItems().stream()
+            .map(item -> conversionService.convert(item, MoneyOperItemDto.class))
+            .sorted(Comparator.comparing(MoneyOperItemDto::getValue))
+            .collect(Collectors.toList());
+    dto.setItems(items);
+    return dto;
   }
 
   private List<String> getStringsByLabels(Collection<Label> labels) {
