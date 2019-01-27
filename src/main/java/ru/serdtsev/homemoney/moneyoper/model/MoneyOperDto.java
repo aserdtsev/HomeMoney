@@ -1,6 +1,8 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.serdtsev.homemoney.common.HmException;
 
 import java.math.BigDecimal;
@@ -12,6 +14,8 @@ import java.util.Currency;
 import java.util.List;
 import java.util.UUID;
 
+@Data
+@NoArgsConstructor
 public class MoneyOperDto {
   private UUID id;
   private MoneyOperStatus status;
@@ -34,15 +38,6 @@ public class MoneyOperDto {
   private String fromAccName;
   private String toAccName;
   private String type;
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public MoneyOperDto() {}
-
-  public MoneyOperDto(UUID id, MoneyOperStatus status, LocalDate operDate, UUID fromAccId, UUID toAccId,
-      BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode, Period period, String comment) {
-    this(id, status, operDate, fromAccId, toAccId, amount, currencyCode, toAmount, toCurrencyCode, period, comment,
-        null, null, null, null, null);
-  }
 
   public MoneyOperDto(UUID id, MoneyOperStatus status, LocalDate operDate,
       UUID fromAccId, UUID toAccId, BigDecimal amount, String currencyCode, BigDecimal toAmount, String toCurrencyCode,
@@ -70,172 +65,6 @@ public class MoneyOperDto {
     this.items = new ArrayList<>();
   }
 
-  public UUID getId() {
-    return id;
-  }
-
-  public void setId(UUID id) {
-    this.id = id;
-  }
-
-  public MoneyOperStatus getStatus() {
-    return status;
-  }
-
-  public void setStatus(MoneyOperStatus status) {
-    this.status = status;
-  }
-
-  public LocalDate getOperDate() {
-    return operDate;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setOperDate(LocalDate trnDate) {
-    this.operDate = trnDate;
-  }
-
-  public Integer getDateNum() {
-    return dateNum;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setDateNum(Integer dateNum) {
-    this.dateNum = dateNum;
-  }
-
-  public UUID getFromAccId() {
-    return fromAccId;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setFromAccId(UUID fromAccId) {
-    this.fromAccId = fromAccId;
-  }
-
-  public UUID getToAccId() {
-    return toAccId;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setToAccId(UUID toAccId) {
-    this.toAccId = toAccId;
-  }
-
-  public UUID getParentId() {
-    return parentId;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setParentId(UUID parentId) {
-    this.parentId = parentId;
-  }
-
-  public BigDecimal getAmount() {
-    return amount;
-  }
-
-  public void setAmount(BigDecimal amount) {
-    this.amount = amount;
-  }
-
-  public String getCurrencyCode() {
-    return currencyCode;
-  }
-
-  public void setCurrencyCode(String currencyCode) {
-    this.currencyCode = currencyCode;
-  }
-
-  public BigDecimal getToAmount() {
-    return toAmount;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setToAmount(BigDecimal toAmount) {
-    this.toAmount = toAmount;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public String getToCurrencyCode() {
-    return toCurrencyCode;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setToCurrencyCode(String toCurrencyCode) {
-    this.toCurrencyCode = toCurrencyCode;
-  }
-
-  public String getComment() {
-    return comment;
-  }
-
-  public void setComment(String comment) {
-    this.comment = comment;
-  }
-
-  public Timestamp getCreatedTs() {
-    return createdTs;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setCreatedTs(Timestamp createdTs) {
-    this.createdTs = createdTs;
-  }
-
-  public Period getPeriod() {
-    return period != null ? period : Period.month;
-  }
-
-  public void setPeriod(Period period) {
-    this.period = period;
-  }
-
-  public List<String> getLabels() {
-    return labels != null ? labels : new ArrayList<>(0);
-  }
-
-  public void setLabels(List<String> labels) {
-    this.labels = labels;
-  }
-
-  public UUID getRecurrenceId() {
-    return recurrenceId;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setRecurrenceId(UUID recurrenceId) {
-    this.recurrenceId = recurrenceId;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public String getFromAccName() {
-    return fromAccName;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setFromAccName(String fromAccName) {
-    this.fromAccName = fromAccName;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public String getToAccName() {
-    return toAccName;
-  }
-
-  @SuppressWarnings({"unused", "WeakerAccess"})
-  public void setToAccName(String toAccName) {
-    this.toAccName = toAccName;
-  }
-
-  public String getType() {
-    return type;
-  }
-
-  public void setType(String type) {
-    this.type = type;
-  }
-
   public String getCurrencySymbol() {
     return Currency.getInstance(currencyCode).getSymbol();
   }
@@ -247,28 +76,6 @@ public class MoneyOperDto {
 
   public Boolean isMonoCurrencies() {
     return currencyCode.equals(toCurrencyCode);
-  }
-
-  public List<MoneyOperItemDto> getItems() {
-    return items;
-  }
-
-  public void setItems(List<MoneyOperItemDto> items) {
-    this.items = items;
-  }
-
-  /**
-   * Возвращает true, если поля операции, которые влияют на остатки в разрезе дат, одинаковые.
-   */
-  public Boolean essentialEquals(MoneyOperDto other) {
-    if (!equals(other)) {
-      throw new HmException(HmException.Code.IdentifiersDoNotMatch);
-    }
-    return operDate.equals(other.operDate)
-        && fromAccId.equals(other.fromAccId) && toAccId.equals(other.toAccId)
-        && amount.compareTo(other.amount) == 0
-        && toAmount.compareTo(other.toAmount) == 0
-        && status == other.status;
   }
 
   @Override
