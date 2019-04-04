@@ -27,7 +27,7 @@ public class MainDao {
       cpds.setDriverClass("org.postgresql.Driver");
       cpds.setJdbcUrl("jdbc:postgresql://localhost:5433/homemoney");
       cpds.setUser("serdtsev");
-      cpds.setPassword("123456");
+      cpds.setPassword("serdtsev");
       cpds.setMinPoolSize(5);
       cpds.setMaxPoolSize(10);
       cpds.setInitialPoolSize(5);
