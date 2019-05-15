@@ -403,9 +403,10 @@ public class MoneyOperResource {
     val currencyCode = fromBalance != null ? fromBalance.getCurrencyCode() : toBalance.getCurrencyCode();
     val toCurrencyCode = toBalance != null ? toBalance.getCurrencyCode() : currencyCode;
     val toAmount = Objects.equals(currencyCode, toCurrencyCode) ? amount : moneyOperDto.getToAmount();
-    return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.getId(), pending, moneyOperDto.getOperDate(), nvl(moneyOperDto.getDateNum(), 0),
-        labels, moneyOperDto.getComment(), moneyOperDto.getPeriod(), moneyOperDto.getFromAccId(), moneyOperDto.getToAccId(),
-        amount, toAmount, null, moneyOperDto.getRecurrenceId());
+    return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.getId(), pending, moneyOperDto.getOperDate(),
+            nvl(moneyOperDto.getDateNum(), 0), labels, moneyOperDto.getComment(), nvl(moneyOperDto.getPeriod(),
+            Period.month), moneyOperDto.getFromAccId(), moneyOperDto.getToAccId(), amount, toAmount, null,
+            moneyOperDto.getRecurrenceId());
   }
 
   private Optional<Label> categoryToLabel(BalanceSheet balanceSheet, MoneyOperDto operDto) {
