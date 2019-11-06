@@ -6,7 +6,7 @@
       <synchronize>true</synchronize>
       <auto-commit>false</auto-commit>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5433/homemoney</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/homemoney</jdbc-url>
     </data-source>
   </component>
 </project>

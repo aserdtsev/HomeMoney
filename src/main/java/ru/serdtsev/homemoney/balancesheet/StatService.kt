@@ -114,7 +114,7 @@ open class StatService(
             dayStat.setDelta(accountType, dayStat.getDelta(accountType).add(amount))
             if (accountType == AccountType.income) {
                 dayStat.incomeAmount = dayStat.incomeAmount.add(amount)
-            } else if (accountType in arrayOf(AccountType.expense, AccountType.reserve)) {
+            } else if (accountType == AccountType.expense) {
                 dayStat.chargeAmount = dayStat.chargeAmount.add(amount)
             }
         }
