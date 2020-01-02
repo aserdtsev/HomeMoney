@@ -35,9 +35,11 @@ open class StatData(
                 .filter { it.moneyOper.status == status && it.balance.type.isBalance}
                 .flatMap { item ->
                     val itemTurnovers = ArrayList<Turnover>()
-
                     val balance = item.balance
-                    val turnover = Turnover(item.performed, balance.type, item.value)
+                    val value = if (item.balance.currencyCode != balanceSheet.currencyCode && item.moneyOper.isForeignCurrencyTransaction)
+                        item.moneyOper.valueInNationalCurrency.negate()
+                    else item.value
+                    val turnover = Turnover(item.performed, balance.type, value)
                     itemTurnovers.add(turnover)
 
                     item.moneyOper.labels

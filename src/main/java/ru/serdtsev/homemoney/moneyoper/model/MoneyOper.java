@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.logging.log4j.util.Strings;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.model.Account;
@@ -19,6 +20,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
 import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.*;
@@ -288,6 +290,18 @@ public class MoneyOper implements Serializable {
       return MoneyOperType.expense;
     }
     return MoneyOperType.transfer;
+  }
+
+  public boolean isForeignCurrencyTransaction() {
+    return items.stream().anyMatch(it -> !it.getBalance().getCurrencyCode().equals(balanceSheet.getCurrencyCode()));
+  }
+
+  public BigDecimal getValueInNationalCurrency() {
+    return items.stream()
+            .filter(it -> it.getBalance().getCurrencyCode().equals(balanceSheet.getCurrencyCode()))
+            .map(MoneyOperItem::getValue)
+            .reduce(BigDecimal::add)
+            .orElse(BigDecimal.ZERO);
   }
 
   public void complete() {
