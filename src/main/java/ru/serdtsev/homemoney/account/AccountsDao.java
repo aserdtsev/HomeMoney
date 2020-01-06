@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.account;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ScalarHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.dao.HmSqlException;
 import ru.serdtsev.homemoney.dao.MainDao;
@@ -13,8 +14,15 @@ import java.util.UUID;
 @Component
 // todo удалить класс
 public class AccountsDao {
-  public static boolean isTrnExists(UUID id) {
-    try (Connection conn = MainDao.getConnection()) {
+  private final MainDao mainDao;
+
+  @Autowired
+  public AccountsDao(MainDao mainDao) {
+    this.mainDao = mainDao;
+  }
+
+  public boolean isTrnExists(UUID id) {
+    try (Connection conn = mainDao.getConnection()) {
       return isTrnExists(conn, id);
     } catch (SQLException e) {
       throw new HmSqlException(e);

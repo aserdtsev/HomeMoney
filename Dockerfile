@@ -1,13 +1,9 @@
-FROM openjdk:11.0.2-jre-slim
+FROM java:8
 
 MAINTAINER Andrey Serdtsev <andrey.serdtsev@gmail.com>
 
 ARG VERSION=$VERSION
 ENV jarFile=HomeMoney.war
-
-# Fonts for JavaMelody
-RUN apt-get update && apt install -y --no-install-recommends fontconfig
-RUN fc-cache -r
 
 RUN mkdir -p /opt/homemoney
 COPY target/${jarFile} /opt/homemoney

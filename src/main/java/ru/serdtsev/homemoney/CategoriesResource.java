@@ -22,13 +22,15 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/{bsId}/categories")
 public class CategoriesResource {
-  private BalanceSheetRepository balanceSheetRepo;
-  private CategoryRepository categoryRepo;
+  private final BalanceSheetRepository balanceSheetRepo;
+  private final CategoryRepository categoryRepo;
+  private final AccountsDao accountsDao;
 
   @Autowired
-  public CategoriesResource(BalanceSheetRepository balanceSheetRepo, CategoryRepository categoryRepo) {
+  public CategoriesResource(BalanceSheetRepository balanceSheetRepo, CategoryRepository categoryRepo, AccountsDao accountsDao) {
     this.balanceSheetRepo = balanceSheetRepo;
     this.categoryRepo = categoryRepo;
+    this.accountsDao = accountsDao;
   }
 
   @RequestMapping
@@ -73,7 +75,7 @@ public class CategoriesResource {
       @PathVariable UUID bsId,
       @RequestBody Category category) {
     try {
-      if (!AccountsDao.isTrnExists(category.getId())) {
+      if (!accountsDao.isTrnExists(category.getId())) {
         categoryRepo.delete(category);
       }
       return HmResponse.getOk();

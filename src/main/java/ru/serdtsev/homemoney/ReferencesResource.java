@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,9 +13,16 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/{bsId}/references")
 public class ReferencesResource {
+  private final ReferencesDao referencesDao;
+
+  @Autowired
+  public ReferencesResource(ReferencesDao referencesDao) {
+    this.referencesDao = referencesDao;
+  }
+
   @RequestMapping("currencies")
   @Transactional
-  public final HmResponse getCurrencies(@PathVariable UUID bsId) {
-    return HmResponse.getOk(ReferencesDao.getCurrencies(bsId));
+  public HmResponse getCurrencies(@PathVariable UUID bsId) {
+    return HmResponse.getOk(referencesDao.getCurrencies(bsId));
   }
 }

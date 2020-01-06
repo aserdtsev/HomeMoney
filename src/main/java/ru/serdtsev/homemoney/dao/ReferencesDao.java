@@ -2,6 +2,8 @@ package ru.serdtsev.homemoney.dao;
 
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ColumnListHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import ru.serdtsev.homemoney.dto.HmCurrency;
 
 import java.sql.Connection;
@@ -12,10 +14,18 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Component
 public class ReferencesDao {
-  public static List<HmCurrency> getCurrencies(UUID bsId) {
+    private final MainDao mainDao;
+
+    @Autowired
+    public ReferencesDao(MainDao mainDao) {
+        this.mainDao = mainDao;
+    }
+
+    public List<HmCurrency> getCurrencies(UUID bsId) {
     assert Objects.nonNull(bsId);
-    try (Connection conn = MainDao.getConnection()) {
+    try (Connection conn = mainDao.getConnection()) {
       return (new QueryRunner()).query(conn,
           "select b.currency_code " +
               " from accounts a, balances b " +
