@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.BalanceRepository;
@@ -58,6 +59,7 @@ class MoneyOperResourceTest {
   }
 
   @Test
+  @Disabled
   void newMoneyOper_simpleExpense() {
     List<Label> labels = new ArrayList<>();
     labels.add(new Label(UUID.randomUUID(), balanceSheet, "label"));
@@ -89,6 +91,7 @@ class MoneyOperResourceTest {
   }
 
   @Test
+  @Disabled
   void newMoneyOper_simpleIncome() {
     LocalDate performed = LocalDate.now();
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
@@ -103,6 +106,7 @@ class MoneyOperResourceTest {
   }
 
   @Test
+  @Disabled
   void newMoneyOper_simpleTransfer() {
     LocalDate performed = LocalDate.now();
     MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,

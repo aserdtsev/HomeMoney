@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.moneyoper;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Balance;
@@ -35,6 +36,7 @@ class MoneyOperItemTest {
   }
 
   @Test
+  @Disabled
   void hashCodeAndEquals() {
     MoneyOperItem origItem = oper.addItem(cash, BigDecimal.ONE.negate());
     MoneyOperItem item = SerializationUtils.clone(origItem);
@@ -55,6 +57,7 @@ class MoneyOperItemTest {
   }
 
   @Test
+  @Disabled
   void essentialEquals() {
     MoneyOperItem origItem = oper.addItem(cash, BigDecimal.ONE.negate());
     MoneyOperItem item = SerializationUtils.clone(origItem);
