@@ -36,7 +36,7 @@ public class CategoriesResource {
   @RequestMapping
   @Transactional(readOnly = true)
   public HmResponse getCategoryList(@PathVariable UUID bsId) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     List<Category> categories = ((List<Category>) categoryRepo.findByBalanceSheet(balanceSheet)).stream()
         .sorted(Comparator.comparing(Category::getSortIndex))
         .collect(Collectors.toList());
@@ -48,7 +48,7 @@ public class CategoriesResource {
       @PathVariable UUID bsId,
       @RequestBody Category category) {
     try {
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       category.setBalanceSheet(balanceSheet);
       categoryRepo.save(category);
       return HmResponse.getOk();

@@ -54,7 +54,7 @@ public class MoneyOperService {
   }
 
   public Optional<MoneyOper> findMoneyOper(UUID id) {
-    return Optional.ofNullable(moneyOperRepo.findOne(id));
+    return moneyOperRepo.findById(id);
   }
 
   public void save(MoneyOper moneyOper) {
@@ -62,7 +62,7 @@ public class MoneyOperService {
   }
 
   public Optional<RecurrenceOper> findRecurrenceOper(UUID id) {
-    return Optional.ofNullable(recurrenceOperRepo.findOne(id));
+    return recurrenceOperRepo.findById(id);
   }
 
   public void save(RecurrenceOper recurrenceOper) {
@@ -127,7 +127,7 @@ public class MoneyOperService {
   }
 
   public void createRecurrenceOper(BalanceSheet balanceSheet, UUID operId) {
-    MoneyOper sample = moneyOperRepo.findOne(operId);
+    MoneyOper sample = moneyOperRepo.findById(operId).get();
     requireNonNull(sample);
     checkMoneyOperBelongsBalanceSheet(sample, balanceSheet.getId());
     MoneyOper template = newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.template, null, null,
@@ -146,14 +146,14 @@ public class MoneyOperService {
   }
 
   public void deleteRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
-    RecurrenceOper recurrenceOper = recurrenceOperRepo.findOne(recurrenceId);
+    RecurrenceOper recurrenceOper = recurrenceOperRepo.findById(recurrenceId).get();
     recurrenceOper.arc();
     recurrenceOperRepo.save(recurrenceOper);
     log.info("RecurrenceOper '{}' moved to archive.", recurrenceId);
   }
 
   public void skipRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
-    RecurrenceOper recurrenceOper = recurrenceOperRepo.findOne(recurrenceId);
+    RecurrenceOper recurrenceOper = recurrenceOperRepo.findById(recurrenceId).get();
     recurrenceOper.skipNextDate();
     recurrenceOperRepo.save(recurrenceOper);
   }
@@ -168,14 +168,14 @@ public class MoneyOperService {
     oper.setRecurrenceId(recurrenceId);
 
     oper.setFromAccId(fromAccId);
-    Account fromAcc = accountRepo.findOne(fromAccId);
+    Account fromAcc = accountRepo.findById(fromAccId).get();
     assert fromAcc != null;
     if (fromAcc instanceof Balance) {
       oper.addItem((Balance) fromAcc, amount.negate(), performed);
     }
 
     oper.setToAccId(toAccId);
-    Account toAcc = accountRepo.findOne(toAccId);
+    Account toAcc = accountRepo.findById(toAccId).get();
     assert toAcc != null;
     if (toAcc instanceof  Balance) {
       oper.addItem((Balance) toAcc, toAmount, performed);
@@ -185,7 +185,7 @@ public class MoneyOperService {
     oper.setToAmount(toAmount);
 
     if (parentId != null) {
-      MoneyOper parentOper =  moneyOperRepo.findOne(parentId);
+      MoneyOper parentOper =  moneyOperRepo.findById(parentId).get();
       assert parentOper != null;
       oper.setParentOper(parentOper);
     }
@@ -194,7 +194,7 @@ public class MoneyOperService {
   }
 
   public void updateRecurrenceOper(BalanceSheet balanceSheet, RecurrenceOperDto recurrenceOperDto) {
-    RecurrenceOper recurrenceOper = recurrenceOperRepo.findOne(recurrenceOperDto.getId());
+    RecurrenceOper recurrenceOper = recurrenceOperRepo.findById(recurrenceOperDto.getId()).get();
     recurrenceOper.setNextDate(recurrenceOperDto.getNextDate());
     MoneyOper template = recurrenceOper.getTemplate();
 
@@ -237,7 +237,7 @@ public class MoneyOperService {
     oper.getItems().stream()
         .filter(item -> item.getBalance().getId().equals(oldAccId))
         .forEach(item -> {
-          Balance balance = (Balance) accountRepo.findOne(newAccId);
+          Balance balance = (Balance) accountRepo.findById(newAccId).get();
           item.setBalance(balance);
         });
   }
@@ -281,7 +281,7 @@ public class MoneyOperService {
   List<Label> getSuggestLabels(UUID bsId, MoneyOperDto moneyOper) {
     // Найдем 10 наиболее часто используемых меток-категорий за последние 30 дней.
     LocalDate startDate = LocalDate.now().minusDays(30);
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     return moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
       .flatMap(oper -> oper.getLabels().stream())
       .filter(label -> !moneyOper.getLabels().contains(label))
@@ -311,12 +311,12 @@ public class MoneyOperService {
   }
 
   public String getAccountName(UUID accountId) {
-    Account account = accountRepo.findOne(accountId);
+    Account account = accountRepo.findById(accountId).get();
     return account.getName();
   }
 
   Stream<Label> getLabels(UUID bsId) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     return labelRepo.findByBalanceSheetOrderByName(balanceSheet);
   }
 }

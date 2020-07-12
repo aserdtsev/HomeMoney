@@ -33,7 +33,7 @@ public class ReservesResource {
 
   @RequestMapping
   public HmResponse getReserveList(@PathVariable UUID bsId) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     List<Reserve> reserves = ((List<Reserve>) reserveRepo.findByBalanceSheet(balanceSheet)).stream()
         .sorted(Comparator.comparing(Reserve::getCreated))
         .collect(Collectors.toList());
@@ -46,7 +46,7 @@ public class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       reserve.setBalanceSheet(balanceSheet);
       reserve.setType(AccountType.reserve);
       reserve.setCurrencyCode(balanceSheet.getCurrencyCode());
@@ -64,7 +64,7 @@ public class ReservesResource {
       @PathVariable UUID bsId,
       @RequestBody Reserve reserve) {
     try {
-      Reserve currReserve = reserveRepo.findOne(reserve.getId());
+      Reserve currReserve = reserveRepo.findById(reserve.getId()).get();
       currReserve.merge(reserve, reserveRepo, moneyOperService);
       reserveRepo.save(currReserve);
       return HmResponse.getOk();

@@ -43,7 +43,7 @@ public class RecurrenceOperResource {
       @PathVariable UUID bsId,
       @RequestParam(required = false, defaultValue = "") String search) {
     try {
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       List<RecurrenceOperDto> list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
           .sorted(Comparator.comparing(RecurrenceOper::getNextDate))
           .map(this::recurrenceOperToDto)
@@ -56,8 +56,8 @@ public class RecurrenceOperResource {
 
   private RecurrenceOperDto recurrenceOperToDto(RecurrenceOper recurrenceOper) {
     MoneyOper oper = recurrenceOper.getTemplate();
-    String fromAccName = accountRepo.findOne(oper.getFromAccId()).getName();
-    String toAccName = accountRepo.findOne(oper.getToAccId()).getName();
+    String fromAccName = accountRepo.findById(oper.getFromAccId()).get().getName();
+    String toAccName = accountRepo.findById(oper.getToAccId()).get().getName();
     RecurrenceOperDto dto = new RecurrenceOperDto(recurrenceOper.getId(), oper.getId(), oper.getId(),
             recurrenceOper.getNextDate(), oper.getPeriod(), oper.getFromAccId(), oper.getToAccId(), oper.getAmount(), oper.getToAmount(),
             oper.getComment(), getStringsByLabels(oper.getLabels()), oper.getCurrencyCode(), oper.getToCurrencyCode(), fromAccName,
@@ -80,7 +80,7 @@ public class RecurrenceOperResource {
   public HmResponse create(
       @PathVariable UUID bsId,
       @RequestBody MoneyOperDto moneyOperDto) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     moneyOperService.createRecurrenceOper(balanceSheet, moneyOperDto.getId());
     return HmResponse.getOk();
   }
@@ -89,7 +89,7 @@ public class RecurrenceOperResource {
   public HmResponse skip(
       @PathVariable UUID bsId,
       @RequestBody RecurrenceOperDto oper) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     moneyOperService.skipRecurrenceOper(balanceSheet, oper.getId());
     return HmResponse.getOk();
   }
@@ -99,7 +99,7 @@ public class RecurrenceOperResource {
       @PathVariable UUID bsId,
       @RequestBody RecurrenceOperDto oper) {
     try {
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       moneyOperService.deleteRecurrenceOper(balanceSheet, oper.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
@@ -112,7 +112,7 @@ public class RecurrenceOperResource {
       @PathVariable UUID bsId,
       @RequestBody RecurrenceOperDto oper) {
     try {
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       moneyOperService.updateRecurrenceOper(balanceSheet, oper);
       return HmResponse.getOk();
     } catch (HmException e) {

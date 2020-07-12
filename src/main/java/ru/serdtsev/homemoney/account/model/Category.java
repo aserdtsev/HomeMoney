@@ -31,7 +31,7 @@ public class Category extends Account implements Comparable {
   public void init(CategoryRepository categoryRepo) {
     super.init();
     if (rootId != null) {
-      root = categoryRepo.findOne(rootId);
+      root = categoryRepo.findById(rootId).get();
     } else {
       root = null;
     }

@@ -17,10 +17,7 @@ import ru.serdtsev.homemoney.moneyoper.model.MoneyOperDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -38,7 +35,7 @@ class MoneyOperServiceTest {
   void setUp() {
     balanceSheetRepo = mock(BalanceSheetRepository.class);
     balanceSheet = BalanceSheet.Companion.newInstance();
-    doReturn(balanceSheet).when(balanceSheetRepo).findOne(any());
+    doReturn(Optional.of(balanceSheet)).when(balanceSheetRepo).findById(any());
 
     moneyOperRepo = mock(MoneyOperRepo.class);
     accountRepo = mock(AccountRepository.class);
@@ -59,7 +56,7 @@ class MoneyOperServiceTest {
     when(moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(any(), any(), any()))
         .thenReturn(opers);
     Account account = new Account(balanceSheet, AccountType.debit, "Some account name", java.sql.Date.valueOf(LocalDate.now()), false);
-    when(accountRepo.findOne(any())).thenReturn(account);
+    when(accountRepo.findById(any())).thenReturn(Optional.of(account));
 
     MoneyOper moneyOper = newMoneyOperWithLabels(new ArrayList<>());
     MoneyOperDto moneyOperDto = service.moneyOperToDto(moneyOper);

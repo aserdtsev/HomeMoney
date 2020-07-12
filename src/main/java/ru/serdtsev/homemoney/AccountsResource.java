@@ -28,7 +28,7 @@ public class AccountsResource {
   @RequestMapping("/api/{bsId}/accounts")
   @Transactional(readOnly = true)
   public HmResponse getAccountList(@PathVariable UUID bsId) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     List<Account> accounts = balanceSheet.getAccounts().stream()
         .sorted(Comparator.comparing(Account::getSortIndex))
         .collect(Collectors.toList());

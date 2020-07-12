@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.balancesheet
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
@@ -21,12 +22,13 @@ open class StatService(
         private val labelRepository: LabelRepository,
         private val moneyOperItemRepo: MoneyOperItemRepo,
         private val jdbcTemplate: JdbcTemplate,
-        private val statData: StatData) {
+        private val statData: StatData
+) {
 
     data class AggrAccountSaldo(var type: AccountType, var saldo: BigDecimal)
 
     open fun getBsStat(bsId: UUID, interval: Long?): BsStat {
-        val balanceSheet = balanceSheetRepo.findOne(bsId)
+        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
 
         val today = LocalDate.now()
         val fromDate = today.minusDays(interval!!)
@@ -130,7 +132,7 @@ open class StatService(
                     var category = oper.labels.firstOrNull { it.getIsCategory() }
                     val rootId = category?.rootId
                     if (rootId != null) {
-                        category = labelRepository.findOne(rootId)
+                        category = labelRepository.findByIdOrNull(rootId)
                     }
 
                     val isReserveIncrease = item.balance.type == AccountType.reserve && item.value.signum() > 0

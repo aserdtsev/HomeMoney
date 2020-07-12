@@ -62,7 +62,7 @@ public class CheckAuthTokenFilter implements Filter {
       }
     }
 
-    UserAuthToken userAuthToken = userAuthTokenRepo.findOne(authToken);
+    UserAuthToken userAuthToken = userAuthTokenRepo.findById(authToken).get();
     if (Objects.isNull(userAuthToken) || !Objects.equals(userAuthToken.getUserId(), userId)) {
       throw new HmException(HmException.Code.WrongAuth);
     }

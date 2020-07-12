@@ -17,6 +17,7 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -41,8 +42,8 @@ class MoneyOperResourceTest {
   public MoneyOperResourceTest() {
     this.mtRes = new MoneyOperResource(moneyOperService, balanceSheetRepo, accountRepo, balanceRepo, moneyOperRepo, labelRepo,
         moneyOperItemRepo, categoryRepo);
-    when(accountRepo.findOne(balanceSheet.getUncatCosts().getId())).thenReturn(balanceSheet.getUncatCosts());
-    when(accountRepo.findOne(balanceSheet.getUncatIncome().getId())).thenReturn(balanceSheet.getUncatIncome());
+    when(accountRepo.findById(balanceSheet.getUncatCosts().getId())).thenReturn(Optional.of(balanceSheet.getUncatCosts()));
+    when(accountRepo.findById(balanceSheet.getUncatIncome().getId())).thenReturn(Optional.of(balanceSheet.getUncatIncome()));
   }
 
   @BeforeEach
@@ -51,11 +52,11 @@ class MoneyOperResourceTest {
 
     cash = new Balance(balanceSheet, AccountType.debit, "Cash", now, false, "RUB",
         BigDecimal.valueOf(10000L, 2), null);
-    when(accountRepo.findOne(cash.getId())).thenReturn(cash);
+    when(accountRepo.findById(cash.getId())).thenReturn(Optional.of(cash));
 
     currentAccount = new Balance(balanceSheet, AccountType.credit, "Current account", now, false, "RUB",
         BigDecimal.valueOf(10000L, 2), null);
-    when(accountRepo.findOne(currentAccount.getId())).thenReturn(currentAccount);
+    when(accountRepo.findById(currentAccount.getId())).thenReturn(Optional.of(currentAccount));
   }
 
   @Test

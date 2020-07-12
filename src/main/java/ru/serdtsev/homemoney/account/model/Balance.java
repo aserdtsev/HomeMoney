@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.serdtsev.homemoney.account.ReserveRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
 import ru.serdtsev.homemoney.moneyoper.model.Period;
 import ru.serdtsev.homemoney.utils.Utils;
@@ -49,7 +49,7 @@ public class Balance extends Account {
 
   private Long num;
 
-  Balance() {
+  public Balance() {
     super();
   }
 
@@ -68,7 +68,7 @@ public class Balance extends Account {
     minValue = nvl(minValue, BigDecimal.ZERO);
     num = nvl(num, 0L);
     if (reserveId != null) {
-      reserve = reserveRepo.findOne(reserveId);
+      reserve = reserveRepo.findById(reserveId).get();
     }
   }
 
@@ -76,7 +76,7 @@ public class Balance extends Account {
     super.merge(balance);
     setCreditLimit(balance.getCreditLimit());
     setMinValue(balance.getMinValue());
-    setReserve(balance.getReserveId() != null ? reserveRepo.findOne(balance.getReserveId()) : null);
+    setReserve(balance.getReserveId() != null ? reserveRepo.findById(balance.getReserveId()).get() : null);
     if (balance.getValue().compareTo(getValue()) != 0) {
       BalanceSheet balanceSheet = getBalanceSheet();
       boolean more = balance.getValue().compareTo(getValue()) > 0;

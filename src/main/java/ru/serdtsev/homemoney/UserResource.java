@@ -16,7 +16,6 @@ import ru.serdtsev.homemoney.common.HmException;
 import ru.serdtsev.homemoney.common.HmResponse;
 import ru.serdtsev.homemoney.user.*;
 
-import javax.validation.constraints.NotNull;
 import java.util.Set;
 import java.util.UUID;
 
@@ -45,7 +44,7 @@ public class UserResource {
       if (userId == null) {
         throw new HmException(HmException.Code.UserIdCookieIsEmpty);
       }
-      User user = userRepo.findOne(userId);
+      User user = userRepo.findById(userId).get();
       response = HmResponse.getOk(user.getBsId());
     } catch (HmException e) {
       response = HmResponse.getFail(e.getCode());
@@ -85,7 +84,7 @@ public class UserResource {
   public HmResponse logout(
       @CookieValue(value="userId", required=false) UUID userId,
       @CookieValue(value="authToken", required=false) UUID authToken) {
-    UserAuthToken userAuthToken = userAuthTokenRepo.findOne(authToken);
+    UserAuthToken userAuthToken = userAuthTokenRepo.findById(authToken).get();
     if (!userAuthToken.getUserId().equals(userId)) {
       throw new HmException(HmException.Code.WrongUserId);
     }
@@ -110,10 +109,9 @@ public class UserResource {
   @RequestMapping(method = RequestMethod.DELETE)
   @Transactional
   public void deleteBalanceSheet(@RequestParam UUID id) {
-    balanceSheetRepo.delete(id);
+    balanceSheetRepo.deleteById(id);
   }
 
-  @NotNull
   User createUserNBalanceSheet(String email, String pwdHash) {
     BalanceSheet bs = BalanceSheet.Companion.newInstance();
     balanceSheetRepo.save(bs);

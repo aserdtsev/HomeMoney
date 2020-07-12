@@ -79,7 +79,7 @@ public class MoneyOperResource {
       @RequestParam(required = false, defaultValue = "0") int offset) {
     try {
       ArrayList<MoneyOperDto> opers = new ArrayList<>();
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       if (offset == 0) {
         List<MoneyOperDto> pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.pending, search, limit + 1, offset)
             .stream()
@@ -111,16 +111,16 @@ public class MoneyOperResource {
 
   private List<MoneyOper> getMoneyOpers(BalanceSheet balanceSheet, MoneyOperStatus status, @Nullable String search,
       Integer limit, Integer offset) {
-    Sort sort = new Sort(Sort.Direction.DESC, "performed")
-        .and(new Sort("dateNum"))
-        .and(new Sort(Sort.Direction.DESC, "created"));
+    Sort sort = Sort.by(Sort.Direction.DESC, "performed")
+        .and(Sort.by("dateNum"))
+        .and(Sort.by(Sort.Direction.DESC, "created"));
     return Strings.isBlank(search)
         ? getMoneyOpers(balanceSheet, status, sort, limit, offset)
         : getMoneyOpersBySearch(balanceSheet, status, search.toLowerCase(), sort, limit, offset);
   }
 
   private List<MoneyOper> getMoneyOpers(BalanceSheet balanceSheet, MoneyOperStatus status, Sort sort, Integer limit, Integer offset) {
-    Pageable pageRequest = new PageRequest(offset/(limit-1), limit-1, sort);
+    Pageable pageRequest = PageRequest.of(offset/(limit-1), limit-1, sort);
     List<MoneyOper> opers = new ArrayList<>();
     opers.addAll(moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest).getContent());
     opers.addAll(moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest.next()).getContent().stream()
@@ -131,7 +131,7 @@ public class MoneyOperResource {
 
   private List<MoneyOper> getMoneyOpersBySearch(BalanceSheet balanceSheet, MoneyOperStatus status, String search,
       Sort sort, Integer limit, Integer offset) {
-    Pageable pageRequest = new PageRequest(0, 100, sort);
+    Pageable pageRequest = PageRequest.of(0, 100, sort);
     List<MoneyOper> opers = new ArrayList<>();
     Page page;
     final Function<Pageable, Page> pager;
@@ -149,7 +149,7 @@ public class MoneyOperResource {
       adder = p -> opers.addAll(p.getContent());
     } else if (search.matches(SEARCH_MONEY_REGEX)) {
       // по сумме операции
-      pageRequest = new PageRequest(pageRequest.getPageNumber(), pageRequest.getPageSize());
+      pageRequest = PageRequest.of(pageRequest.getPageNumber(), pageRequest.getPageSize());
       pager = pageable -> {
         BigDecimal value = new BigDecimal(search).abs();
         return moneyOperItemRepo.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, pageable);
@@ -191,7 +191,7 @@ public class MoneyOperResource {
       @PathVariable UUID bsId,
       @RequestParam UUID id) {
     try {
-      MoneyOper oper = moneyOperRepo.findOne(id);
+      MoneyOper oper = moneyOperRepo.findById(id).get();
       moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
       return getOk(moneyOperService.moneyOperToDto(oper));
     } catch (HmException e) {
@@ -214,7 +214,7 @@ public class MoneyOperResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyOperDto moneyOperDto) {
     try {
-      MoneyOper origOper = moneyOperRepo.findOne(moneyOperDto.getId());
+      MoneyOper origOper = moneyOperRepo.findById(moneyOperDto.getId()).orElse(null);
       if (isNull(origOper)) {
         createMoneyOperInternal(bsId, moneyOperDto);
         return getOk();
@@ -222,7 +222,7 @@ public class MoneyOperResource {
 
       moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, bsId);
 
-      BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       MoneyOper oper = newMoneyOper(balanceSheet, moneyOperDto);
 
       boolean essentialEquals = origOper.essentialEquals(oper);
@@ -262,7 +262,7 @@ public class MoneyOperResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyOperDto moneyOperDto) {
     try {
-      MoneyOper oper = moneyOperRepo.findOne(moneyOperDto.getId());
+      MoneyOper oper = moneyOperRepo.findById(moneyOperDto.getId()).get();
       requireNonNull(oper);
       moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
       oper.cancel();
@@ -291,7 +291,7 @@ public class MoneyOperResource {
   }
 
   private void skipPendingMoneyOper(UUID bsId, MoneyOperDto moneyOperDto) {
-    MoneyOper oper = moneyOperRepo.findOne(moneyOperDto.getId());
+    MoneyOper oper = moneyOperRepo.findById(moneyOperDto.getId()).get();
     requireNonNull(oper);
     moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId);
     oper.cancel();
@@ -311,7 +311,7 @@ public class MoneyOperResource {
       @PathVariable UUID bsId,
       @RequestBody MoneyOperDto moneyOperDto) {
     try {
-      MoneyOper oper = moneyOperRepo.findOne(moneyOperDto.getId());
+      MoneyOper oper = moneyOperRepo.findById(moneyOperDto.getId()).get();
       List<MoneyOper> opers = moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(oper.getBalanceSheet(),
           MoneyOperStatus.done, oper.getPerformed())
           .sorted(Comparator.comparing(MoneyOper::getDateNum))
@@ -334,7 +334,7 @@ public class MoneyOperResource {
   }
 
   private Stream<MoneyOper> createMoneyOperInternal(UUID bsId, MoneyOperDto moneyOperDto) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findOne(bsId);
+    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     List<MoneyOper> moneyOpers = new ArrayList<>();
 
     MoneyOper mainOper = newMainMoneyOper(balanceSheet, moneyOperDto);
@@ -362,7 +362,7 @@ public class MoneyOperResource {
 
   private Optional<MoneyOper> newReserveMoneyOper(BalanceSheet balanceSheet, MoneyOperDto moneyOperDto) {
     Account fromAcc = balanceSheet.getSvcRsv();
-    Account account = accountRepo.findOne(moneyOperDto.getFromAccId());
+    Account account = accountRepo.findById(moneyOperDto.getFromAccId()).get();
     if (account.getType() == AccountType.debit) {
       Balance balance = (Balance) account;
       if (balance.getReserve() != null) {
@@ -371,7 +371,7 @@ public class MoneyOperResource {
     }
 
     Account toAcc = balanceSheet.getSvcRsv();
-    account = accountRepo.findOne(moneyOperDto.getToAccId());
+    account = accountRepo.findById(moneyOperDto.getToAccId()).get();
     if (account.getType() == AccountType.debit) {
       Balance balance = (Balance) account;
       if (balance.getReserve() != null) {
@@ -398,8 +398,8 @@ public class MoneyOperResource {
       amount = moneyOperDto.getToAmount();
     }
     assert nonNull(amount);
-    val fromBalance = balanceRepo.findOne(moneyOperDto.getFromAccId());
-    val toBalance = balanceRepo.findOne(moneyOperDto.getToAccId());
+    val fromBalance = balanceRepo.findById(moneyOperDto.getFromAccId()).orElse(null);
+    val toBalance = balanceRepo.findById(moneyOperDto.getToAccId()).orElse(null);
     val currencyCode = fromBalance != null ? fromBalance.getCurrencyCode() : toBalance.getCurrencyCode();
     val toCurrencyCode = toBalance != null ? toBalance.getCurrencyCode() : currencyCode;
     val toAmount = Objects.equals(currencyCode, toCurrencyCode) ? amount : moneyOperDto.getToAmount();
@@ -413,9 +413,9 @@ public class MoneyOperResource {
     Category category = null;
     MoneyOperType operType = MoneyOperType.valueOf(operDto.getType());
     if (operType.equals(expense)) {
-      category = categoryRepo.findOne(operDto.getToAccId());
+      category = categoryRepo.findById(operDto.getToAccId()).orElse(null);
     } else if (operType.equals(income)) {
-      category = categoryRepo.findOne(operDto.getFromAccId());
+      category = categoryRepo.findById(operDto.getFromAccId()).orElse(null);
     }
     if (isNull(category)) {
       return Optional.empty();

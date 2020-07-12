@@ -27,7 +27,7 @@ public class BalanceService {
   private final MoneyOperService moneyOperService;
 
   public List<Balance> getBalances(UUID bsId) {
-    val balanceSheet = balanceSheetRepo.findOne(bsId);
+    val balanceSheet = balanceSheetRepo.findById(bsId).get();
     return ((List<Balance>) balanceRepo.findByBalanceSheet(balanceSheet)).stream()
         .filter(balance -> balance.getType() != AccountType.reserve)
         .sorted(Comparator.comparing(Balance::getNum))
@@ -35,20 +35,20 @@ public class BalanceService {
   }
 
   public void createBalance(UUID bsId, Balance balance) {
-    val balanceSheet = balanceSheetRepo.findOne(bsId);
+    val balanceSheet = balanceSheetRepo.findById(bsId).get();
     balance.setBalanceSheet(balanceSheet);
     balance.init(reserveRepo);
     balanceRepo.save(balance);
   }
 
   public void updateBalance(Balance balance) {
-    val storedBalance = balanceRepo.findOne(balance.getId());
+    val storedBalance = balanceRepo.findById(balance.getId()).get();
     storedBalance.merge(balance, reserveRepo, moneyOperService);
     balanceRepo.save(storedBalance);
   }
 
   public void deleteOrArchiveBalance(UUID balanceId) {
-    val balance = balanceRepo.findOne(balanceId);
+    val balance = balanceRepo.findById(balanceId).get();
     val operFound = moneyOperItemRepo.findByBalance(balance).limit(1).count() > 0;
     if (operFound) {
       balance.setArc(true);
@@ -62,8 +62,8 @@ public class BalanceService {
 
   public void upBalance(UUID bsId, UUID balanceId) {
     // todo работает неправильно, исправить
-    BalanceSheet bs = balanceSheetRepo.findOne(bsId);
-    Balance balance = balanceRepo.findOne(balanceId);
+    BalanceSheet bs = balanceSheetRepo.findById(bsId).get();
+    Balance balance = balanceRepo.findById(balanceId).get();
 
     List<Balance> balances = bs.getBalances().stream()
         .sorted((b1, b2) -> b1.getNum() < b2.getNum() ? -1 : (b1.getNum() > b2.getNum() ? 1 : 0))
@@ -85,7 +85,7 @@ public class BalanceService {
         }
       }
     } while (prev != null && prev.getArc());
-    balanceRepo.save(balances);
+    balances.forEach(it -> balanceRepo.save(it));
   }
 
 }

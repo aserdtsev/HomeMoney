@@ -20,7 +20,7 @@ public class MoneyOperItemToDtoConverter implements Converter<MoneyOperItem, Mon
     if (balanceRepo == null) {
       balanceRepo = appCtx.getBean(BalanceRepository.class);
     }
-    val balance = balanceRepo.findOne(item.getBalanceId());
+    val balance = balanceRepo.findById(item.getBalanceId()).get();
     return new MoneyOperItemDto(item.getId(), item.getBalanceId(), balance.getName(), item.getValue(),
         item.getPerformed(), item.getIndex());
   }

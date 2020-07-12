@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.moneyoper.model;
 
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.logging.log4j.util.Strings;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.model.Account;
@@ -20,7 +19,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
 import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.*;
@@ -281,8 +279,8 @@ public class MoneyOper implements Serializable {
 
   @Deprecated
   public MoneyOperType getType(AccountRepository accountRepo) {
-    Account fromAcc = accountRepo.findOne(fromAccId);
-    Account toAcc = accountRepo.findOne(toAccId);
+    Account fromAcc = accountRepo.findById(fromAccId).get();
+    Account toAcc = accountRepo.findById(toAccId).get();
     if (fromAcc.getType().equals(AccountType.income)) {
       return MoneyOperType.income;
     }
