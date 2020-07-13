@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,12 +25,19 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/{bsId}/reserves")
-@RequiredArgsConstructor
 public class ReservesResource {
   private final ReserveRepository reserveRepo;
   private final BalanceSheetRepository balanceSheetRepo;
   private final MoneyOperService moneyOperService;
   private final BalanceService balanceService;
+
+  public ReservesResource(ReserveRepository reserveRepo, BalanceSheetRepository balanceSheetRepo,
+          MoneyOperService moneyOperService, BalanceService balanceService) {
+    this.reserveRepo = reserveRepo;
+    this.balanceSheetRepo = balanceSheetRepo;
+    this.moneyOperService = moneyOperService;
+    this.balanceService = balanceService;
+  }
 
   @RequestMapping
   public HmResponse getReserveList(@PathVariable UUID bsId) {
