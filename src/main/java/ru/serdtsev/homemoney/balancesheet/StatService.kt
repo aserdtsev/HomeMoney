@@ -129,7 +129,7 @@ open class StatService(
                 .filter { item -> item.moneyOper.type == MoneyOperType.expense || item.balance.type == AccountType.reserve }
                 .map { item ->
                     val oper = item.moneyOper
-                    var category = oper.labels.firstOrNull { it.getIsCategory() }
+                    var category = oper.labels.firstOrNull { it.isCategory() }
                     val rootId = category?.rootId
                     if (rootId != null) {
                         category = labelRepository.findByIdOrNull(rootId)
@@ -144,7 +144,7 @@ open class StatService(
                     }
 
                     val name = category?.name ?: if (isReserveIncrease) item.balance.name else "<Без категории>"
-                    CategoryStat(id, null, name, item.value.abs())
+                    CategoryStat(id!!, null, name, item.value.abs())
                 }
                 .groupBy { it }
 

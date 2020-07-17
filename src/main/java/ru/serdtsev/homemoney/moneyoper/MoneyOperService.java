@@ -267,7 +267,7 @@ public class MoneyOperService {
   }
 
   private Label createSimpleLabel(BalanceSheet balanceSheet, String name) {
-    Label label = new Label(UUID.randomUUID(), balanceSheet, name);
+    Label label = new Label(UUID.randomUUID(), balanceSheet, name, null, false, null, null);
     labelRepo.save(label);
     return label;
   }

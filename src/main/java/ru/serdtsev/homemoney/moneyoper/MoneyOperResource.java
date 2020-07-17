@@ -428,13 +428,15 @@ public class MoneyOperResource {
         rootLabel = labelRepo.findByBalanceSheetAndName(balanceSheet, rootCategory.getName());
         if (isNull(rootLabel)) {
           val rootCategoryType = CategoryType.valueOf(rootCategory.getType().name());
-          rootLabel = new Label(UUID.randomUUID(), balanceSheet, rootCategory.getName(), null, true, rootCategoryType);
+          rootLabel = new Label(UUID.randomUUID(), balanceSheet, rootCategory.getName(), null, true,
+                  rootCategoryType, null);
           labelRepo.save(rootLabel);
         }
       }
       UUID rootLabelId = nonNull(rootLabel) ? rootLabel.getId() : null;
       val categoryType = CategoryType.valueOf(category.getType().name());
-      label = new Label(UUID.randomUUID(), balanceSheet, category.getName(), rootLabelId, true, categoryType);
+      label = new Label(UUID.randomUUID(), balanceSheet, category.getName(), rootLabelId, true, categoryType,
+              null);
       labelRepo.save(label);
     }
     return Optional.of(label);

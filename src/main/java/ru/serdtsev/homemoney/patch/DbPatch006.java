@@ -40,9 +40,9 @@ public class DbPatch006 {
     BalanceSheet balanceSheet = category.getBalanceSheet();
     Label label = labelRepo.findByBalanceSheetAndName(balanceSheet, category.getName());
     if (isNull(label)) {
-      label = new Label(UUID.randomUUID(), balanceSheet, category.getName(), null, true, null);
-    } else if (!label.getIsCategory()) {
-      label.setIsCategory(true);
+      label = new Label(UUID.randomUUID(), balanceSheet, category.getName(), null, true, null, null);
+    } else if (!label.isCategory()) {
+      label.setCategory(true);
     }
     if (nonNull(category.getRoot()) && isNull(label.getRootId())) {
       Label rootLabel = getOrCreateRootLabel(category);
@@ -64,7 +64,7 @@ public class DbPatch006 {
       rootLabel = labelRepo.findByBalanceSheetAndName(balanceSheet, rootCategory.getName());
       if (isNull(rootLabel)) {
         val categoryType = CategoryType.valueOf(category.getType().name());
-        rootLabel = new Label(UUID.randomUUID(), balanceSheet, rootCategory.getName(), null, true, categoryType);
+        rootLabel = new Label(UUID.randomUUID(), balanceSheet, rootCategory.getName(), null, true, categoryType, null);
         labelRepo.save(rootLabel);
       }
     }
