@@ -1,396 +1,190 @@
-package ru.serdtsev.homemoney.moneyoper.model;
+package ru.serdtsev.homemoney.moneyoper.model
 
-import lombok.extern.slf4j.Slf4j;
-import org.apache.logging.log4j.util.Strings;
-import ru.serdtsev.homemoney.account.AccountRepository;
-import ru.serdtsev.homemoney.account.model.Account;
-import ru.serdtsev.homemoney.account.model.AccountType;
-import ru.serdtsev.homemoney.account.model.Balance;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.utils.Utils;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.persistence.*;
-import javax.validation.constraints.AssertTrue;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.util.*;
-
-import static java.util.Objects.nonNull;
-import static ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus.*;
-import static ru.serdtsev.homemoney.utils.Utils.assertNonNulls;
+import ru.serdtsev.homemoney.account.model.AccountType
+import ru.serdtsev.homemoney.account.model.Balance
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import java.io.Serializable
+import java.math.BigDecimal
+import java.sql.Timestamp
+import java.time.Instant
+import java.time.LocalDate
+import java.util.*
+import java.util.function.Consumer
+import javax.persistence.*
 
 @Entity
 @Table(name = "money_oper")
-@Slf4j
-public class MoneyOper implements Serializable {
-  @Id
-  private UUID id;
+class MoneyOper(
+        @Id val id: UUID,
+        @ManyToOne @JoinColumn(name = "balance_sheet_id") val balanceSheet: BalanceSheet,
+        @Enumerated(EnumType.STRING) var status: MoneyOperStatus?,
+        performed: LocalDate,
+        @Column(name = "date_num") var dateNum: Int?,
+        labels: Collection<Label>,
+        comment: String? = null,
+        @Enumerated(EnumType.STRING) var period: Period? = null
+) : Serializable {
+    @Column(name = "trn_date")
+    var performed: LocalDate = performed
+        set(value) {
+            field = value
+            items.forEach { it.performed = value }
+        }
 
-  @ManyToOne
-  @JoinColumn(name = "balance_sheet_id")
-  @Nonnull
-  private BalanceSheet balanceSheet;
+    @OneToMany(cascade = [CascadeType.ALL])
+    @JoinColumn(name = "oper_id")
+    val items: MutableList<MoneyOperItem> = mutableListOf()
 
-  @Enumerated(EnumType.STRING)
-  @Nonnull
-  private MoneyOperStatus status;
+    @ManyToMany
+    @JoinTable(name = "labels2objs",
+            joinColumns = [JoinColumn(name = "obj_id", foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT))],
+            inverseJoinColumns = [JoinColumn(name = "label_id")])
+    val labels: MutableSet<Label> = labels.toMutableSet()
 
-  @Column(name = "trn_date")
-  @Nonnull
-  private LocalDate performed;
-
-  @Column(name = "date_num")
-  private Integer dateNum;
-
-  @OneToMany(cascade = CascadeType.ALL)
-  @JoinColumn(name = "oper_id")
-  @Nonnull
-  private List<MoneyOperItem> items;
-
-  @ManyToMany
-  @JoinTable(name = "labels2objs",
-      joinColumns = @JoinColumn(name = "obj_id", foreignKey = @ForeignKey(value = ConstraintMode.NO_CONSTRAINT)),
-      inverseJoinColumns = @JoinColumn(name = "label_id"))
-  private Set<Label> labels;
-
-  private String comment;
-
-  @Enumerated(EnumType.STRING)
-  private Period period;
-
-  @Column(name = "created_ts")
-  @Nonnull
-  private Timestamp created;
-
-  @OneToOne
-  @JoinColumn(name = "parent_id")
-  private MoneyOper parentOper;
-
-  @Column(name = "from_acc_id")
-  private UUID fromAccId;
-
-  @Column(name = "to_acc_id")
-  private UUID toAccId;
-
-  @Column(name = "amount")
-  private BigDecimal amount;
-
-  @Column(name = "to_amount")
-  private BigDecimal toAmount;
-
-  /**
-   * Идентификатор повторяющейся операции. Служит для получения списка операций, которые были созданы по одному шаблону.
-   */
-  @Column(name = "recurrence_id")
-  private UUID recurrenceId;
-
-  public MoneyOper() {
-  }
-
-  public MoneyOper(UUID id, BalanceSheet balanceSheet, MoneyOperStatus status, LocalDate performed, Integer dateNum,
-      Collection<Label> labels, String comment, Period period) {
-    this.id = id;
-    this.balanceSheet = balanceSheet;
-    this.status = status;
-    this.performed = performed;
-    this.dateNum = dateNum;
-    this.items = new ArrayList<>();
-    this.labels = new HashSet<>(labels);
-    this.comment = comment;
-    this.period = period;
-    this.created = Timestamp.from(Instant.now());
-  }
-
-  public UUID getId() {
-    return id;
-  }
-
-  public BalanceSheet getBalanceSheet() {
-    return balanceSheet;
-  }
-
-  private void setStatus(MoneyOperStatus status) {
-    this.status = status;
-  }
-
-  public MoneyOperStatus getStatus() {
-    return status;
-  }
-
-  public LocalDate getPerformed() {
-    return performed;
-  }
-
-  public void setPerformed(LocalDate performed) {
-    this.performed = performed;
-    items.forEach(item -> item.setPerformed(performed));
-  }
-
-  public List<MoneyOperItem> getItems() {
-    return items;
-  }
-
-  public void setItems(List<MoneyOperItem> items) {
-    this.items = items;
-  }
-
-  public Period getPeriod() {
-    return period;
-  }
-
-  public void setPeriod(Period period) {
-    this.period = period;
-  }
-
-  public String getComment() {
-    return Utils.nvl(comment, Strings.EMPTY);
-  }
-
-  public void setComment(String comment) {
-    this.comment = comment;
-  }
-
-  public Collection<Label> getLabels() {
-    return Collections.unmodifiableSet(labels);
-  }
-
-  public void setLabels(Collection<Label> labels) {
-    this.labels.retainAll(labels);
-    this.labels.addAll(labels);
-  }
-
-  public Integer getDateNum() {
-    return dateNum;
-  }
-
-  public void setDateNum(Integer dateNum) {
-    this.dateNum = dateNum;
-  }
-
-  public void setParentOper(MoneyOper parentOper) {
-    this.parentOper = parentOper;
-  }
-
-  public MoneyOper getParentOper() {
-    return parentOper;
-  }
-
-  public UUID getParentOperId() {
-    return parentOper != null ? parentOper.getId() : null;
-  }
-
-  public Timestamp getCreated() {
-    return created;
-  }
-
-  public void setFromAccId(UUID fromAccId) {
-    this.fromAccId = fromAccId;
-  }
-
-  @Deprecated
-  public UUID getFromAccId() {
-    return fromAccId;
-  }
-
-  public void setToAccId(UUID toAccId) {
-    this.toAccId = toAccId;
-  }
-
-  @Deprecated
-  public UUID getToAccId() {
-    return toAccId;
-  }
-
-  public void setAmount(BigDecimal amount) {
-    this.amount = amount;
-  }
-
-  @Deprecated
-  public BigDecimal getAmount() {
-    return items.stream()
-        .map(MoneyOperItem::getValue)
-        .filter(value -> value.signum() < 0)
-        .map(BigDecimal::abs)
-        .findFirst()
-        .orElse(amount);
-  }
-
-  @Deprecated
-  public String getCurrencyCode() {
-    return items.stream()
-        .sorted(Comparator.comparingInt(item -> item.getValue().signum()))
-        .map(item -> item.getBalance().getCurrencyCode())
-        .findFirst()
-        .orElse(getBalanceSheet().getCurrencyCode());
-  }
-
-  public void setToAmount(BigDecimal toAmount) {
-    this.toAmount = toAmount;
-  }
-
-  @Deprecated
-  public BigDecimal getToAmount() {
-    return items.stream()
-        .map(MoneyOperItem::getValue)
-        .filter(value -> value.signum() > 0)
-        .map(BigDecimal::abs)
-        .findFirst()
-        .orElse(toAmount);
-  }
-
-  @Deprecated
-  public String getToCurrencyCode() {
-    return items.stream()
-        .sorted(Comparator.comparingInt(item -> item.getValue().signum() * -1))
-        .map(item -> item.getBalance().getCurrencyCode())
-        .findFirst()
-        .orElse(getBalanceSheet().getCurrencyCode());
-  }
-
-  public UUID getRecurrenceId() {
-    return recurrenceId;
-  }
-
-  public void setRecurrenceId(UUID recurrenceId) {
-    this.recurrenceId = recurrenceId;
-  }
-
-  public MoneyOperType getType() {
-    boolean hasReserve = items.stream().anyMatch(it -> it.getBalance().getType() == AccountType.reserve);
-    if (!hasReserve) {
-      Optional<Integer> valueSignedSumOpt = items.stream()
-              .map(item -> item.getValue().signum())
-              .reduce((a, s) -> a += s);
-      int valueSignedSum = valueSignedSumOpt.orElseThrow(() ->
-              new IllegalStateException("items is empty: " + id));
-      if (valueSignedSum > 0) {
-        return MoneyOperType.income;
-      } else if (valueSignedSum < 0) {
-        return MoneyOperType.expense;
-      }
+    fun setLabels(labels: Collection<Label>) {
+        this.labels.retainAll(labels)
+        this.labels.addAll(labels)
     }
-    return MoneyOperType.transfer;
-  }
 
-  @Deprecated
-  public MoneyOperType getType(AccountRepository accountRepo) {
-    Account fromAcc = accountRepo.findById(fromAccId).get();
-    Account toAcc = accountRepo.findById(toAccId).get();
-    if (fromAcc.getType().equals(AccountType.income)) {
-      return MoneyOperType.income;
+    @Column(name = "created_ts")
+    var created: Timestamp = Timestamp.from(Instant.now())
+        private set
+
+    @OneToOne
+    @JoinColumn(name = "parent_id")
+    var parentOper: MoneyOper? = null
+
+    @Deprecated("")
+    @Column(name = "from_acc_id")
+    lateinit var fromAccId: UUID
+
+    @Deprecated("")
+    @Column(name = "to_acc_id")
+    lateinit var toAccId: UUID
+
+    /**
+     * Идентификатор повторяющейся операции. Служит для получения списка операций, которые были созданы по одному шаблону.
+     */
+    @Column(name = "recurrence_id")
+    var recurrenceId: UUID? = null
+
+    var comment: String? = comment
+        get() = field.orEmpty()
+
+    val parentOperId: UUID?
+        get() = parentOper?.let { parentOper!!.id }
+
+    @Deprecated("")
+    fun getAmount(): BigDecimal = items.first().value.abs()
+
+    @Deprecated("")
+    val currencyCode: String?
+        get() = items.stream()
+                .sorted(Comparator.comparingInt { item: MoneyOperItem -> item.value.signum() })
+                .map { item: MoneyOperItem -> item.balance.currencyCode }
+                .findFirst()
+                .orElse(balanceSheet.currencyCode)
+
+    @Deprecated("")
+    fun getToAmount(): BigDecimal = items.first().value.abs()
+
+    @Deprecated("")
+    val toCurrencyCode: String?
+        get() = items.stream()
+                .sorted(Comparator.comparingInt { item: MoneyOperItem -> item.value.signum() * -1 })
+                .map { item: MoneyOperItem -> item.balance.currencyCode }
+                .findFirst()
+                .orElse(balanceSheet.currencyCode)
+
+    val type: MoneyOperType
+        get() {
+            val hasReserve = items.any { it.balance.type == AccountType.reserve }
+            if (!hasReserve) {
+                val valueSignedSum = items.map { it.value.signum() }.sum()
+                if (valueSignedSum > 0) {
+                    return MoneyOperType.income
+                } else if (valueSignedSum < 0) {
+                    return MoneyOperType.expense
+                }
+            }
+            return MoneyOperType.transfer
+        }
+
+    val isForeignCurrencyTransaction: Boolean
+        get() = items.any { it.balance.currencyCode != balanceSheet.currencyCode }
+
+    val valueInNationalCurrency: BigDecimal
+        get() = items
+                .filter { it.balance.currencyCode == balanceSheet.currencyCode }
+                .map(MoneyOperItem::value)
+                .reduce { obj: BigDecimal, augend: BigDecimal? -> obj.add(augend) }
+                ?: BigDecimal.ZERO
+
+    fun complete() {
+        assert(status == MoneyOperStatus.pending || status == MoneyOperStatus.cancelled) { status!! }
+        assert(!performed.isAfter(LocalDate.now()))
+        changeBalances(false)
+        status = MoneyOperStatus.done
     }
-    if (toAcc.getType().equals(AccountType.expense)) {
-      return MoneyOperType.expense;
+
+    fun cancel() {
+        assert(status == MoneyOperStatus.done || status == MoneyOperStatus.pending || status == MoneyOperStatus.template)
+        if (status == MoneyOperStatus.done) {
+            changeBalances(true)
+        }
+        status = MoneyOperStatus.cancelled
     }
-    return MoneyOperType.transfer;
-  }
 
-  public boolean isForeignCurrencyTransaction() {
-    return items.stream().anyMatch(it -> !it.getBalance().getCurrencyCode().equals(balanceSheet.getCurrencyCode()));
-  }
-
-  public BigDecimal getValueInNationalCurrency() {
-    return items.stream()
-            .filter(it -> it.getBalance().getCurrencyCode().equals(balanceSheet.getCurrencyCode()))
-            .map(MoneyOperItem::getValue)
-            .reduce(BigDecimal::add)
-            .orElse(BigDecimal.ZERO);
-  }
-
-  public void complete() {
-    assert getStatus() == pending || getStatus() == cancelled : getStatus();
-    assert !performed.isAfter(LocalDate.now());
-    changeBalances(false);
-    setStatus(done);
-  }
-
-  public void cancel() {
-    assert getStatus() == done || getStatus() == pending || getStatus() == template;
-    if (getStatus() == done) {
-      changeBalances(true);
+    fun addItems(items: Collection<MoneyOperItem>) {
+        items.forEach(Consumer { item: MoneyOperItem -> addItem(item.balance, item.value) })
     }
-    setStatus(cancelled);
-  }
 
-  public void addItems(Collection<MoneyOperItem> items) {
-    items.forEach(item -> addItem(item.getBalance(), item.getValue()));
-  }
-
-  public MoneyOperItem addItem(Balance balance, BigDecimal value) {
-    return addItem(balance, value, LocalDate.now());
-  }
-
-  public MoneyOperItem addItem(Balance balance, BigDecimal value, @Nullable LocalDate performed) {
-    assertNonNulls(balance, value);
-    assert value.compareTo(BigDecimal.ZERO) != 0 : this.toString();
-    MoneyOperItem item = new MoneyOperItem(UUID.randomUUID(), this, balance, value, performed, items.size());
-    items.add(item);
-    if (value.signum() ==  -1) {
-      fromAccId = balance.getId();
-      amount = value.abs();
-    } else if (value.signum() ==  1) {
-      toAccId = balance.getId();
-      toAmount = value;
+    @JvmOverloads
+    fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate = LocalDate.now()): MoneyOperItem {
+        assert(value.compareTo(BigDecimal.ZERO) != 0) { this.toString() }
+        val item = MoneyOperItem(UUID.randomUUID(), this, balance, value, performed, items.size)
+        items.add(item)
+        if (value.signum() == -1) {
+            fromAccId = balance.id
+        } else if (value.signum() == 1) {
+            toAccId = balance.id
+        }
+        return item
     }
-    return item;
-  }
 
-  public void changeBalances(boolean revert) {
-    BigDecimal factor = revert ? BigDecimal.ONE.negate() : BigDecimal.ONE;
-    items.forEach(item -> item.getBalance().changeValue(item.getValue().multiply(factor), this));
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    MoneyOper moneyOper = (MoneyOper) o;
-    return Objects.equals(id, moneyOper.id);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(id);
-  }
-
-  public boolean essentialEquals(MoneyOper other) {
-    assert this.equals(other);
-    return itemsEssentialEquals(other);
-  }
-
-  boolean itemsEssentialEquals(MoneyOper other) {
-    return items.stream().allMatch(item ->
-        other.getItems().stream().anyMatch(i -> i.equals(item)));
-  }
-
-  @Override
-  public String toString() {
-    return "MoneyOper{" +
-        "id=" + id +
-        ", balanceSheet=" + balanceSheet +
-        ", status=" + status +
-        ", performed=" + performed +
-        ", items=" + items +
-        ", created=" + created +
-        '}';
-  }
-
-  @AssertTrue(message = "Fields amount and toAmount is wrong.")
-  public boolean isAmountsValid() {
-    if (Objects.equals(getCurrencyCode(), getToCurrencyCode())) {
-      return amount.compareTo(toAmount) == 0;
-    } else {
-      return amount.compareTo(toAmount) != 0;
+    fun changeBalances(revert: Boolean) {
+        val factor = if (revert) BigDecimal.ONE.negate() else BigDecimal.ONE
+        items.forEach(Consumer { item: MoneyOperItem -> item.balance.changeValue(item.value.multiply(factor), this) })
     }
-  }
 
-  @AssertTrue(message = "Field recurrenceId of template is null.")
-  public boolean isRecurrenceIdNotNullForTemplate() {
-    return status != MoneyOperStatus.template || nonNull(recurrenceId);
-  }
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        val moneyOper = other as MoneyOper
+        return id == moneyOper.id
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(id)
+    }
+
+    fun essentialEquals(other: MoneyOper): Boolean {
+        assert(this == other)
+        return itemsEssentialEquals(other)
+    }
+
+    fun itemsEssentialEquals(other: MoneyOper): Boolean {
+        return items.all { item: MoneyOperItem -> other.items.any { i: MoneyOperItem -> i == item } }
+    }
+
+    override fun toString(): String {
+        return "MoneyOper{" +
+                "id=" + id +
+                ", balanceSheet=" + balanceSheet +
+                ", status=" + status +
+                ", performed=" + performed +
+                ", items=" + items +
+                ", created=" + created +
+                '}'
+    }
 }

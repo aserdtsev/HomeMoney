@@ -119,9 +119,7 @@ public class MoneyOperService {
         recurrenceOper.getNextDate(), 0, template.getLabels(), template.getComment(), template.getPeriod());
     oper.addItems(template.getItems());
     oper.setFromAccId(template.getFromAccId());
-    oper.setAmount(template.getAmount());
     oper.setToAccId(template.getToAccId());
-    oper.setToAmount(template.getToAmount());
     oper.setRecurrenceId(template.getRecurrenceId());
     return oper;
   }
@@ -181,9 +179,6 @@ public class MoneyOperService {
       oper.addItem((Balance) toAcc, toAmount, performed);
     }
 
-    oper.setAmount(amount);
-    oper.setToAmount(toAmount);
-
     if (parentId != null) {
       MoneyOper parentOper =  moneyOperRepo.findById(parentId).get();
       assert parentOper != null;
@@ -216,7 +211,6 @@ public class MoneyOperService {
     oper.getItems().stream()
         .filter(item -> item.getValue().signum() < 0)
         .forEach(item -> item.setValue(amount.negate()));
-    oper.setAmount(amount);
   }
 
   void updateToAmount(MoneyOper oper, BigDecimal amount) {
@@ -224,7 +218,6 @@ public class MoneyOperService {
     oper.getItems().stream()
         .filter(item -> item.getValue().signum() > 0)
         .forEach(item -> item.setValue(amount));
-    oper.setToAmount(amount);
   }
 
   void updateFromAccount(MoneyOper oper, UUID accId) {
@@ -294,18 +287,18 @@ public class MoneyOperService {
   }
 
   public MoneyOperDto moneyOperToDto(MoneyOper moneyOper) {
-    MoneyOperDto moneyOperDto = new MoneyOperDto(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(), moneyOper.getFromAccId(),
-        moneyOper.getToAccId(), moneyOper.getAmount().abs(), moneyOper.getCurrencyCode(),
-        moneyOper.getToAmount(), moneyOper.getToCurrencyCode(), moneyOper.getPeriod(), moneyOper.getComment(),
-        getStringsByLabels(moneyOper.getLabels()), moneyOper.getDateNum(), moneyOper.getParentOperId(),
-        moneyOper.getRecurrenceId(), moneyOper.getCreated());
+    MoneyOperDto moneyOperDto = new MoneyOperDto(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(),
+            moneyOper.getFromAccId(), moneyOper.getToAccId(), moneyOper.getAmount().abs(), moneyOper.getCurrencyCode(),
+            moneyOper.getToAmount(), moneyOper.getToCurrencyCode(), moneyOper.getPeriod(), moneyOper.getComment(),
+            getStringsByLabels(moneyOper.getLabels()), moneyOper.getDateNum(), moneyOper.getParentOperId(),
+            moneyOper.getRecurrenceId(), moneyOper.getCreated());
     moneyOperDto.setFromAccName(getAccountName(moneyOper.getFromAccId()));
     moneyOperDto.setToAccName(getAccountName(moneyOper.getToAccId()));
     moneyOperDto.setType(moneyOper.getType().name());
     val items = moneyOper.getItems().stream()
-        .map(item -> conversionService.convert(item, MoneyOperItemDto.class))
-        .sorted(Comparator.comparing(MoneyOperItemDto::getValue))
-        .collect(Collectors.toList());
+            .map(item -> conversionService.convert(item, MoneyOperItemDto.class))
+            .sorted(Comparator.comparing(MoneyOperItemDto::getValue))
+            .collect(Collectors.toList());
     moneyOperDto.setItems(items);
     return moneyOperDto;
   }

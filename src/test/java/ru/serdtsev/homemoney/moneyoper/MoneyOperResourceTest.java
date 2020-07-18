@@ -88,7 +88,7 @@ class MoneyOperResourceTest {
     assertEquals(MoneyOperStatus.done, oper.getStatus());
     assertEquals(comment, oper.getComment());
     assertEquals(labels, oper.getLabels());
-    assertEquals(0, oper.getDateNum().intValue());
+    assertEquals(0, oper.getDateNum());
   }
 
   @Test

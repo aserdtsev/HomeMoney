@@ -18,7 +18,7 @@ import java.util.concurrent.CompletableFuture
 
 @Component
 @Transactional(readOnly = true)
-open class StatData(
+class StatData(
         private val moneyOperItemRepo: MoneyOperItemRepo,
         private val recurrenceOperRepo: RecurrenceOperRepo) {
     private val log = KotlinLogging.logger {  }

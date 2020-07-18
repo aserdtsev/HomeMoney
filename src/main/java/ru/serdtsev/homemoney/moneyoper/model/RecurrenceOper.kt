@@ -1,136 +1,58 @@
-package ru.serdtsev.homemoney.moneyoper.model;
+package ru.serdtsev.homemoney.moneyoper.model
 
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-
-import javax.persistence.*;
-import java.time.LocalDate;
-import java.util.Objects;
-import java.util.UUID;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import java.time.LocalDate
+import java.util.*
+import javax.persistence.*
 
 @Entity
 @Table(name = "recurrence_oper")
-public class RecurrenceOper {
-  @Id
-  private UUID id;
+class RecurrenceOper(
+        @Id val id: UUID,
+        @ManyToOne @JoinColumn(name = "bs_id") val balanceSheet: BalanceSheet,
+        @OneToOne @JoinColumn(name = "template_id") val template: MoneyOper,
+        @Column(name = "next_date") var nextDate: LocalDate
+) {
+    @Column(name = "is_arc")
+    var arc: Boolean = false
+        private set
 
-  @ManyToOne
-  @JoinColumn(name = "bs_id")
-  private BalanceSheet balanceSheet;
-
-  @OneToOne
-  @JoinColumn(name = "template_id")
-  private MoneyOper template;
-
-  @Column(name = "next_date")
-  private LocalDate nextDate;
-
-  @Column(name = "is_arc")
-  private Boolean isArc;
-
-  private RecurrenceOper() {
-  }
-
-  public RecurrenceOper(UUID id, BalanceSheet balanceSheet, MoneyOper template, LocalDate nextDate) {
-    this.id = id;
-    this.balanceSheet = balanceSheet;
-    this.template = template;
-    this.nextDate = nextDate;
-    this.isArc = false;
-  }
-
-  public UUID getId() {
-    return id;
-  }
-
-  public void setId(UUID id) {
-    this.id = id;
-  }
-
-  public BalanceSheet getBalanceSheet() {
-    return balanceSheet;
-  }
-
-  public void setBalanceSheet(BalanceSheet balanceSheet) {
-    this.balanceSheet = balanceSheet;
-  }
-
-  public MoneyOper getTemplate() {
-    return template;
-  }
-
-  public void setTemplate(MoneyOper template) {
-    this.template = template;
-  }
-
-  public LocalDate getNextDate() {
-    return nextDate;
-  }
-
-  public void setNextDate(LocalDate nextDate) {
-    this.nextDate = nextDate;
-  }
-
-  public LocalDate skipNextDate() {
-    nextDate = calcNextDate(nextDate);
-    return nextDate;
-  }
-
-  public LocalDate calcNextDate(LocalDate date) {
-    LocalDate dateAsLocalDate = date;
-    LocalDate nextDate;
-    switch (template.getPeriod()) {
-      case month:
-        nextDate = dateAsLocalDate.plusMonths(1);
-        break;
-      case quarter:
-        nextDate = dateAsLocalDate.plusMonths(3);
-        break;
-      case year:
-        nextDate =  dateAsLocalDate.plusYears(1);
-        break;
-      default:
-        nextDate = date;
+    fun skipNextDate(): LocalDate {
+        nextDate = calcNextDate(nextDate)
+        return nextDate
     }
-    return nextDate;
-  }
 
-  public Boolean getArc() {
-    return isArc;
-  }
+    fun calcNextDate(date: LocalDate): LocalDate = when (template.period) {
+        Period.month -> date.plusMonths(1)
+        Period.quarter -> date.plusMonths(3)
+        Period.year -> date.plusYears(1)
+        else -> date
+    }
 
-  private void setArc(Boolean arc) {
-    isArc = arc;
-  }
+    /**
+     * Переводит повторяющуюся операцию в архив.
+     */
+    fun arc() {
+        template.cancel()
+        arc = true
+    }
 
-  /**
-   * Переводит повторяющуюся операцию в архив.
-   */
-  public void arc() {
-    template.cancel();
-    setArc(true);
-  }
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is RecurrenceOper) return false
+        return balanceSheet == other.balanceSheet && template == other.template
+    }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof RecurrenceOper)) return false;
-    RecurrenceOper that = (RecurrenceOper) o;
-    return Objects.equals(balanceSheet, that.balanceSheet) &&
-        Objects.equals(template, that.template);
-  }
+    override fun hashCode(): Int {
+        return Objects.hash(balanceSheet, template)
+    }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(balanceSheet, template);
-  }
-
-  @Override
-  public String toString() {
-    return "RecurrenceOper{" +
-        "id=" + id +
-        ", balanceSheet=" + balanceSheet +
-        ", template=" + template +
-        ", nextDate=" + nextDate +
-        '}';
-  }
+    override fun toString(): String {
+        return "RecurrenceOper{" +
+                "id=" + id +
+                ", balanceSheet=" + balanceSheet +
+                ", template=" + template +
+                ", nextDate=" + nextDate +
+                '}'
+    }
 }
