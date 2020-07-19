@@ -314,6 +314,7 @@ public class MoneyOperResource {
       MoneyOper oper = moneyOperRepo.findById(moneyOperDto.getId()).get();
       List<MoneyOper> opers = moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(oper.getBalanceSheet(),
           MoneyOperStatus.done, oper.getPerformed())
+          .stream()
           .sorted(Comparator.comparing(MoneyOper::getDateNum))
           .collect(Collectors.toList());
       int index = opers.indexOf(oper);
@@ -458,6 +459,7 @@ public class MoneyOperResource {
   public HmResponse labels(
       @PathVariable UUID bsId) {
     List<String> labels = moneyOperService.getLabels(bsId)
+        .stream()
         .map(Label::getName)
         .collect(Collectors.toList());
     return getOk(labels);

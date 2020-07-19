@@ -55,7 +55,7 @@ class MoneyOperServiceTest {
     List<Label> labelsA = asList(car, food, clothes);
     List<Label> labelsB = asList(food, clothes);
     List<Label> labelsC = asList(clothes);
-    Stream<MoneyOper> opers = Stream.of(newMoneyOperWithLabels(labelsA), newMoneyOperWithLabels(labelsB), newMoneyOperWithLabels(labelsC));
+    List<MoneyOper> opers = asList(newMoneyOperWithLabels(labelsA), newMoneyOperWithLabels(labelsB), newMoneyOperWithLabels(labelsC));
     when(moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(any(), any(), any()))
         .thenReturn(opers);
     Account account = new Account(balanceSheet, AccountType.debit, "Some account name", java.sql.Date.valueOf(LocalDate.now()), false);

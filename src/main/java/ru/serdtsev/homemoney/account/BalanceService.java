@@ -49,7 +49,7 @@ public class BalanceService {
 
   public void deleteOrArchiveBalance(UUID balanceId) {
     val balance = balanceRepo.findById(balanceId).get();
-    val operFound = moneyOperItemRepo.findByBalance(balance).limit(1).count() > 0;
+    val operFound = moneyOperItemRepo.findByBalance(balance).stream().limit(1).count() > 0;
     if (operFound) {
       balance.setArc(true);
       balanceRepo.save(balance);

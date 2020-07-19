@@ -83,6 +83,7 @@ public class MoneyOperService {
    */
   public Stream<RecurrenceOper> getRecurrenceOpers(BalanceSheet balanceSheet, String search) {
     return recurrenceOperRepo.findByBalanceSheet(balanceSheet)
+        .stream()
         .filter(recurrenceOper -> !recurrenceOper.getArc() && isOperMatchSearch(recurrenceOper, search));
   }
 
@@ -276,6 +277,7 @@ public class MoneyOperService {
     LocalDate startDate = LocalDate.now().minusDays(30);
     BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     return moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
+      .stream()
       .flatMap(oper -> oper.getLabels().stream())
       .filter(label -> !moneyOper.getLabels().contains(label))
       .collect(Collectors.groupingBy(label -> label, Collectors.counting()))
@@ -308,7 +310,7 @@ public class MoneyOperService {
     return account.getName();
   }
 
-  Stream<Label> getLabels(UUID bsId) {
+  List<Label> getLabels(UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     return labelRepo.findByBalanceSheetOrderByName(balanceSheet);
   }
