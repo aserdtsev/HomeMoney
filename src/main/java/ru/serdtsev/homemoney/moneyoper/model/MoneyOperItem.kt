@@ -16,7 +16,7 @@ import javax.persistence.*
 @NamedQuery(name = "MoneyOperItem.findByBalanceSheetAndValueOrderByPerformedDesc",
         query = "select m from MoneyOperItem m where balanceSheet = ?1 and abs(value) = ?2 order by performed desc")
 class MoneyOperItem(
-        @Id var id: UUID,
+        @Id val id: UUID,
         @ManyToOne @JoinColumn(name = "oper_id") @JsonIgnore val moneyOper: MoneyOper,
         @ManyToOne @JoinColumn(name = "balance_id") @JsonIgnore var balance: Balance,
         var value: BigDecimal,

@@ -43,7 +43,7 @@ class StatData(
                     itemTurnovers.add(turnover)
 
                     item.moneyOper.labels
-                            .firstOrNull { it.isCategory() }?.let {
+                            .firstOrNull { it.category!! }?.let {
                                 if (balance.type == AccountType.debit) {
                                     val accountType = if (item.value.signum() < 0) AccountType.expense else AccountType.income
                                     itemTurnovers.add(Turnover(item.performed, accountType, item.value.abs()))

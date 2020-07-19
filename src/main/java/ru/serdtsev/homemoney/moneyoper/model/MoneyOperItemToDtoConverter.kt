@@ -10,9 +10,13 @@ class MoneyOperItemToDtoConverter(private val appCtx: ApplicationContext) : Conv
     private var balanceRepo: BalanceRepository? = null
 
     override fun convert(item: MoneyOperItem): MoneyOperItemDto {
-        if (balanceRepo == null) balanceRepo = appCtx.getBean(BalanceRepository::class.java)
-        val balance = balanceRepo!!.findById(item.getBalanceId()).get()
+        val balance = getBalanceRepo().findById(item.getBalanceId()).get()
         return MoneyOperItemDto(item.id, item.getBalanceId(), balance.name, item.value,
                 item.performed, item.index)
+    }
+
+    private fun getBalanceRepo(): BalanceRepository {
+        if (balanceRepo == null) balanceRepo = appCtx.getBean(BalanceRepository::class.java)
+        return balanceRepo!!
     }
 }

@@ -17,7 +17,7 @@ import java.util.*
 @Service
 @Repository
 @Transactional(readOnly = true)
-open class StatService(
+class StatService(
         private val balanceSheetRepo: BalanceSheetRepository,
         private val labelRepository: LabelRepository,
         private val moneyOperItemRepo: MoneyOperItemRepo,
@@ -129,7 +129,7 @@ open class StatService(
                 .filter { item -> item.moneyOper.type == MoneyOperType.expense || item.balance.type == AccountType.reserve }
                 .map { item ->
                     val oper = item.moneyOper
-                    var category = oper.labels.firstOrNull { it.isCategory() }
+                    var category = oper.labels.firstOrNull { it.category!! }
                     val rootId = category?.rootId
                     if (rootId != null) {
                         category = labelRepository.findByIdOrNull(rootId)

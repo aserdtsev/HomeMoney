@@ -1,8 +1,5 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
-import com.fasterxml.jackson.annotation.JsonFormat
-import lombok.Data
-import lombok.NoArgsConstructor
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
@@ -26,7 +23,7 @@ class RecurrenceOperDto(
         val type: String
 ) {
     var status: Status? = null
-    var items: List<MoneyOperItemDto> = ArrayList()
+    var items: List<MoneyOperItemDto> = mutableListOf()
 
     enum class Status { active, deleted }
 }

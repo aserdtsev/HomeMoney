@@ -88,6 +88,7 @@ dependencies {
 
     testCompile 'org.springframework.boot:spring-boot-starter-test'
     testCompile 'com.nhaarman:mockito-kotlin:1.6.0'
+    testCompile 'org.mockito:mockito-all:1.10.19'
 }
 
 compileKotlin {

@@ -1,5 +1,3 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
-enum class CategoryType {
-    income, expense
-}
+enum class CategoryType { income, expense }

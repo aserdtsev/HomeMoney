@@ -8,33 +8,30 @@ import javax.persistence.*
 @Table(name = "labels")
 class Label(
         @Id
-        var id: UUID?,
+        val id: UUID,
 
         @ManyToOne
         @JoinColumn(name = "bs_id")
-        var balanceSheet: BalanceSheet?,
+        val balanceSheet: BalanceSheet,
 
-        var name: String?,
+        val name: String,
 
         @Column(name = "root_id")
-        var rootId: UUID? = null,
+        val rootId: UUID? = null,
 
-        @Column(name = "is_category")
-        var category: Boolean? = null,
+        category: Boolean? = null,
 
         @Column(name = "cat_type")
         @Enumerated(EnumType.STRING)
-        var categoryType: CategoryType? = null,
+        val categoryType: CategoryType? = null,
 
         @Column(name = "is_arc")
         val arc: Boolean? = null
 ) {
-    constructor(id: UUID?, balanceSheet: BalanceSheet?, name: String?) : this(id, balanceSheet, name, null,
+    @Column(name = "is_category")
+    val category: Boolean? = category
+        get() = field ?: false
+
+    constructor(id: UUID, balanceSheet: BalanceSheet, name: String) : this(id, balanceSheet, name, null,
             null,null, null)
-
-    fun isCategory() = category ?: false
-
-    fun setCategory(value: Boolean) {
-        category = value
-    }
 }

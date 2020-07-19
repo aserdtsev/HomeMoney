@@ -71,30 +71,29 @@ class MoneyOper(
     var comment: String? = comment
         get() = field.orEmpty()
 
-    val parentOperId: UUID?
-        get() = parentOper?.let { parentOper!!.id }
+    fun getParentOperId(): UUID? = parentOper?.id
 
     @Deprecated("")
     fun getAmount(): BigDecimal = items.first().value.abs()
 
     @Deprecated("")
     val currencyCode: String?
-        get() = items.stream()
-                .sorted(Comparator.comparingInt { item: MoneyOperItem -> item.value.signum() })
-                .map { item: MoneyOperItem -> item.balance.currencyCode }
-                .findFirst()
-                .orElse(balanceSheet.currencyCode)
+        get() = items
+                .sortedBy { it.value.signum() }
+                .map { it.balance.currencyCode }
+                .firstOrNull()
+                ?: balanceSheet.currencyCode
 
     @Deprecated("")
     fun getToAmount(): BigDecimal = items.first().value.abs()
 
     @Deprecated("")
     val toCurrencyCode: String?
-        get() = items.stream()
-                .sorted(Comparator.comparingInt { item: MoneyOperItem -> item.value.signum() * -1 })
-                .map { item: MoneyOperItem -> item.balance.currencyCode }
-                .findFirst()
-                .orElse(balanceSheet.currencyCode)
+        get() = items
+                .sortedBy { it.value.signum() * -1 }
+                .map { it.balance.currencyCode }
+                .firstOrNull()
+                ?: balanceSheet.currencyCode
 
     val type: MoneyOperType
         get() {
@@ -116,8 +115,8 @@ class MoneyOper(
     val valueInNationalCurrency: BigDecimal
         get() = items
                 .filter { it.balance.currencyCode == balanceSheet.currencyCode }
-                .map(MoneyOperItem::value)
-                .reduce { obj: BigDecimal, augend: BigDecimal? -> obj.add(augend) }
+                .map { it.value }
+                .reduce { acc, value -> acc.add(value) }
                 ?: BigDecimal.ZERO
 
     fun complete() {
@@ -136,7 +135,7 @@ class MoneyOper(
     }
 
     fun addItems(items: Collection<MoneyOperItem>) {
-        items.forEach(Consumer { item: MoneyOperItem -> addItem(item.balance, item.value) })
+        items.forEach { addItem(it.balance, it.value) }
     }
 
     @JvmOverloads

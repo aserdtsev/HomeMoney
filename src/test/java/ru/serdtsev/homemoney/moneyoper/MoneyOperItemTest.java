@@ -37,27 +37,6 @@ class MoneyOperItemTest {
 
   @Test
   @Disabled
-  void hashCodeAndEquals() {
-    MoneyOperItem origItem = oper.addItem(cash, BigDecimal.ONE.negate());
-    MoneyOperItem item = SerializationUtils.clone(origItem);
-    assertEquals(origItem.hashCode(), item.hashCode());
-    assertTrue(item.equals(origItem));
-
-    item.setId(UUID.randomUUID());
-    assertNotEquals(origItem.hashCode(), item.hashCode());
-    assertFalse(item.equals(origItem));
-
-    item = SerializationUtils.clone(origItem);
-    item.setBalance(checkingAccount);
-    item.setPerformed(LocalDate.now().minusDays(1L));
-    item.setValue(item.getValue().add(BigDecimal.ONE));
-    item.setIndex(item.getIndex() + 1);
-    assertEquals(origItem.hashCode(), item.hashCode());
-    assertTrue(item.equals(origItem));
-  }
-
-  @Test
-  @Disabled
   void essentialEquals() {
     MoneyOperItem origItem = oper.addItem(cash, BigDecimal.ONE.negate());
     MoneyOperItem item = SerializationUtils.clone(origItem);

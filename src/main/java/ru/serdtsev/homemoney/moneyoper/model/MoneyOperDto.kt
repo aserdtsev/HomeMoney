@@ -41,6 +41,7 @@ data class MoneyOperDto(
             throw HmException(HmException.Code.WrongAmount)
         }
     }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

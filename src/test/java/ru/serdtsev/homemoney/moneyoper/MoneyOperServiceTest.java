@@ -1,10 +1,12 @@
 package ru.serdtsev.homemoney.moneyoper;
 
+import kotlin.jvm.JvmOverloads;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.core.convert.ConversionService;
 import ru.serdtsev.homemoney.account.AccountRepository;
 import ru.serdtsev.homemoney.account.model.Account;
@@ -81,7 +83,7 @@ class MoneyOperServiceTest {
   }
 
   private Label newLabel(String name) {
-    return new Label(null, null, name);
+    return new Label(UUID.randomUUID(), Mockito.mock(BalanceSheet.class), name);
   }
 
 }
