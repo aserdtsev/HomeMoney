@@ -89,6 +89,7 @@ public class MoneyOperResource {
 
         LocalDate beforeDate = LocalDate.now().plusDays(30);
         List<MoneyOperDto> recurrenceOpers = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, beforeDate)
+            .stream()
             .map((MoneyOper moneyOper) -> moneyOperService.moneyOperToDto(moneyOper))
             .collect(Collectors.toList());
         opers.addAll(recurrenceOpers);

@@ -45,6 +45,7 @@ public class RecurrenceOperResource {
     try {
       BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
       List<RecurrenceOperDto> list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
+          .stream()
           .sorted(Comparator.comparing(RecurrenceOper::getNextDate))
           .map(this::recurrenceOperToDto)
           .collect(Collectors.toList());

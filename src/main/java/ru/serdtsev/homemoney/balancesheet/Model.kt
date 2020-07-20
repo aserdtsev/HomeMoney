@@ -17,9 +17,9 @@ import javax.persistence.*
 @Table(name = "balance_sheets")
 data class BalanceSheet(
         @Id
-        var id: UUID? = null,
+        val id: UUID,
 
-        var created: Instant? = null,
+        val created: Instant,
 
         @Column(name = "currency_code")
         var currencyCode: String? = null,

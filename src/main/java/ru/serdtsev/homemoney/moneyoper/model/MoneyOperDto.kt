@@ -19,7 +19,7 @@ data class MoneyOperDto(
         val toCurrencyCode: String?,
         val period: Period?,
         val comment: String?,
-        val labels: List<String>?,
+        val labels: List<String>,
         val dateNum: Int?,
         val parentId: UUID?,
         val recurrenceId: UUID?,

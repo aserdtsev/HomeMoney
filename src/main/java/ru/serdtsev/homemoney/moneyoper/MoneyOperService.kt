@@ -1,317 +1,258 @@
-package ru.serdtsev.homemoney.moneyoper;
+package ru.serdtsev.homemoney.moneyoper
 
-import lombok.val;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.convert.ConversionService;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import ru.serdtsev.homemoney.account.AccountRepository;
-import ru.serdtsev.homemoney.account.model.Account;
-import ru.serdtsev.homemoney.account.model.Balance;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.moneyoper.model.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.lang.String.format;
-import static java.util.Objects.requireNonNull;
-import static org.springframework.util.Assert.isTrue;
+import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.core.convert.ConversionService
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.stereotype.Service
+import ru.serdtsev.homemoney.account.AccountRepository
+import ru.serdtsev.homemoney.account.model.Balance
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.moneyoper.model.*
+import java.math.BigDecimal
+import java.time.LocalDate
+import java.util.*
+import java.util.stream.Collectors
 
 /**
  * Предоставляет методы работы с денежными операциями
  */
 @Service
-public class MoneyOperService {
-  private static final String SEARCH_DATE_REGEX = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}";
-  private static final String SEARCH_UUID_REGEX = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}";
-  private static final String SEARCH_MONEY_REGEX = "\\p{Digit}+\\.*\\p{Digit}*";
-  private final Logger log = LoggerFactory.getLogger(this.getClass());
-  private final ConversionService conversionService;
-  private final BalanceSheetRepository balanceSheetRepo;
-  private final MoneyOperRepo moneyOperRepo;
-  private final RecurrenceOperRepo recurrenceOperRepo;
-  private final AccountRepository accountRepo;
-  private final LabelRepository labelRepo;
-
-  @Autowired
-  public MoneyOperService(@Qualifier("conversionService") ConversionService conversionService,
-      BalanceSheetRepository balanceSheetRepo, MoneyOperRepo moneyOperRepo, RecurrenceOperRepo recurrenceOperRepo,
-      AccountRepository accountRepo, LabelRepository labelRepo) {
-    this.conversionService = conversionService;
-    this.balanceSheetRepo = balanceSheetRepo;
-    this.moneyOperRepo = moneyOperRepo;
-    this.recurrenceOperRepo = recurrenceOperRepo;
-    this.accountRepo = accountRepo;
-    this.labelRepo = labelRepo;
-  }
-
-  public Optional<MoneyOper> findMoneyOper(UUID id) {
-    return moneyOperRepo.findById(id);
-  }
-
-  public void save(MoneyOper moneyOper) {
-    moneyOperRepo.save(moneyOper);
-  }
-
-  public Optional<RecurrenceOper> findRecurrenceOper(UUID id) {
-    return recurrenceOperRepo.findById(id);
-  }
-
-  public void save(RecurrenceOper recurrenceOper) {
-    recurrenceOperRepo.save(recurrenceOper);
-  }
-
-  /**
-   * Возвращает следующие повторы операций.
-   */
-  Stream<MoneyOper> getNextRecurrenceOpers(BalanceSheet balanceSheet, String search, LocalDate beforeDate) {
-    return getRecurrenceOpers(balanceSheet, search)
-        .filter(recurrenceOper -> recurrenceOper.getNextDate().isBefore(beforeDate))
-        .map(recurrenceOper -> createMoneyOperByTemplate(balanceSheet, recurrenceOper));
-  }
-
-  /**
-   * Возвращает повторяющиеся операции.
-   */
-  public Stream<RecurrenceOper> getRecurrenceOpers(BalanceSheet balanceSheet, String search) {
-    return recurrenceOperRepo.findByBalanceSheet(balanceSheet)
-        .stream()
-        .filter(recurrenceOper -> !recurrenceOper.getArc() && isOperMatchSearch(recurrenceOper, search));
-  }
-
-  /**
-   * @return true, если шаблон операции соответствует строке поиска
-   */
-  private boolean isOperMatchSearch(RecurrenceOper recurrenceOper, String search) {
-    MoneyOper template = recurrenceOper.getTemplate();
-    if (StringUtils.isEmpty(search)) {
-      return true;
-    } else if (search.matches(SEARCH_DATE_REGEX)) {
-      // по дате в формате ISO
-      return recurrenceOper.getNextDate().isEqual(LocalDate.parse(search));
-    } else if (search.matches(SEARCH_UUID_REGEX)) {
-      // по идентификатору операции
-      return template.getId().equals(UUID.fromString(search));
-    } else if (search.matches(SEARCH_MONEY_REGEX)) {
-      // по сумме операции
-      return template.getItems()
-          .stream()
-          .anyMatch(change -> change.getValue().plus().compareTo(new BigDecimal(search)) == 0);
-    } else {
-      return template.getItems()
-          .stream()
-          .anyMatch(change -> change.getBalance().getName().toLowerCase().contains(search))
-          || template.getComment().toLowerCase().contains(search)
-          || template.getLabels().stream().anyMatch(label -> label.getName().toLowerCase().contains(search));
-    }
-  }
-
-  private MoneyOper createMoneyOperByTemplate(BalanceSheet balanceSheet, RecurrenceOper recurrenceOper) {
-    MoneyOper template = recurrenceOper.getTemplate();
-    MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, MoneyOperStatus.recurrence,
-        recurrenceOper.getNextDate(), 0, template.getLabels(), template.getComment(), template.getPeriod());
-    oper.addItems(template.getItems());
-    oper.setFromAccId(template.getFromAccId());
-    oper.setToAccId(template.getToAccId());
-    oper.setRecurrenceId(template.getRecurrenceId());
-    return oper;
-  }
-
-  public void createRecurrenceOper(BalanceSheet balanceSheet, UUID operId) {
-    MoneyOper sample = moneyOperRepo.findById(operId).get();
-    requireNonNull(sample);
-    checkMoneyOperBelongsBalanceSheet(sample, balanceSheet.getId());
-    MoneyOper template = newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.template, null, null,
-        sample.getLabels(), sample.getComment(), sample.getPeriod(), sample.getFromAccId(), sample.getToAccId(), sample.getAmount(),
-        sample.getToAmount(), null, null);
-    RecurrenceOper recurrenceOper = new RecurrenceOper(UUID.randomUUID(), balanceSheet, template, sample.getPerformed());
-    recurrenceOper.skipNextDate();
-    moneyOperRepo.save(template);
-    recurrenceOperRepo.save(recurrenceOper);
-
-    // todo поправить эту косоту
-    template.setRecurrenceId(recurrenceOper.getId());
-    moneyOperRepo.save(template);
-    sample.setRecurrenceId(recurrenceOper.getId());
-    moneyOperRepo.save(sample);
-  }
-
-  public void deleteRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
-    RecurrenceOper recurrenceOper = recurrenceOperRepo.findById(recurrenceId).get();
-    recurrenceOper.arc();
-    recurrenceOperRepo.save(recurrenceOper);
-    log.info("RecurrenceOper '{}' moved to archive.", recurrenceId);
-  }
-
-  public void skipRecurrenceOper(BalanceSheet balanceSheet, UUID recurrenceId) {
-    RecurrenceOper recurrenceOper = recurrenceOperRepo.findById(recurrenceId).get();
-    recurrenceOper.skipNextDate();
-    recurrenceOperRepo.save(recurrenceOper);
-  }
-
-  /**
-   * Создает экземпляр MoneyOper.
-   */
-  public MoneyOper newMoneyOper(BalanceSheet balanceSheet, UUID moneyOperId, MoneyOperStatus status, LocalDate performed,
-      Integer dateNum, Collection<Label> labels, String comment, Period period, UUID fromAccId, UUID toAccId, BigDecimal amount,
-      BigDecimal toAmount, UUID parentId, UUID recurrenceId) {
-    MoneyOper oper = new MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period);
-    oper.setRecurrenceId(recurrenceId);
-
-    oper.setFromAccId(fromAccId);
-    Account fromAcc = accountRepo.findById(fromAccId).get();
-    assert fromAcc != null;
-    if (fromAcc instanceof Balance) {
-      oper.addItem((Balance) fromAcc, amount.negate(), performed);
+class MoneyOperService @Autowired constructor(
+        @Qualifier("conversionService") private val conversionService: ConversionService,
+        private val balanceSheetRepo: BalanceSheetRepository,
+        private val moneyOperRepo: MoneyOperRepo,
+        private val recurrenceOperRepo: RecurrenceOperRepo,
+        private val accountRepo: AccountRepository,
+        private val labelRepo: LabelRepository
+) {
+    fun save(moneyOper: MoneyOper) {
+        moneyOperRepo.save(moneyOper)
     }
 
-    oper.setToAccId(toAccId);
-    Account toAcc = accountRepo.findById(toAccId).get();
-    assert toAcc != null;
-    if (toAcc instanceof  Balance) {
-      oper.addItem((Balance) toAcc, toAmount, performed);
+    fun findRecurrenceOper(id: UUID): Optional<RecurrenceOper> {
+        return recurrenceOperRepo.findById(id)
     }
 
-    if (parentId != null) {
-      MoneyOper parentOper =  moneyOperRepo.findById(parentId).get();
-      assert parentOper != null;
-      oper.setParentOper(parentOper);
+    fun save(recurrenceOper: RecurrenceOper) {
+        recurrenceOperRepo.save(recurrenceOper)
     }
 
-    return oper;
-  }
+    /**
+     * Возвращает следующие повторы операций.
+     */
+    fun getNextRecurrenceOpers(balanceSheet: BalanceSheet, search: String, beforeDate: LocalDate?): List<MoneyOper> {
+        return getRecurrenceOpers(balanceSheet, search)
+                .filter { it.nextDate.isBefore(beforeDate) }
+                .map { createMoneyOperByTemplate(balanceSheet, it) }
+    }
 
-  public void updateRecurrenceOper(BalanceSheet balanceSheet, RecurrenceOperDto recurrenceOperDto) {
-    RecurrenceOper recurrenceOper = recurrenceOperRepo.findById(recurrenceOperDto.getId()).get();
-    recurrenceOper.setNextDate(recurrenceOperDto.getNextDate());
-    MoneyOper template = recurrenceOper.getTemplate();
+    /**
+     * Возвращает повторяющиеся операции.
+     */
+    fun getRecurrenceOpers(balanceSheet: BalanceSheet, search: String): List<RecurrenceOper> =
+            recurrenceOperRepo.findByBalanceSheet(balanceSheet).filter { !it.arc && isOperMatchSearch(it, search) }
 
-    updateFromAccount(template, recurrenceOperDto.getFromAccId());
-    updateToAccount(template, recurrenceOperDto.getToAccId());
-    updateAmount(template, recurrenceOperDto.getAmount());
-    updateToAmount(template, recurrenceOperDto.getToAmount());
+    /**
+     * @return true, если шаблон операции соответствует строке поиска
+     */
+    private fun isOperMatchSearch(recurrenceOper: RecurrenceOper, search: String): Boolean {
+        val template = recurrenceOper.template
+        return when {
+            search.isBlank() -> true
+            search.matches(SearchDateRegex) -> {
+                // по дате в формате ISO
+                recurrenceOper.nextDate.isEqual(LocalDate.parse(search))
+            }
+            search.matches(SearchUuidRegex) -> {
+                // по идентификатору операции
+                template.id == UUID.fromString(search)
+            }
+            search.matches(SearchMoneyRegex) -> {
+                // по сумме операции
+                template.items.any { it.value.plus().compareTo(BigDecimal(search)) == 0 }
+            }
+            else -> {
+                (template.items.any { it.balance.name.toLowerCase().contains(search) }
+                        || template.labels.any { it.name.toLowerCase().contains(search) })
+                        || template.comment?.toLowerCase()?.contains(search) ?: false
+            }
+        }
+    }
 
-    template.setComment(recurrenceOperDto.getComment());
+    private fun createMoneyOperByTemplate(balanceSheet: BalanceSheet?, recurrenceOper: RecurrenceOper): MoneyOper {
+        val template = recurrenceOper.template
+        val oper = MoneyOper(UUID.randomUUID(), balanceSheet!!, MoneyOperStatus.recurrence,
+                recurrenceOper.nextDate, 0, template.labels, template.comment, template.period)
+        oper.addItems(template.items)
+        oper.fromAccId = template.fromAccId
+        oper.toAccId = template.toAccId
+        oper.recurrenceId = template.recurrenceId
+        return oper
+    }
 
-    Collection<Label> labels = getLabelsByStrings(balanceSheet, recurrenceOperDto.getLabels());
-    template.setLabels(labels);
+    fun createRecurrenceOper(balanceSheet: BalanceSheet, operId: UUID) {
+        val sample = moneyOperRepo.findByIdOrNull(operId)!!
+        checkMoneyOperBelongsBalanceSheet(sample, balanceSheet.id)
+        val template = newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.template, sample.performed, null,
+                sample.labels, sample.comment, sample.period, sample.fromAccId, sample.toAccId, sample.getAmount(),
+                sample.getToAmount(), null, null)
+        val recurrenceOper = RecurrenceOper(UUID.randomUUID(), balanceSheet, template, sample.performed)
+        recurrenceOper.skipNextDate()
+        moneyOperRepo.save(template)
+        recurrenceOperRepo.save(recurrenceOper)
 
-    recurrenceOperRepo.save(recurrenceOper);
-  }
+        // todo поправить эту косоту
+        template.recurrenceId = recurrenceOper.id
+        moneyOperRepo.save(template)
+        sample.recurrenceId = recurrenceOper.id
+        moneyOperRepo.save(sample)
+    }
 
-  void updateAmount(MoneyOper oper, BigDecimal amount) {
-    if (oper.getAmount().compareTo(amount) == 0) return;
-    oper.getItems().stream()
-        .filter(item -> item.getValue().signum() < 0)
-        .forEach(item -> item.setValue(amount.negate()));
-  }
+    fun deleteRecurrenceOper(balanceSheet: BalanceSheet, recurrenceId: UUID) {
+        val recurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceId)!!
+        recurrenceOper.arc()
+        recurrenceOperRepo.save(recurrenceOper)
+        log.info("RecurrenceOper '{}' moved to archive.", recurrenceId)
+    }
 
-  void updateToAmount(MoneyOper oper, BigDecimal amount) {
-    if (oper.getToAmount().compareTo(amount) == 0) return;
-    oper.getItems().stream()
-        .filter(item -> item.getValue().signum() > 0)
-        .forEach(item -> item.setValue(amount));
-  }
+    fun skipRecurrenceOper(balanceSheet: BalanceSheet, recurrenceId: UUID) {
+        val recurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceId)!!
+        recurrenceOper.skipNextDate()
+        recurrenceOperRepo.save(recurrenceOper)
+    }
 
-  void updateFromAccount(MoneyOper oper, UUID accId) {
-    if (oper.getFromAccId().equals(accId)) return;
-    replaceBalance(oper, oper.getFromAccId(), accId);
-    oper.setFromAccId(accId);
-  }
+    /**
+     * Создает экземпляр MoneyOper.
+     */
+    fun newMoneyOper(balanceSheet: BalanceSheet, moneyOperId: UUID, status: MoneyOperStatus, performed: LocalDate,
+            dateNum: Int?, labels: Collection<Label>, comment: String?, period: Period?, fromAccId: UUID, toAccId: UUID,
+            amount: BigDecimal, toAmount: BigDecimal, parentId: UUID?, recurrenceId: UUID?): MoneyOper {
+        val oper = MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period)
+        oper.recurrenceId = recurrenceId
+        oper.fromAccId = fromAccId
+        val fromAcc = accountRepo.findById(fromAccId).get()
+        if (fromAcc is Balance) {
+            oper.addItem(fromAcc, amount.negate(), performed)
+        }
+        oper.toAccId = toAccId
+        val toAcc = accountRepo.findById(toAccId).get()
+        if (toAcc is Balance) {
+            oper.addItem(toAcc, toAmount, performed)
+        }
+        if (parentId != null) {
+            val parentOper = moneyOperRepo.findById(parentId).get()
+            oper.parentOper = parentOper
+        }
+        return oper
+    }
 
-  private void replaceBalance(MoneyOper oper, UUID oldAccId, UUID newAccId) {
-    oper.getItems().stream()
-        .filter(item -> item.getBalance().getId().equals(oldAccId))
-        .forEach(item -> {
-          Balance balance = (Balance) accountRepo.findById(newAccId).get();
-          item.setBalance(balance);
-        });
-  }
+    fun updateRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOperDto: RecurrenceOperDto) {
+        val recurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceOperDto.id)!!
+        recurrenceOper.nextDate = recurrenceOperDto.nextDate
+        val template = recurrenceOper.template
+        updateFromAccount(template, recurrenceOperDto.fromAccId)
+        updateToAccount(template, recurrenceOperDto.toAccId)
+        updateAmount(template, recurrenceOperDto.amount)
+        updateToAmount(template, recurrenceOperDto.toAmount)
+        template.comment = recurrenceOperDto.comment
+        val labels: Collection<Label> = getLabelsByStrings(balanceSheet, recurrenceOperDto.labels)
+        template.setLabels(labels)
+        recurrenceOperRepo.save(recurrenceOper)
+    }
 
-  void updateToAccount(MoneyOper oper, UUID accId) {
-    if (oper.getToAccId().equals(accId)) return;
-    replaceBalance(oper, oper.getToAccId(), accId);
-    oper.setToAccId(accId);
-  }
+    fun updateAmount(oper: MoneyOper, amount: BigDecimal) {
+        if (oper.getAmount().compareTo(amount) == 0) return
+        oper.items
+                .filter { it.value.signum() < 0 }
+                .forEach { it.value = amount.negate() }
+    }
 
-  public void checkMoneyOperBelongsBalanceSheet(MoneyOper oper, UUID bsId) {
-    isTrue(Objects.equals(oper.getBalanceSheet().getId(), bsId),
-        format("MoneyOper id='%s' belongs the other balance sheet.", oper.getId()));
-  }
+    fun updateToAmount(oper: MoneyOper, amount: BigDecimal?) {
+        if (oper.getToAmount().compareTo(amount) == 0) return
+        oper.items
+                .filter { it.value.signum() > 0 }
+                .forEach { it.value = amount!! }
+    }
 
-  public List<Label> getLabelsByStrings(BalanceSheet balanceSheet, List<String> strLabels) {
-    return strLabels
-        .stream()
-        .map(name -> findOrCreateLabel(balanceSheet, name))
-        .collect(Collectors.toList());
-  }
+    fun updateFromAccount(oper: MoneyOper, accId: UUID) {
+        if (oper.fromAccId == accId) return
+        replaceBalance(oper, oper.fromAccId, accId)
+        oper.fromAccId = accId
+    }
 
-  Label findOrCreateLabel(BalanceSheet balanceSheet, String name) {
-    Label label = labelRepo.findByBalanceSheetAndName(balanceSheet, name);
-    return Optional.ofNullable(label)
-        .orElseGet(() -> createSimpleLabel(balanceSheet, name));
-  }
+    private fun replaceBalance(oper: MoneyOper, oldAccId: UUID, newAccId: UUID) {
+        oper.items
+                .filter { it.balance.id == oldAccId }
+                .forEach {
+                    val balance = accountRepo.findByIdOrNull(newAccId) as Balance
+                    it.balance = balance
+                }
+    }
 
-  private Label createSimpleLabel(BalanceSheet balanceSheet, String name) {
-    Label label = new Label(UUID.randomUUID(), balanceSheet, name, null, false, null, null);
-    labelRepo.save(label);
-    return label;
-  }
+    fun updateToAccount(oper: MoneyOper, accId: UUID) {
+        if (oper.toAccId == accId) return
+        replaceBalance(oper, oper.toAccId, accId)
+        oper.toAccId = accId
+    }
 
-  List<String> getStringsByLabels(Collection<Label> labels) {
-    return labels.stream()
-        .map(Label::getName)
-        .collect(Collectors.toList());
-  }
+    fun checkMoneyOperBelongsBalanceSheet(oper: MoneyOper, bsId: UUID) =
+            assert(oper.balanceSheet.id == bsId) { "MoneyOper id='${oper.id}' belongs the other balance sheet." }
 
-  List<Label> getSuggestLabels(UUID bsId, MoneyOperDto moneyOper) {
-    // Найдем 10 наиболее часто используемых меток-категорий за последние 30 дней.
-    LocalDate startDate = LocalDate.now().minusDays(30);
-    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
-    return moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
-      .stream()
-      .flatMap(oper -> oper.getLabels().stream())
-      .filter(label -> !moneyOper.getLabels().contains(label))
-      .collect(Collectors.groupingBy(label -> label, Collectors.counting()))
-      .entrySet()
-      .stream()
-      .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-      .map(Map.Entry::getKey)
-      .collect(Collectors.toList());
-  }
+    fun getLabelsByStrings(balanceSheet: BalanceSheet, strLabels: List<String>): List<Label> =
+            strLabels.map { findOrCreateLabel(balanceSheet, it) }
 
-  public MoneyOperDto moneyOperToDto(MoneyOper moneyOper) {
-    MoneyOperDto moneyOperDto = new MoneyOperDto(moneyOper.getId(), moneyOper.getStatus(), moneyOper.getPerformed(),
-            moneyOper.getFromAccId(), moneyOper.getToAccId(), moneyOper.getAmount().abs(), moneyOper.getCurrencyCode(),
-            moneyOper.getToAmount(), moneyOper.getToCurrencyCode(), moneyOper.getPeriod(), moneyOper.getComment(),
-            getStringsByLabels(moneyOper.getLabels()), moneyOper.getDateNum(), moneyOper.getParentOperId(),
-            moneyOper.getRecurrenceId(), moneyOper.getCreated());
-    moneyOperDto.setFromAccName(getAccountName(moneyOper.getFromAccId()));
-    moneyOperDto.setToAccName(getAccountName(moneyOper.getToAccId()));
-    moneyOperDto.setType(moneyOper.getType().name());
-    val items = moneyOper.getItems().stream()
-            .map(item -> conversionService.convert(item, MoneyOperItemDto.class))
-            .sorted(Comparator.comparing(MoneyOperItemDto::getValue))
-            .collect(Collectors.toList());
-    moneyOperDto.setItems(items);
-    return moneyOperDto;
-  }
+    fun findOrCreateLabel(balanceSheet: BalanceSheet, name: String): Label =
+            labelRepo.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleLabel(balanceSheet, name) }
 
-  public String getAccountName(UUID accountId) {
-    Account account = accountRepo.findById(accountId).get();
-    return account.getName();
-  }
+    private fun createSimpleLabel(balanceSheet: BalanceSheet, name: String): Label =
+            Label(UUID.randomUUID(), balanceSheet, name).apply { labelRepo.save(this) }
 
-  List<Label> getLabels(UUID bsId) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
-    return labelRepo.findByBalanceSheetOrderByName(balanceSheet);
-  }
+    fun getStringsByLabels(labels: Collection<Label>): List<String> = labels.map { it.name }
+
+    fun getSuggestLabels(bsId: UUID, moneyOper: MoneyOperDto): List<Label> {
+        // Найдем 10 наиболее часто используемых меток-категорий за последние 30 дней.
+        val startDate = LocalDate.now().minusDays(30)
+        val balanceSheet = balanceSheetRepo.findById(bsId).get()
+        return moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
+                .flatMap { it.labels }
+                .filter { !moneyOper.labels.contains(it.name) }
+                .groupingBy { it }.eachCount()
+                .entries
+                .sortedByDescending { it.value }
+                .map { it.key }
+    }
+
+    fun moneyOperToDto(moneyOper: MoneyOper): MoneyOperDto =
+            MoneyOperDto(moneyOper.id, moneyOper.status, moneyOper.performed,
+                    moneyOper.fromAccId, moneyOper.toAccId, moneyOper.getAmount().abs(), moneyOper.currencyCode,
+                    moneyOper.getToAmount(), moneyOper.toCurrencyCode, moneyOper.period, moneyOper.comment,
+                    getStringsByLabels(moneyOper.labels), moneyOper.dateNum, moneyOper.getParentOperId(),
+                    moneyOper.recurrenceId, moneyOper.created).apply {
+                fromAccName = getAccountName(moneyOper.fromAccId)
+                toAccName = getAccountName(moneyOper.toAccId)
+                type = moneyOper.type.name
+                items = moneyOper.items
+                        .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
+                        .sortedBy { it.value }
+            }
+
+    fun getAccountName(accountId: UUID): String {
+        val account = accountRepo.findByIdOrNull(accountId)!!
+        return account.name
+    }
+
+    fun getLabels(bsId: UUID): List<Label> {
+        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+        return labelRepo.findByBalanceSheetOrderByName(balanceSheet)
+    }
+
+    companion object {
+        private val log = KotlinLogging.logger {  }
+        private val SearchDateRegex = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}".toRegex()
+        private val SearchUuidRegex = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}".toRegex()
+        private val SearchMoneyRegex = "\\p{Digit}+\\.*\\p{Digit}*".toRegex()
+    }
 }
