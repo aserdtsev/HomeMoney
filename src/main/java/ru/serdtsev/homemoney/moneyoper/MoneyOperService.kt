@@ -14,7 +14,6 @@ import ru.serdtsev.homemoney.moneyoper.model.*
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
-import java.util.stream.Collectors
 
 /**
  * Предоставляет методы работы с денежными операциями
@@ -32,8 +31,8 @@ class MoneyOperService @Autowired constructor(
         moneyOperRepo.save(moneyOper)
     }
 
-    fun findRecurrenceOper(id: UUID): Optional<RecurrenceOper> {
-        return recurrenceOperRepo.findById(id)
+    fun findRecurrenceOper(id: UUID): RecurrenceOper? {
+        return recurrenceOperRepo.findByIdOrNull(id)
     }
 
     fun save(recurrenceOper: RecurrenceOper) {
@@ -201,8 +200,8 @@ class MoneyOperService @Autowired constructor(
     fun checkMoneyOperBelongsBalanceSheet(oper: MoneyOper, bsId: UUID) =
             assert(oper.balanceSheet.id == bsId) { "MoneyOper id='${oper.id}' belongs the other balance sheet." }
 
-    fun getLabelsByStrings(balanceSheet: BalanceSheet, strLabels: List<String>): List<Label> =
-            strLabels.map { findOrCreateLabel(balanceSheet, it) }
+    fun getLabelsByStrings(balanceSheet: BalanceSheet, strLabels: List<String>): MutableList<Label> =
+            strLabels.map { findOrCreateLabel(balanceSheet, it) }.toMutableList()
 
     fun findOrCreateLabel(balanceSheet: BalanceSheet, name: String): Label =
             labelRepo.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleLabel(balanceSheet, name) }
