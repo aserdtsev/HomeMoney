@@ -1,11 +1,10 @@
-package ru.serdtsev.homemoney.user;
+package ru.serdtsev.homemoney.user
 
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.UUID;
+import org.springframework.data.repository.CrudRepository
+import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
-public interface UserRepository extends CrudRepository<User, UUID> {
-  User findByEmail(String email);
+interface UserRepository : CrudRepository<User, UUID> {
+    fun findByEmail(email: String): User?
 }

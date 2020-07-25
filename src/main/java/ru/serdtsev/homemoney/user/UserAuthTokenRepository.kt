@@ -1,8 +1,6 @@
-package ru.serdtsev.homemoney.user;
+package ru.serdtsev.homemoney.user
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.CrudRepository
+import java.util.*
 
-import java.util.UUID;
-
-public interface UserAuthTokenRepository extends CrudRepository<UserAuthToken, UUID> {
-}
+interface UserAuthTokenRepository : CrudRepository<UserAuthToken, UUID>
