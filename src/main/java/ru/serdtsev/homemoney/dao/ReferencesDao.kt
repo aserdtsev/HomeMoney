@@ -1,45 +1,33 @@
-package ru.serdtsev.homemoney.dao;
+package ru.serdtsev.homemoney.dao
 
-import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.ColumnListHandler;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import ru.serdtsev.homemoney.dto.HmCurrency;
+import org.springframework.jdbc.core.JdbcTemplate
+import org.springframework.stereotype.Component
+import ru.serdtsev.homemoney.dto.HmCurrency
+import java.util.*
+import java.util.stream.Collectors
+import javax.sql.DataSource
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Currency;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
+@Suppress("JoinDeclarationAndAssignment")
 @Component
-public class ReferencesDao {
-    private final MainDao mainDao;
+class ReferencesDao (dataSource: DataSource) {
+    private val jdbcTemplate: JdbcTemplate
 
-    @Autowired
-    public ReferencesDao(MainDao mainDao) {
-        this.mainDao = mainDao;
+    fun getCurrencies(bsId: UUID?): List<HmCurrency> {
+        val sql = """
+            select b.currency_code  from accounts a, balances b  
+                where a.balance_sheet_id = ? and b.id = a.id  
+                group by currency_code
+            """.trimIndent()
+        return jdbcTemplate.queryForList(sql, String::class.java, bsId)
+                .stream()
+                .map { code: String? ->
+                    val currency = Currency.getInstance(code)
+                    HmCurrency(currency.currencyCode, currency.displayName, currency.symbol)
+                }
+                .collect(Collectors.toList())
     }
 
-    public List<HmCurrency> getCurrencies(UUID bsId) {
-    assert Objects.nonNull(bsId);
-    try (Connection conn = mainDao.getConnection()) {
-      return (new QueryRunner()).query(conn,
-          "select b.currency_code " +
-              " from accounts a, balances b " +
-              " where a.balance_sheet_id = ? and b.id = a.id " +
-              " group by currency_code",
-          new ColumnListHandler<String>(), bsId)
-          .stream()
-          .map(code -> {
-            Currency currency = Currency.getInstance(code);
-            return new HmCurrency(currency.getCurrencyCode(), currency.getDisplayName(), currency.getSymbol());
-          })
-          .collect(Collectors.toList());
-    } catch (SQLException e){
-      throw new HmSqlException(e);
+    init {
+        jdbcTemplate = JdbcTemplate(dataSource)
     }
-  }
 }

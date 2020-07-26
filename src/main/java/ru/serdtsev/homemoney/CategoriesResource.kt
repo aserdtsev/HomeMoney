@@ -1,86 +1,60 @@
-package ru.serdtsev.homemoney;
+package ru.serdtsev.homemoney
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import ru.serdtsev.homemoney.account.AccountsDao;
-import ru.serdtsev.homemoney.account.model.Category;
-import ru.serdtsev.homemoney.account.CategoryRepository;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.common.HmException;
-import ru.serdtsev.homemoney.common.HmResponse;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.repository.findByIdOrNull
+import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
+import ru.serdtsev.homemoney.account.CategoryRepository
+import ru.serdtsev.homemoney.account.model.Category
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.common.HmException
+import ru.serdtsev.homemoney.common.HmResponse
+import java.util.*
 
 @RestController
 @RequestMapping("/api/{bsId}/categories")
-public class CategoriesResource {
-  private final BalanceSheetRepository balanceSheetRepo;
-  private final CategoryRepository categoryRepo;
-  private final AccountsDao accountsDao;
-
-  @Autowired
-  public CategoriesResource(BalanceSheetRepository balanceSheetRepo, CategoryRepository categoryRepo, AccountsDao accountsDao) {
-    this.balanceSheetRepo = balanceSheetRepo;
-    this.categoryRepo = categoryRepo;
-    this.accountsDao = accountsDao;
-  }
-
-  @RequestMapping
-  @Transactional(readOnly = true)
-  public HmResponse getCategoryList(@PathVariable UUID bsId) {
-    BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
-    List<Category> categories = ((List<Category>) categoryRepo.findByBalanceSheet(balanceSheet)).stream()
-        .sorted(Comparator.comparing(Category::getSortIndex))
-        .collect(Collectors.toList());
-    return HmResponse.getOk(categories);
-  }
-
-  @RequestMapping({"/create"})
-  public HmResponse createCategory(
-      @PathVariable UUID bsId,
-      @RequestBody Category category) {
-    try {
-      BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
-      category.setBalanceSheet(balanceSheet);
-      categoryRepo.save(category);
-      return HmResponse.getOk();
-    } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+class CategoriesResource @Autowired constructor(
+        private val balanceSheetRepo: BalanceSheetRepository,
+        private val categoryRepo: CategoryRepository
+) {
+    @RequestMapping
+    @Transactional(readOnly = true)
+    fun getCategoryList(@PathVariable bsId: UUID): HmResponse {
+        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+        val categories: List<Category> = categoryRepo.findByBalanceSheet(balanceSheet).sortedBy { it.sortIndex }
+        return HmResponse.getOk(categories)
     }
-  }
 
-  @RequestMapping({"/update"})
-  public HmResponse updateCategory(
-      @PathVariable UUID bsId,
-      @RequestBody Category category) {
-    try {
-      category.init(categoryRepo);
-      categoryRepo.save(category);
-      return HmResponse.getOk();
-    } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+    @RequestMapping("/create")
+    fun createCategory(
+            @PathVariable bsId: UUID,
+            @RequestBody category: Category
+    ): HmResponse {
+        return try {
+            val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+            category.balanceSheet = balanceSheet
+            categoryRepo.save(category)
+            HmResponse.getOk()
+        } catch (e: HmException) {
+            HmResponse.getFail(e.code)
+        }
     }
-  }
 
-  @RequestMapping({"/delete"})
-  public HmResponse deleteCategory(
-      @PathVariable UUID bsId,
-      @RequestBody Category category) {
-    try {
-      if (!accountsDao.isTrnExists(category.getId())) {
-        categoryRepo.delete(category);
-      }
-      return HmResponse.getOk();
-    } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+    @RequestMapping("/update")
+    fun updateCategory(
+            @PathVariable bsId: UUID?,
+            @RequestBody category: Category
+    ): HmResponse {
+        return try {
+            category.init(categoryRepo)
+            categoryRepo.save(category)
+            HmResponse.getOk()
+        } catch (e: HmException) {
+            HmResponse.getFail(e.code)
+        }
     }
-  }
+
 }
