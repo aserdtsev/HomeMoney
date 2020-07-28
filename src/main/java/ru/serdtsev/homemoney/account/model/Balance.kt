@@ -1,205 +1,127 @@
-package ru.serdtsev.homemoney.account.model;
+package ru.serdtsev.homemoney.account.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ru.serdtsev.homemoney.account.ReserveRepository;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.moneyoper.MoneyOperService;
-import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
-import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;
-import ru.serdtsev.homemoney.moneyoper.model.Period;
-import ru.serdtsev.homemoney.utils.Utils;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.persistence.*;
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Currency;
-import java.util.UUID;
-
-import static ru.serdtsev.homemoney.utils.Utils.nvl;
+import com.fasterxml.jackson.annotation.JsonIgnore
+import mu.KotlinLogging
+import org.springframework.data.repository.findByIdOrNull
+import ru.serdtsev.homemoney.account.ReserveRepository
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.moneyoper.MoneyOperService
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
+import ru.serdtsev.homemoney.moneyoper.model.Period
+import java.math.BigDecimal
+import java.sql.Date
+import java.time.LocalDate
+import java.util.*
+import javax.persistence.*
 
 @Entity
 @Table(name = "balances")
 @DiscriminatorValue("balance")
-public class Balance extends Account {
-  private static Logger log = LoggerFactory.getLogger(Balance.class);
+open class Balance(
+        balanceSheet: BalanceSheet?,
+        type: AccountType,
+        name: String,
+        created: Date,
+        isArc: Boolean? = null,
+        currencyCode: String?,
+        value: BigDecimal?
+) : Account(balanceSheet, type, name, created, isArc) {
+    @Column(name = "currency_code")
+    open var currencyCode: String? = currencyCode
+        get() = field ?: "RUB"
 
-  @Column(name = "currency_code")
-  private String currencyCode;
-  
-  private BigDecimal value;
+    open var value: BigDecimal? = value
+        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, 0)
 
-  @OneToOne
-  @JoinColumn(name = "reserve_id")
-  private Reserve reserve;
+    @Column(name = "min_value")
+    open var minValue: BigDecimal? = null
+        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, 0)
 
-  @Transient
-  private UUID reserveId;
+    @get:JsonIgnore
+    @OneToOne
+    @JoinColumn(name = "reserve_id")
+    open var reserve: Reserve? = null
 
-  @Column(name = "credit_limit")
-  private BigDecimal creditLimit;
+    @Column(name = "credit_limit")
+    open var creditLimit: BigDecimal? = null
+        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, 0)
 
-  @Column(name = "min_value")
-  private BigDecimal minValue;
+    open var num: Long? = null
+        get() = field ?: 0L
 
-  private Long num;
+    @Transient
+    open var reserveId: UUID? = null
+        get() = reserve?.getId()
 
-  public Balance() {
-    super();
-  }
-
-  public Balance(BalanceSheet balanceSheet, AccountType type, String name, Date created, Boolean isArc, String currencyCode,
-      BigDecimal value, BigDecimal minValue) {
-    super(balanceSheet, type, name, created, isArc);
-    this.currencyCode = currencyCode;
-    this.value = value;
-    this.minValue = minValue;
-  }
-
-  public void init(ReserveRepository reserveRepo) {
-    super.init();
-    value = nvl(value, BigDecimal.ZERO);
-    creditLimit = nvl(creditLimit, BigDecimal.ZERO);
-    minValue = nvl(minValue, BigDecimal.ZERO);
-    num = nvl(num, 0L);
-    if (reserveId != null) {
-      reserve = reserveRepo.findById(reserveId).get();
+    fun init(reserveRepo: ReserveRepository?) {
+        super.init()
+        value = value ?: BigDecimal.ZERO
+        creditLimit = creditLimit ?: BigDecimal.ZERO
+        minValue = minValue ?: BigDecimal.ZERO
+        num = num ?: 0L
+        reserve = reserveId?.let { reserveRepo!!.findByIdOrNull(it) }
     }
-  }
 
-  public void merge(Balance balance, ReserveRepository reserveRepo, MoneyOperService moneyOperService) {
-    super.merge(balance);
-    setCreditLimit(balance.getCreditLimit());
-    setMinValue(balance.getMinValue());
-    setReserve(balance.getReserveId() != null ? reserveRepo.findById(balance.getReserveId()).get() : null);
-    if (balance.getValue().compareTo(getValue()) != 0) {
-      BalanceSheet balanceSheet = getBalanceSheet();
-      boolean more = balance.getValue().compareTo(getValue()) > 0;
-      UUID fromAccId = more ? balanceSheet.getUncatIncome().getId() : balance.getId();
-      UUID toAccId = more ? balance.getId() : balanceSheet.getUncatCosts().getId();
-      BigDecimal amount = balance.getValue().subtract(getValue()).abs();
-
-      if (balance.getType() == AccountType.reserve) {
-        balance.setValue(balance.getValue());
-      } else {
-        MoneyOper moneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, LocalDate.now(),
-            0, new ArrayList<>(), "корректировка остатка", Period.single, fromAccId, toAccId, amount, amount,
-            null, null);
-        moneyOper.complete();
-        moneyOperService.save(moneyOper);
-      }
+    fun merge(balance: Balance, reserveRepo: ReserveRepository, moneyOperService: MoneyOperService) {
+        super.merge(balance)
+        creditLimit = balance.creditLimit
+        minValue = balance.minValue
+        reserve = balance.reserveId?.let { reserveRepo.findByIdOrNull(balance.reserveId) }
+        if (balance.value!!.compareTo(value) != 0) {
+            val balanceSheet = getBalanceSheet()
+            val more = balance.value!!.compareTo(value) > 0
+            val fromAccId = if (more) balanceSheet.uncatIncome!!.getId() else balance.getId()
+            val toAccId = if (more) balance.getId() else balanceSheet.uncatCosts!!.getId()
+            val amount = balance.value!!.subtract(value).abs()
+            if (balance.type == AccountType.reserve) {
+                value = balance.value
+            } else {
+                val moneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(),
+                        MoneyOperStatus.pending, LocalDate.now(),0, ArrayList(), "корректировка остатка",
+                        Period.single, fromAccId, toAccId, amount, amount)
+                moneyOper.complete()
+                moneyOperService.save(moneyOper)
+            }
+        }
     }
-  }
 
-  public String getCurrencyCode() {
-    return currencyCode != null ?  currencyCode : "RUB";
-  }
+    open val currencySymbol: String
+        get() = currency.symbol
 
-  public void setCurrencyCode(String currencyCode) {
-    this.currencyCode = currencyCode;
-  }
+    open val currency: Currency
+        get() {
+            assert(currencyCode != null) { this.toString() }
+            return Currency.getInstance(currencyCode)
+        }
 
-  public String getCurrencySymbol() {
-    return getCurrency().getSymbol();
-  }
+    @Deprecated("")
+    fun changeValue(amount: BigDecimal?, trnId: UUID, status: MoneyOperStatus) {
+        val beforeValue = value!!.plus()
+        value = value!!.add(amount)
+        log.info("Balance value changed; " +
+                "id: " + getId() + ", " +
+                "trnId: " + trnId + ", " +
+                "status: " + status.name + ", " +
+                "before: " + beforeValue + ", " +
+                "after: " + value + ".")
+    }
 
-  private Currency getCurrency() {
-    assert currencyCode != null : this.toString();
-    return Currency.getInstance(currencyCode);
-  }
+    fun changeValue(amount: BigDecimal?, oper: MoneyOper) {
+        val beforeValue = value!!.plus()
+        value = value!!.add(amount)
+        log.info("Balance value changed; " +
+                "id: " + getId() + ", " +
+                "operId: " + oper.id + ", " +
+                "status: " + oper.status!!.name + ", " +
+                "before: " + beforeValue + ", " +
+                "after: " + value + ".")
+    }
 
-  public BigDecimal getValue() {
-    return nvl(value, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
-  }
+    open val freeFunds: BigDecimal
+        get() = value!!.add(creditLimit!!.subtract(minValue))
 
-  public void setValue(BigDecimal value) {
-    this.value = value;
-  }
-
-  @Deprecated
-  public void changeValue(BigDecimal amount, UUID trnId, MoneyOperStatus status) {
-    BigDecimal beforeValue = value.plus();
-    value = value.add(amount);
-    log.info("Balance value changed; " +
-        "id: " + getId() + ", " +
-        "trnId: " + trnId + ", " +
-        "status: " + status.name() + ", " +
-        "before: " + beforeValue + ", " +
-        "after: " + value + ".");
-  }
-
-  public void changeValue(BigDecimal amount, MoneyOper oper) {
-    BigDecimal beforeValue = value.plus();
-    value = value.add(amount);
-    log.info("Balance value changed; " +
-        "id: " + getId() + ", " +
-        "operId: " + oper.getId() + ", " +
-        "status: " + oper.getStatus().name() + ", " +
-        "before: " + beforeValue + ", " +
-        "after: " + value + ".");
-  }
-
-
-  public BigDecimal getCreditLimit() {
-    return nvl(creditLimit, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
-  }
-
-  public void setCreditLimit(BigDecimal creditLimit) {
-    this.creditLimit = creditLimit;
-  }
-
-  public BigDecimal getMinValue() {
-    return nvl(minValue, BigDecimal.ZERO.setScale(getCurrency().getDefaultFractionDigits(), 0));
-  }
-
-  public void setMinValue(BigDecimal minValue) {
-    this.minValue = minValue;
-  }
-
-  @JsonIgnore
-  public Reserve getReserve() {
-    return reserve;
-  }
-
-  /**
-   * Для сериализации в JSON.
-   */
-  @SuppressWarnings("unused")
-  public UUID getReserveId() {
-    return reserve != null ? reserve.getId() : null;
-  }
-
-  /**
-   * Для десериализации из JSON.
-   */
-  @SuppressWarnings("unused")
-  public void setReserveId(@Nullable UUID reserveId) {
-    this.reserveId = reserveId;
-  }
-
-  @Nonnull
-  public Long getNum() {
-    return Utils.nvl(num, 0L);
-  }
-
-  public void setNum(Long num) {
-    this.num = num;
-  }
-
-  public void setReserve(Reserve reserve) {
-    this.reserve = reserve;
-  }
-
-  @SuppressWarnings("unused")
-  public BigDecimal getFreeFunds() {
-    return getValue().add(getCreditLimit().subtract(getMinValue()));
-  }
-
-
-
+    companion object {
+        private val log = KotlinLogging.logger {  }
+    }
 }

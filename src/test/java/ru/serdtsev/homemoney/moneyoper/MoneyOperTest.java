@@ -33,9 +33,9 @@ class MoneyOperTest {
   void setUp() {
     balanceSheet = BalanceSheet.Companion.newInstance();
     cash = new Balance(balanceSheet, AccountType.debit, "Cash", Date.valueOf(LocalDate.now()), false,
-        "RUB", BigDecimal.TEN, null);
+        "RUB", BigDecimal.TEN);
     checkingAccount = new Balance(balanceSheet, AccountType.debit, "Checking account", Date.valueOf(LocalDate.now()), false,
-        "RUB", BigDecimal.valueOf(1000L), null);
+        "RUB", BigDecimal.valueOf(1000L));
   }
 
   @Test

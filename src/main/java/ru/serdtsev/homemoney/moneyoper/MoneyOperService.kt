@@ -128,7 +128,7 @@ class MoneyOperService @Autowired constructor(
      */
     fun newMoneyOper(balanceSheet: BalanceSheet, moneyOperId: UUID, status: MoneyOperStatus, performed: LocalDate,
             dateNum: Int?, labels: Collection<Label>, comment: String?, period: Period?, fromAccId: UUID, toAccId: UUID,
-            amount: BigDecimal, toAmount: BigDecimal, parentId: UUID?, recurrenceId: UUID?): MoneyOper {
+            amount: BigDecimal, toAmount: BigDecimal, parentId: UUID? = null, recurrenceId: UUID? = null): MoneyOper {
         val oper = MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period)
         oper.recurrenceId = recurrenceId
         oper.fromAccId = fromAccId

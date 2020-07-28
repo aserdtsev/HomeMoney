@@ -356,36 +356,27 @@ class MoneyOperResource @Autowired constructor(
     }
 
     private fun categoryToLabel(balanceSheet: BalanceSheet, operDto: MoneyOperDto): Label? {
-        var category: Category? = null
-        val operType = MoneyOperType.valueOf(operDto.type!!)
-        if (operType == MoneyOperType.expense) {
-            category = categoryRepo.findById(operDto.toAccId!!).orElse(null)
-        } else if (operType == MoneyOperType.income) {
-            category = categoryRepo.findById(operDto.fromAccId!!).orElse(null)
-        }
-        if (category == null) {
-            return null
-        }
-        var label = labelRepo.findByBalanceSheetAndName(balanceSheet, category.name)
-        if (Objects.isNull(label)) {
-            val rootCategory = category.root
-            var rootLabel: Label? = null
-            if (Objects.nonNull(rootCategory)) {
-                rootLabel = labelRepo.findByBalanceSheetAndName(balanceSheet, rootCategory.name)
-                if (Objects.isNull(rootLabel)) {
+        val category: Category = when(MoneyOperType.valueOf(operDto.type!!)) {
+            MoneyOperType.expense -> categoryRepo.findByIdOrNull(operDto.toAccId!!)
+            MoneyOperType.income -> categoryRepo.findByIdOrNull(operDto.fromAccId!!)
+            else -> null
+        } ?: return null
+        return labelRepo.findByBalanceSheetAndName(balanceSheet, category.name) ?: run {
+            val rootLabel: Label? = category.root?.let { rootCategory ->
+                labelRepo.findByBalanceSheetAndName(balanceSheet, rootCategory.name) ?: run {
                     val rootCategoryType = CategoryType.valueOf(rootCategory.type.name)
-                    rootLabel = Label(UUID.randomUUID(), balanceSheet, rootCategory.name, null, true,
-                            rootCategoryType, null)
-                    labelRepo.save(rootLabel)
+                    Label(UUID.randomUUID(), balanceSheet, rootCategory.name, null, true,
+                            rootCategoryType).apply {
+                        labelRepo.save<Label>(this)
+                    }
                 }
             }
-            val rootLabelId = if (Objects.nonNull(rootLabel)) rootLabel!!.id else null
+            val rootLabelId = rootLabel?.id
             val categoryType = CategoryType.valueOf(category.type.name)
-            label = Label(UUID.randomUUID(), balanceSheet, category.name, rootLabelId, true, categoryType,
-                    null)
-            labelRepo.save(label)
+            Label(UUID.randomUUID(), balanceSheet, category.name, rootLabelId, true, categoryType).apply {
+                labelRepo.save<Label>(this)
+            }
         }
-        return label
     }
 
     @RequestMapping(value = ["/suggest-labels"], method = [RequestMethod.POST])

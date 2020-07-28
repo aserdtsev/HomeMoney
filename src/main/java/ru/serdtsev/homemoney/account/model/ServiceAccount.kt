@@ -1,20 +1,17 @@
-package ru.serdtsev.homemoney.account.model;
+package ru.serdtsev.homemoney.account.model
 
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import java.sql.Date;
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import java.sql.Date
+import javax.persistence.DiscriminatorValue
+import javax.persistence.Entity
+import javax.persistence.Table
 
 @Entity
 @DiscriminatorValue("service")
 @Table(name = "svc_accounts")
-public class ServiceAccount extends Account {
-  protected ServiceAccount() {
-  }
-
-  public ServiceAccount(BalanceSheet balanceSheet, String name, Date created, Boolean isArc) {
-    super(balanceSheet, AccountType.service, name, created, isArc);
-  }
-}
+open class ServiceAccount(
+        balanceSheet: BalanceSheet,
+        name: String,
+        created: Date,
+        isArc: Boolean?
+) : Account(balanceSheet, AccountType.service, name, created, isArc)

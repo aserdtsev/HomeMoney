@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.moneyoper;
 
-import kotlin.jvm.JvmOverloads;
 import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +19,6 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Matchers.any;
@@ -74,9 +72,9 @@ class MoneyOperServiceTest {
         labelsA, null, Period.month);
     Date created = Date.valueOf(LocalDate.now());
     Balance balance1 = new Balance(balanceSheet, AccountType.debit, "Some account name", created,
-        false, "RUB", BigDecimal.ZERO, BigDecimal.ZERO);
+        false, "RUB", BigDecimal.ZERO);
     Balance balance2 = new Balance(balanceSheet, AccountType.debit, "Some account name", created,
-            false, "RUB", BigDecimal.ZERO, BigDecimal.ZERO);
+            false, "RUB", BigDecimal.ZERO);
     moneyOper.addItem(balance1, BigDecimal.valueOf(1).negate());
     moneyOper.addItem(balance2, BigDecimal.ONE);
     return moneyOper;

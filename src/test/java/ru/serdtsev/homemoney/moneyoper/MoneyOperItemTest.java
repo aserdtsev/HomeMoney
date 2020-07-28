@@ -28,9 +28,9 @@ class MoneyOperItemTest {
   void setUp() {
     BalanceSheet balanceSheet = BalanceSheet.Companion.newInstance();
     cash = new Balance(balanceSheet, AccountType.debit, "Cash", Date.valueOf(LocalDate.now()), false,
-        "RUB", BigDecimal.TEN, null);
+        "RUB", BigDecimal.TEN);
     checkingAccount = new Balance(balanceSheet, AccountType.debit, "Checking account", Date.valueOf(LocalDate.now()), false,
-        "RUB", BigDecimal.valueOf(1000L), null);
+        "RUB", BigDecimal.valueOf(1000L));
     oper = new MoneyOper(UUID.randomUUID(), balanceSheet, pending, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
   }
