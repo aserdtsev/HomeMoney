@@ -50,11 +50,11 @@ class MoneyOperResourceTest {
   void setUp() {
     Date now = Date.valueOf(LocalDate.now());
 
-    cash = new Balance(balanceSheet, AccountType.debit, "Cash", now, false, "RUB",
+    cash = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", now, false, "RUB",
         BigDecimal.valueOf(10000L, 2));
     when(accountRepo.findById(cash.getId())).thenReturn(Optional.of(cash));
 
-    currentAccount = new Balance(balanceSheet, AccountType.credit, "Current account", now, false, "RUB",
+    currentAccount = new Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account", now, false, "RUB",
         BigDecimal.valueOf(10000L, 2));
     when(accountRepo.findById(currentAccount.getId())).thenReturn(Optional.of(currentAccount));
   }

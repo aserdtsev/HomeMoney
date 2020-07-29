@@ -24,7 +24,7 @@ class CategoriesResource @Autowired constructor(
     @Transactional(readOnly = true)
     fun getCategoryList(@PathVariable bsId: UUID): HmResponse {
         val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-        val categories: List<Category> = categoryRepo.findByBalanceSheet(balanceSheet).sortedBy { it.sortIndex }
+        val categories: List<Category> = categoryRepo.findByBalanceSheet(balanceSheet).sortedBy { it.getSortIndex() }
         return HmResponse.getOk(categories)
     }
 

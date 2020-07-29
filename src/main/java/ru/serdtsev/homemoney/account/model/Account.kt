@@ -1,124 +1,41 @@
-package ru.serdtsev.homemoney.account.model;
+package ru.serdtsev.homemoney.account.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-
-import javax.persistence.*;
-import java.io.Serializable;
-import java.sql.Date;
-import java.util.Objects;
-import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonProperty
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import java.io.Serializable
+import java.sql.Date
+import java.util.*
+import javax.persistence.*
 
 @Entity
 @Table(name = "accounts")
 @Inheritance(strategy = InheritanceType.JOINED)
-public class Account implements Serializable {
-  @Id
-  protected UUID id;
+open class Account(
+        @Id open val id: UUID,
+        @get:JsonIgnore @ManyToOne @JoinColumn(name = "balance_sheet_id") open var balanceSheet: BalanceSheet,
+        @Enumerated(EnumType.STRING) open var type: AccountType,
+        open var name: String,
+        @JsonProperty("createdDate") @Column(name = "created_date") open var created: Date,
+        @JsonProperty("isArc") @Column(name = "is_arc") open var arc: Boolean? = null
+) : Serializable {
+    fun merge(account: Account) {
+        type = account.type
+        name = account.name
+        created = account.created
+        arc = account.arc
+    }
 
-  @ManyToOne
-  @JoinColumn(name = "balance_sheet_id")
-  protected BalanceSheet balanceSheet;
+    open fun getSortIndex(): String = name
 
-  @Column(name = "created_date")
-  private Date created;
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || javaClass != other.javaClass) return false
+        val account = other as Account
+        return id == account.id
+    }
 
-  @Enumerated(EnumType.STRING)
-  private AccountType type;
-
-  private String name;
-
-  @Column(name = "is_arc")
-  private Boolean isArc;
-
-  protected Account() {
-  }
-
-  public Account(BalanceSheet balanceSheet, AccountType type, String name, Date created, Boolean isArc) {
-    this.id = UUID.randomUUID();
-    this.balanceSheet = balanceSheet;
-    this.created = created;
-    this.type = type;
-    this.name = name;
-    this.isArc = isArc;
-  }
-
-  public void init() {
-    this.id = UUID.randomUUID();
-  }
-
-  public void merge(Account account) {
-    setType(account.getType());
-    setName(account.getName());
-    setCreated(account.getCreated());
-    setArc(account.getArc());
-  }
-
-  public UUID getId() {
-    return id;
-  }
-
-  public void setBalanceSheet(BalanceSheet balanceSheet) {
-    this.balanceSheet = balanceSheet;
-  }
-
-  @JsonIgnore
-  public BalanceSheet getBalanceSheet() {
-    return balanceSheet;
-  }
-
-  public AccountType getType() {
-    return type;
-  }
-
-  public void setType(AccountType type) {
-    this.type = type;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  @JsonProperty("createdDate")
-  public Date getCreated() {
-    return created;
-  }
-
-  @JsonProperty("createdDate")
-  public void setCreated(Date created) {
-    this.created = created;
-  }
-
-  @JsonProperty("isArc")
-  public Boolean getArc() {
-    return isArc;
-  }
-
-  @JsonProperty("isArc")
-  public void setArc(Boolean arc) {
-    isArc = arc;
-  }
-
-  @JsonIgnore
-  public String getSortIndex() {
-    return getName();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    Account account = (Account) o;
-    return Objects.equals(id, account.id);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(id);
-  }
+    override fun hashCode(): Int {
+        return Objects.hash(id)
+    }
 }

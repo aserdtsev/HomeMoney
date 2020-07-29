@@ -19,14 +19,15 @@ import javax.persistence.*
 @Table(name = "balances")
 @DiscriminatorValue("balance")
 open class Balance(
-        balanceSheet: BalanceSheet?,
+        id: UUID,
+        balanceSheet: BalanceSheet,
         type: AccountType,
         name: String,
         created: Date,
         isArc: Boolean? = null,
         currencyCode: String?,
         value: BigDecimal?
-) : Account(balanceSheet, type, name, created, isArc) {
+) : Account(id, balanceSheet, type, name, created, isArc) {
     @Column(name = "currency_code")
     open var currencyCode: String? = currencyCode
         get() = field ?: "RUB"
@@ -52,10 +53,9 @@ open class Balance(
 
     @Transient
     open var reserveId: UUID? = null
-        get() = reserve?.getId()
+        get() = reserve?.id
 
     fun init(reserveRepo: ReserveRepository?) {
-        super.init()
         value = value ?: BigDecimal.ZERO
         creditLimit = creditLimit ?: BigDecimal.ZERO
         minValue = minValue ?: BigDecimal.ZERO
@@ -69,10 +69,10 @@ open class Balance(
         minValue = balance.minValue
         reserve = balance.reserveId?.let { reserveRepo.findByIdOrNull(balance.reserveId) }
         if (balance.value!!.compareTo(value) != 0) {
-            val balanceSheet = getBalanceSheet()
+            val balanceSheet = balanceSheet
             val more = balance.value!!.compareTo(value) > 0
-            val fromAccId = if (more) balanceSheet.uncatIncome!!.getId() else balance.getId()
-            val toAccId = if (more) balance.getId() else balanceSheet.uncatCosts!!.getId()
+            val fromAccId = if (more) balanceSheet.uncatIncome!!.id else balance.id
+            val toAccId = if (more) balance.id else balanceSheet.uncatCosts!!.id
             val amount = balance.value!!.subtract(value).abs()
             if (balance.type == AccountType.reserve) {
                 value = balance.value
@@ -100,7 +100,7 @@ open class Balance(
         val beforeValue = value!!.plus()
         value = value!!.add(amount)
         log.info("Balance value changed; " +
-                "id: " + getId() + ", " +
+                "id: " + id + ", " +
                 "trnId: " + trnId + ", " +
                 "status: " + status.name + ", " +
                 "before: " + beforeValue + ", " +
@@ -111,7 +111,7 @@ open class Balance(
         val beforeValue = value!!.plus()
         value = value!!.add(amount)
         log.info("Balance value changed; " +
-                "id: " + getId() + ", " +
+                "id: " + id + ", " +
                 "operId: " + oper.id + ", " +
                 "status: " + oper.status!!.name + ", " +
                 "before: " + beforeValue + ", " +

@@ -12,28 +12,24 @@ import javax.persistence.*
 @Table(name = "categories")
 @DiscriminatorValue("category")
 open class Category(
+        id: UUID,
         balanceSheet: BalanceSheet,
         type: AccountType,
         name: String,
         created: Date,
         isArc: Boolean? = null,
-        root: Category? = null
-) : Account(balanceSheet, type, name, created, isArc), Comparable<Account> {
-    @get:JsonIgnore
-    @ManyToOne
-    @JoinColumn(name = "root_id")
-    open var root: Category? = root
+        @JsonIgnore @ManyToOne @JoinColumn(name = "root_id") open var root: Category? = null
+) : Account(id, balanceSheet, type, name, created, isArc), Comparable<Account> {
 
     @Transient
     open val rootId: UUID? = null
 
     fun init(categoryRepo: CategoryRepository) {
-        super.init()
         root = rootId?.let { categoryRepo.findByIdOrNull(rootId)!! }
     }
 
     override fun getSortIndex(): String {
-        return root?.let { "${it.sortIndex}#$name" } ?: "${type.ordinal}#$name"
+        return root?.let { "${it.getSortIndex()}#$name" } ?: "${type.ordinal}#$name"
     }
 
     override fun compareTo(other: Account): Int {
@@ -41,6 +37,6 @@ open class Category(
             return 0
         }
         val typeComparing = type.compareTo(other.type)
-        return if (typeComparing != 0) typeComparing else sortIndex.compareTo(other.sortIndex)
+        return if (typeComparing != 0) typeComparing else getSortIndex().compareTo(other.getSortIndex())
     }
 }

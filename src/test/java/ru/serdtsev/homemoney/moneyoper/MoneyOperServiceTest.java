@@ -56,7 +56,7 @@ class MoneyOperServiceTest {
     List<MoneyOper> opers = asList(newMoneyOperWithLabels(labelsA), newMoneyOperWithLabels(labelsB), newMoneyOperWithLabels(labelsC));
     when(moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(any(), any(), any()))
         .thenReturn(opers);
-    Account account = new Account(balanceSheet, AccountType.debit, "Some account name", java.sql.Date.valueOf(LocalDate.now()), false);
+    Account account = new Account(UUID.randomUUID(), balanceSheet, AccountType.debit, "Some account name", java.sql.Date.valueOf(LocalDate.now()), false);
     when(accountRepo.findById(any())).thenReturn(Optional.of(account));
 
     MoneyOper moneyOper = newMoneyOperWithLabels(new ArrayList<>());
@@ -71,9 +71,9 @@ class MoneyOperServiceTest {
     MoneyOper moneyOper = new MoneyOper(UUID.randomUUID(), balanceSheet, MoneyOperStatus.doneNew, LocalDate.now(), 0,
         labelsA, null, Period.month);
     Date created = Date.valueOf(LocalDate.now());
-    Balance balance1 = new Balance(balanceSheet, AccountType.debit, "Some account name", created,
+    Balance balance1 = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Some account name", created,
         false, "RUB", BigDecimal.ZERO);
-    Balance balance2 = new Balance(balanceSheet, AccountType.debit, "Some account name", created,
+    Balance balance2 = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Some account name", created,
             false, "RUB", BigDecimal.ZERO);
     moneyOper.addItem(balance1, BigDecimal.valueOf(1).negate());
     moneyOper.addItem(balance2, BigDecimal.ONE);

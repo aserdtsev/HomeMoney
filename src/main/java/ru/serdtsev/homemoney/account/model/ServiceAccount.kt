@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.account.model
 
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import java.sql.Date
+import java.util.*
 import javax.persistence.DiscriminatorValue
 import javax.persistence.Entity
 import javax.persistence.Table
@@ -10,8 +11,9 @@ import javax.persistence.Table
 @DiscriminatorValue("service")
 @Table(name = "svc_accounts")
 open class ServiceAccount(
+        id: UUID,
         balanceSheet: BalanceSheet,
         name: String,
         created: Date,
         isArc: Boolean?
-) : Account(balanceSheet, AccountType.service, name, created, isArc)
+) : Account(id, balanceSheet, AccountType.service, name, created, isArc)

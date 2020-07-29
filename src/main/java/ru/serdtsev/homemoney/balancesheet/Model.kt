@@ -46,9 +46,9 @@ data class BalanceSheet(
 
     fun init(): BalanceSheet {
         val now = Date.valueOf(LocalDate.now())
-        svcRsv = ServiceAccount(this, "Service reserve", now, false)
-        uncatCosts = Category(this, AccountType.expense, "<Без категории>", now, false, null)
-        uncatIncome = Category(this, AccountType.income, "<Без категории>", now, false, null)
+        svcRsv = ServiceAccount(UUID.randomUUID(),this, "Service reserve", now, false)
+        uncatCosts = Category(UUID.randomUUID(),this, AccountType.expense, "<Без категории>", now,false)
+        uncatIncome = Category(UUID.randomUUID(),this, AccountType.income, "<Без категории>", now, false)
         return this
     }
 
