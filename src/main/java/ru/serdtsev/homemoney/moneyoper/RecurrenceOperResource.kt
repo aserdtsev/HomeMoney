@@ -37,7 +37,7 @@ class RecurrenceOperResource @Autowired constructor(
                     .collect(Collectors.toList())
             HmResponse.getOk(list)
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -88,7 +88,7 @@ class RecurrenceOperResource @Autowired constructor(
             moneyOperService.deleteRecurrenceOper(balanceSheet, oper.id)
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -102,7 +102,7 @@ class RecurrenceOperResource @Autowired constructor(
             moneyOperService.updateRecurrenceOper(balanceSheet, oper!!)
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 }

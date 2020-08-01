@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,9 +15,12 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/{bsId}/balances")
-@RequiredArgsConstructor
 public class BalancesResource {
   private final BalanceService balanceService;
+
+  public BalancesResource(BalanceService balanceService) {
+    this.balanceService = balanceService;
+  }
 
   @RequestMapping
   @Transactional(readOnly = true)
@@ -36,7 +38,7 @@ public class BalancesResource {
       balanceService.createBalance(bsId, balance);
       return HmResponse.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.getFail(e.getCode().name());
     }
   }
 
@@ -50,7 +52,7 @@ public class BalancesResource {
       balanceService.updateBalance(balance);
       return HmResponse.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.getFail(e.getCode().name());
     }
   }
 
@@ -63,7 +65,7 @@ public class BalancesResource {
       balanceService.deleteOrArchiveBalance(balance.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.getFail(e.getCode().name());
     }
   }
 
@@ -76,7 +78,7 @@ public class BalancesResource {
       balanceService.upBalance(bsId, balance.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.getFail(e.getCode().name());
     }
   }
 }

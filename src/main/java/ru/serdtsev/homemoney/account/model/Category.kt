@@ -16,16 +16,16 @@ open class Category(
         balanceSheet: BalanceSheet,
         type: AccountType,
         name: String,
-        created: Date,
+        createdDate: Date,
         isArc: Boolean? = null,
         @JsonIgnore @ManyToOne @JoinColumn(name = "root_id") open var root: Category? = null
-) : Account(id, balanceSheet, type, name, created, isArc), Comparable<Account> {
+) : Account(id, balanceSheet, type, name, createdDate, isArc), Comparable<Account> {
 
     @Transient
     open val rootId: UUID? = null
 
     fun init(categoryRepo: CategoryRepository) {
-        root = rootId?.let { categoryRepo.findByIdOrNull(rootId)!! }
+        root = rootId?.let { categoryRepo.findByIdOrNull(it)!! }
     }
 
     override fun getSortIndex(): String {

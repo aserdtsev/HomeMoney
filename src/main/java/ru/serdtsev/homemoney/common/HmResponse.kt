@@ -1,36 +1,19 @@
-package ru.serdtsev.homemoney.common;
+package ru.serdtsev.homemoney.common
 
-public class HmResponse {
-  private String status;
-  private Object data;
+class HmResponse(val status: String, val data: Any?) {
 
-  public HmResponse(String status, Object data) {
-    this.status = status;
-    this.data = data;
-  }
+    companion object {
+        @JvmStatic
+        fun getOk(): HmResponse = HmResponse("OK", null)
 
-  public String getStatus() {
-    return status;
-  }
+        @JvmStatic
+        fun getOk(data: Any?): HmResponse = HmResponse("OK", data)
 
-  public Object getData() {
-    return data;
-  }
+        @JvmStatic
+        fun getFail(status: String): HmResponse = getFail(status, null)
 
-  public static HmResponse getOk() {
-    return getOk(null);
-  }
+        @JvmStatic
+        fun getFail(status: String, data: Any?): HmResponse = HmResponse(status, data)
+    }
 
-  public static HmResponse getOk(Object data) {
-    return new HmResponse("OK", data);
-  }
-
-  public static HmResponse getFail(String status) {
-    return getFail(status, null);
-  }
-
-  @SuppressWarnings("WeakerAccess")
-  public static HmResponse getFail(String status, @SuppressWarnings("SameParameterValue") Object data) {
-    return new HmResponse(status, data);
-  }
 }

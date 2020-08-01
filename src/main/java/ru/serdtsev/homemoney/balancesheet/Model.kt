@@ -40,7 +40,7 @@ data class BalanceSheet(
 ) : Serializable {
     val balances: List<Balance>?
         @JsonIgnore get() = this.accounts
-                ?.filter { account -> account is Balance }
+                ?.filterIsInstance<Balance>()
                 ?.map { account -> account as Balance }
                 .orEmpty()
 

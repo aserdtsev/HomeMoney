@@ -23,11 +23,11 @@ open class Balance(
         balanceSheet: BalanceSheet,
         type: AccountType,
         name: String,
-        created: Date,
+        createdDate: Date,
         isArc: Boolean? = null,
         currencyCode: String?,
         value: BigDecimal?
-) : Account(id, balanceSheet, type, name, created, isArc) {
+) : Account(id, balanceSheet, type, name, createdDate, isArc) {
     @Column(name = "currency_code")
     open var currencyCode: String? = currencyCode
         get() = field ?: "RUB"
@@ -67,7 +67,7 @@ open class Balance(
         super.merge(balance)
         creditLimit = balance.creditLimit
         minValue = balance.minValue
-        reserve = balance.reserveId?.let { reserveRepo.findByIdOrNull(balance.reserveId) }
+        reserve = balance.reserveId?.let { reserveRepo.findByIdOrNull(it) }
         if (balance.value!!.compareTo(value) != 0) {
             val balanceSheet = balanceSheet
             val more = balance.value!!.compareTo(value) > 0

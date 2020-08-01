@@ -1,16 +1,14 @@
 package ru.serdtsev.homemoney;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.serdtsev.homemoney.account.BalanceService;
+import ru.serdtsev.homemoney.account.ReserveRepository;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Reserve;
-import ru.serdtsev.homemoney.account.ReserveRepository;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
 import ru.serdtsev.homemoney.common.HmException;
@@ -43,7 +41,7 @@ public class ReservesResource {
   public HmResponse getReserveList(@PathVariable UUID bsId) {
     BalanceSheet balanceSheet = balanceSheetRepo.findById(bsId).get();
     List<Reserve> reserves = ((List<Reserve>) reserveRepo.findByBalanceSheet(balanceSheet)).stream()
-        .sorted(Comparator.comparing(Reserve::getCreated))
+        .sorted(Comparator.comparing(Reserve::getCreatedDate))
         .collect(Collectors.toList());
     return HmResponse.getOk(reserves);
   }
@@ -58,11 +56,11 @@ public class ReservesResource {
       reserve.setBalanceSheet(balanceSheet);
       reserve.setType(AccountType.reserve);
       reserve.setCurrencyCode(balanceSheet.getCurrencyCode());
-      reserve.setCreated(java.sql.Date.valueOf(LocalDate.now()));
+      reserve.setCreatedDate(java.sql.Date.valueOf(LocalDate.now()));
       reserveRepo.save(reserve);
       return HmResponse.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.getFail(e.getCode().name());
     }
   }
 
@@ -77,7 +75,7 @@ public class ReservesResource {
       reserveRepo.save(currReserve);
       return HmResponse.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.getFail(e.getCode().name());
     }
   }
 
@@ -90,7 +88,7 @@ public class ReservesResource {
       balanceService.deleteOrArchiveBalance(reserve.getId());
       return HmResponse.getOk();
     } catch (HmException e) {
-      return HmResponse.getFail(e.getCode());
+      return HmResponse.getFail(e.getCode().name());
     }
   }
 }

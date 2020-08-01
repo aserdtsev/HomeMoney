@@ -32,7 +32,7 @@ class UserResource @Autowired constructor(private val userRepo: UserRepository,
             val user = userRepo.findByIdOrNull(userId)!!
             HmResponse.getOk(user.bsId)
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
         return response
     }
@@ -53,7 +53,7 @@ class UserResource @Autowired constructor(private val userRepo: UserRepository,
             val auth = Authentication(user.id, user.bsId, authToken)
             HmResponse.getOk(auth)
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 

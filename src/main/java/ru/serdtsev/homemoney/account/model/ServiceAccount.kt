@@ -14,6 +14,6 @@ open class ServiceAccount(
         id: UUID,
         balanceSheet: BalanceSheet,
         name: String,
-        created: Date,
+        createdDate: Date,
         isArc: Boolean?
-) : Account(id, balanceSheet, AccountType.service, name, created, isArc)
+) : Account(id, balanceSheet, AccountType.service, name, createdDate, isArc)

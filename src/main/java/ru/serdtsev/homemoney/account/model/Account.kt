@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.account.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import java.io.Serializable
 import java.sql.Date
@@ -16,14 +15,14 @@ open class Account(
         @get:JsonIgnore @ManyToOne @JoinColumn(name = "balance_sheet_id") open var balanceSheet: BalanceSheet,
         @Enumerated(EnumType.STRING) open var type: AccountType,
         open var name: String,
-        @JsonProperty("createdDate") @Column(name = "created_date") open var created: Date,
-        @JsonProperty("isArc") @Column(name = "is_arc") open var arc: Boolean? = null
+        @Column(name = "created_date") open var createdDate: Date,
+        @Column(name = "is_arc") open var isArc: Boolean? = null
 ) : Serializable {
     fun merge(account: Account) {
         type = account.type
         name = account.name
-        created = account.created
-        arc = account.arc
+        createdDate = account.createdDate
+        isArc = account.isArc
     }
 
     open fun getSortIndex(): String = name

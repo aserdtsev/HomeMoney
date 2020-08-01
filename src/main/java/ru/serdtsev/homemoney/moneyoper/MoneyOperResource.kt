@@ -71,7 +71,7 @@ class MoneyOperResource @Autowired constructor(
             val pagedList = PagedList(opers, limit, offset, hasNext)
             HmResponse.getOk(pagedList)
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -162,7 +162,7 @@ class MoneyOperResource @Autowired constructor(
             moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId)
             HmResponse.getOk(moneyOperService.moneyOperToDto(oper))
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -211,7 +211,7 @@ class MoneyOperResource @Autowired constructor(
             moneyOperRepo.save(origOper)
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -226,7 +226,7 @@ class MoneyOperResource @Autowired constructor(
             moneyOperRepo.save(oper)
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -244,7 +244,7 @@ class MoneyOperResource @Autowired constructor(
             }
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -285,7 +285,7 @@ class MoneyOperResource @Autowired constructor(
             }
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 

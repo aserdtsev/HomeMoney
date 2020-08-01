@@ -39,7 +39,7 @@ class CategoriesResource @Autowired constructor(
             categoryRepo.save(category)
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 
@@ -53,7 +53,7 @@ class CategoriesResource @Autowired constructor(
             categoryRepo.save(category)
             HmResponse.getOk()
         } catch (e: HmException) {
-            HmResponse.getFail(e.code)
+            HmResponse.getFail(e.code.name)
         }
     }
 

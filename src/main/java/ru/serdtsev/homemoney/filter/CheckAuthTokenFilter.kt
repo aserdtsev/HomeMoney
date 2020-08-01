@@ -1,85 +1,58 @@
-package ru.serdtsev.homemoney.filter;
+package ru.serdtsev.homemoney.filter
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import org.apache.catalina.connector.RequestFacade;
-import org.springframework.beans.factory.annotation.Autowired;
-import ru.serdtsev.homemoney.common.HmException;
-import ru.serdtsev.homemoney.user.UserAuthToken;
-import ru.serdtsev.homemoney.user.UserAuthTokenRepository;
+import net.sf.ehcache.Cache
+import net.sf.ehcache.CacheManager
+import net.sf.ehcache.Element
+import org.apache.catalina.connector.RequestFacade
+import org.springframework.data.repository.findByIdOrNull
+import ru.serdtsev.homemoney.common.HmException
+import ru.serdtsev.homemoney.user.UserAuthTokenRepository
+import java.util.*
+import javax.servlet.*
+import javax.servlet.annotation.WebFilter
 
-import javax.servlet.*;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.Cookie;
-import java.io.IOException;
-import java.util.*;
-
-@SuppressWarnings("unused")
 @WebFilter("/api/*")
-public class CheckAuthTokenFilter implements Filter {
-  private UserAuthTokenRepository userAuthTokenRepo;
-
-  @Autowired
-  public CheckAuthTokenFilter(UserAuthTokenRepository userAuthTokenRepo) {
-    this.userAuthTokenRepo = userAuthTokenRepo;
-  }
-
-  @Override
-  public void init(FilterConfig filterConfig) throws ServletException {
-  }
-
-  @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-      throws IOException, ServletException {
-    String path = ((RequestFacade) request).getRequestURI();
-    if (!path.contains("api/user/login")) {
-      List<Cookie> cookies = Arrays.asList(((RequestFacade) request).getCookies());
-      Optional<Cookie> userIdCookie = cookies.stream().filter(c -> "userId".equals(c.getName())).findFirst();
-      Optional<Cookie> authTokenCookie = cookies.stream().filter(c -> "authToken".equals(c.getName())).findFirst();
-      if (!userIdCookie.isPresent() || !authTokenCookie.isPresent()) {
-        return;
-      }
-
-      UUID userId = UUID.fromString(userIdCookie.get().getValue());
-      UUID authToken = UUID.fromString(authTokenCookie.get().getValue());
-      checkAuthToken(userId, authToken);
-    }
-    chain.doFilter(request, response);
-  }
-
-  @Override
-  public void destroy() {
-  }
-
-  private void checkAuthToken(UUID userId, UUID authToken) {
-    Cache authTokensCache = getAuthTokensCache();
-    Element element = authTokensCache.get(userId);
-    if (element != null) {
-      Set authTokens = (Set)element.getObjectValue();
-      if (authTokens.contains(authToken)) {
-        return;
-      }
+class CheckAuthTokenFilter(private val userAuthTokenRepo: UserAuthTokenRepository) : Filter {
+    override fun init(filterConfig: FilterConfig) {
     }
 
-    UserAuthToken userAuthToken = userAuthTokenRepo.findById(authToken).get();
-    if (Objects.isNull(userAuthToken) || !Objects.equals(userAuthToken.getUserId(), userId)) {
-      throw new HmException(HmException.Code.WrongAuth);
+    override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
+        val path = (request as RequestFacade).requestURI
+        if (!path.contains("api/user/login")) {
+            val cookies = listOf(*request.cookies)
+            val userIdCookie = cookies.firstOrNull { "userId" == it.name }
+            val authTokenCookie = cookies.firstOrNull { "authToken" == it.name }
+            if (userIdCookie== null || authTokenCookie == null) return
+            val userId = UUID.fromString(userIdCookie.value)
+            val authToken = UUID.fromString(authTokenCookie.value)
+            checkAuthToken(userId, authToken)
+        }
+        chain.doFilter(request, response)
     }
 
-    if (element == null) {
-      element = new Element(userId, new HashSet<UUID>());
+    override fun destroy() {}
+
+    @Suppress("UNCHECKED_CAST")
+    private fun checkAuthToken(userId: UUID, authToken: UUID) {
+        val authTokensCache = authTokensCache
+        val element = authTokensCache[userId]?.also {
+            val authTokens = it.objectValue as MutableSet<UUID>
+            if (authTokens.contains(authToken)) {
+                return
+            }
+        } ?: Element(userId, HashSet<UUID>())
+        val userAuthToken = userAuthTokenRepo.findByIdOrNull(authToken)
+        if (userAuthToken == null || userAuthToken.userId != userId) {
+            throw HmException(HmException.Code.WrongAuth, null)
+        }
+        val authTokens = element.objectValue as MutableSet<UUID>
+        if (authTokens.isEmpty()) {
+            authTokensCache.put(element)
+        }
+        authTokens.add(authToken)
     }
 
-    @SuppressWarnings("unchecked")
-    Set<UUID> authTokens = (Set<UUID>) element.getObjectValue();
-    if (authTokens.isEmpty()) {
-      authTokensCache.put(element);
-    }
-    authTokens.add(authToken);
-  }
+    private val authTokensCache: Cache
+        get() = CacheManager.getInstance().getCache("authTokens")
 
-  private Cache getAuthTokensCache() {
-    return CacheManager.getInstance().getCache("authTokens");
-  }
 }

@@ -17,12 +17,12 @@ open class Reserve(
         id: UUID,
         balanceSheet: BalanceSheet,
         name: String,
-        created: Date,
+        createdDate: Date,
         currencyCode: String,
         value: BigDecimal,
         open var target: BigDecimal = BigDecimal.ZERO,
         isArc: Boolean? = null
-) : Balance(id, balanceSheet, AccountType.reserve, name, created, isArc, currencyCode, value) {
+) : Balance(id, balanceSheet, AccountType.reserve, name, createdDate, isArc, currencyCode, value) {
     fun merge(reserve: Reserve, reserveRepo: ReserveRepository, moneyOperService: MoneyOperService) {
         super.merge(reserve, reserveRepo, moneyOperService)
         target = reserve.target
