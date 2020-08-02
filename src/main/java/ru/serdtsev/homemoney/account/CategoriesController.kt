@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney
+package ru.serdtsev.homemoney.account
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import ru.serdtsev.homemoney.account.CategoryRepository
 import ru.serdtsev.homemoney.account.model.Category
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.HmException

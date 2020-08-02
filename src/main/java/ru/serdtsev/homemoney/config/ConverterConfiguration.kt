@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney
+package ru.serdtsev.homemoney.config
 
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware

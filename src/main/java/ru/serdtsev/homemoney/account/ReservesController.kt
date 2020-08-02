@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney
+package ru.serdtsev.homemoney.account
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
@@ -6,8 +6,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import ru.serdtsev.homemoney.account.BalanceService
-import ru.serdtsev.homemoney.account.ReserveRepository
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Reserve
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository

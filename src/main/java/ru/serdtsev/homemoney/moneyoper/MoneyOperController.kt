@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.moneyoper
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -19,9 +18,8 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
-import ru.serdtsev.homemoney.dto.PagedList
+import ru.serdtsev.homemoney.common.dto.PagedList
 import ru.serdtsev.homemoney.moneyoper.model.*
-import ru.serdtsev.homemoney.utils.Utils
 import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
@@ -34,7 +32,7 @@ import java.util.stream.IntStream
 @RestController
 @RequestMapping("/api/{bsId}/money-opers")
 @Transactional
-class MoneyOperResource @Autowired constructor(
+class MoneyOperController(
         private val moneyOperService: MoneyOperService,
         private val balanceSheetRepo: BalanceSheetRepository,
         private val accountRepo: AccountRepository,
@@ -201,7 +199,7 @@ class MoneyOperResource @Autowired constructor(
             moneyOperService.updateFromAccount(origOper, oper.fromAccId)
             moneyOperService.updateToAccount(origOper, oper.toAccId)
             moneyOperService.updateAmount(origOper, oper.getAmount())
-            val toCurrencyCode = Utils.nvl(oper.toCurrencyCode, oper.currencyCode)
+            val toCurrencyCode = oper.toCurrencyCode ?: oper.currencyCode
             val toAmount = if (oper.currencyCode == toCurrencyCode) oper.getAmount() else oper.getToAmount()
             moneyOperService.updateToAmount(origOper, toAmount)
             if (!essentialEquals && origPrevStatus == MoneyOperStatus.done || origOper.status == MoneyOperStatus.pending
@@ -329,9 +327,10 @@ class MoneyOperResource @Autowired constructor(
         var reserveMoneyOper: MoneyOper? = null
         if (fromAcc != toAcc) {
             val labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyOperDto.labels)
-            reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending, moneyOperDto.operDate!!,
-                    Utils.nvl(moneyOperDto.dateNum, 0), labels, moneyOperDto.comment, moneyOperDto.period, fromAcc!!.id, toAcc!!.id,
-                    moneyOperDto.amount, moneyOperDto.amount, moneyOperDto.id, null)
+            val dateNum = moneyOperDto.dateNum ?: 0
+            reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending,
+                    moneyOperDto.operDate!!, dateNum, labels, moneyOperDto.comment, moneyOperDto.period, fromAcc!!.id,
+                    toAcc!!.id, moneyOperDto.amount, moneyOperDto.amount, moneyOperDto.id)
         }
         return reserveMoneyOper
     }
@@ -349,10 +348,11 @@ class MoneyOperResource @Autowired constructor(
         val currencyCode = if (fromBalance != null) fromBalance.currencyCode else toBalance!!.currencyCode
         val toCurrencyCode = if (toBalance != null) toBalance.currencyCode else currencyCode
         val toAmount = if (currencyCode == toCurrencyCode) amount else moneyOperDto.toAmount
+        val dateNum = moneyOperDto.dateNum ?: 0
+        val period = moneyOperDto.period ?: Period.month
         return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.id, MoneyOperStatus.pending, moneyOperDto.operDate!!,
-                Utils.nvl(moneyOperDto.dateNum, 0), labels, moneyOperDto.comment, Utils.nvl(moneyOperDto.period,
-                Period.month), moneyOperDto.fromAccId, moneyOperDto.toAccId, amount!!, toAmount!!, null,
-                moneyOperDto.recurrenceId)
+                dateNum, labels, moneyOperDto.comment, period, moneyOperDto.fromAccId, moneyOperDto.toAccId, amount!!,
+                toAmount!!, recurrenceId = moneyOperDto.recurrenceId)
     }
 
     private fun categoryToLabel(balanceSheet: BalanceSheet, operDto: MoneyOperDto): Label? {

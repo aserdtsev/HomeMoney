@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.filter
+package ru.serdtsev.homemoney.config
 
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus

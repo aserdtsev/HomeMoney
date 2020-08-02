@@ -1,150 +1,138 @@
-package ru.serdtsev.homemoney.moneyoper;
+package ru.serdtsev.homemoney.moneyoper
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import ru.serdtsev.homemoney.account.AccountRepository;
-import ru.serdtsev.homemoney.account.BalanceRepository;
-import ru.serdtsev.homemoney.account.CategoryRepository;
-import ru.serdtsev.homemoney.account.model.*;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
-import ru.serdtsev.homemoney.moneyoper.model.*;
+import com.nhaarman.mockito_kotlin.mock
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
+import org.mockito.Mockito
+import org.springframework.data.repository.findByIdOrNull
+import ru.serdtsev.homemoney.account.AccountRepository
+import ru.serdtsev.homemoney.account.BalanceRepository
+import ru.serdtsev.homemoney.account.CategoryRepository
+import ru.serdtsev.homemoney.account.model.AccountType
+import ru.serdtsev.homemoney.account.model.Balance
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet.Companion.newInstance
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.moneyoper.model.Label
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
+import ru.serdtsev.homemoney.moneyoper.model.Period
+import java.math.BigDecimal
+import java.sql.Date
+import java.time.LocalDate
+import java.util.*
 
-import javax.sql.DataSource;
-import java.math.BigDecimal;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+internal class MoneyOperControllerTest {
+    private val moneyOperController: MoneyOperController
+    private val accountRepo: AccountRepository = mock {  }
+    private val moneyOperService: MoneyOperService = mock {  }
+    private val balanceSheetRepo: BalanceSheetRepository = mock {  }
+    private val balanceRepo: BalanceRepository = mock {  }
+    private val moneyOperRepo: MoneyOperRepo = mock {  }
+    private val labelRepo: LabelRepository = mock {  }
+    private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
+    private val categoryRepo: CategoryRepository = mock {  }
+    private val balanceSheet = newInstance()
+    private lateinit var balance: Balance
+    private lateinit var account: Balance
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+    @BeforeEach
+    fun setUp() {
+        val now = Date.valueOf(LocalDate.now())
+        balance = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", now, false, "RUB",
+                BigDecimal.valueOf(10000L, 2))
+        Mockito.`when`(accountRepo.findById(balance.id)).thenReturn(Optional.of(balance))
+        account = Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account", now, false, "RUB",
+                BigDecimal.valueOf(10000L, 2))
+        Mockito.`when`(accountRepo.findById(account.id)).thenReturn(Optional.of(account))
+    }
 
-class MoneyOperResourceTest {
-  private DataSource dataSource = mock(DataSource.class);
-  private MoneyOperResource mtRes;
-  private AccountRepository accountRepo = mock(AccountRepository.class);
-  private MoneyOperService moneyOperService = mock(MoneyOperService.class);
-  private BalanceSheetRepository balanceSheetRepo = mock(BalanceSheetRepository.class);
-  private BalanceRepository balanceRepo = mock(BalanceRepository.class);
-  private MoneyOperRepo moneyOperRepo = mock(MoneyOperRepo.class);
-  private LabelRepository labelRepo = mock(LabelRepository.class);
-  private MoneyOperItemRepo moneyOperItemRepo = mock(MoneyOperItemRepo.class);
-  private CategoryRepository categoryRepo = mock(CategoryRepository.class);
-  private BalanceSheet balanceSheet = BalanceSheet.Companion.newInstance();
-  private Balance cash;
-  private Balance currentAccount;
+    @Test
+    @Disabled
+    fun newMoneyOper_simpleExpense() {
+        val labels: MutableList<Label> = ArrayList()
+        labels.add(Label(UUID.randomUUID(), balanceSheet, "label"))
+        val performed = LocalDate.now()
+        val comment = "my comment"
+        val oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done,
+                performed, 0, labels, comment, Period.month, balance.id, balanceSheet.uncatCosts!!.id,
+                BigDecimal.ONE, BigDecimal.ONE)
+        assertEquals(balanceSheet, oper.balanceSheet)
+        val items = oper.items
+        assertEquals(1, items.size)
+        val item = items[0]
+        assertEquals(oper, item.moneyOper)
+        assertEquals(balance, item.balance)
+        assertEquals(BigDecimal.ONE.negate(), item.value)
+        assertEquals(0, item.index)
+        assertEquals(performed, item.performed)
+        assertEquals(balance.id, oper.fromAccId)
+        assertEquals(balanceSheet.uncatCosts!!.id, oper.toAccId)
+        assertEquals(Period.month, oper.period)
+        assertEquals(MoneyOperStatus.done, oper.status)
+        assertEquals(comment, oper.comment)
+        assertEquals(labels, oper.labels)
+        assertEquals(0, oper.dateNum)
+    }
 
-  public MoneyOperResourceTest() {
-    this.mtRes = new MoneyOperResource(moneyOperService, balanceSheetRepo, accountRepo, balanceRepo, moneyOperRepo, labelRepo,
-        moneyOperItemRepo, categoryRepo);
-    when(accountRepo.findById(balanceSheet.getUncatCosts().getId())).thenReturn(Optional.of(balanceSheet.getUncatCosts()));
-    when(accountRepo.findById(balanceSheet.getUncatIncome().getId())).thenReturn(Optional.of(balanceSheet.getUncatIncome()));
-  }
+    @Test
+    @Disabled
+    fun newMoneyOper_simpleIncome() {
+        val performed = LocalDate.now()
+        val oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done,
+                performed, 0, emptyList(),"", Period.month, balanceSheet.uncatIncome!!.id,
+                account.id, BigDecimal.ONE, BigDecimal.ONE)
+        val items = oper.items
+        assertEquals(1, items.size)
+        val item = items[0]
+        assertEquals(account, item.balance)
+        assertEquals(BigDecimal.ONE, item.value)
+    }
 
-  @BeforeEach
-  void setUp() {
-    Date now = Date.valueOf(LocalDate.now());
+    @Test
+    @Disabled
+    fun newMoneyOper_simpleTransfer() {
+        val performed = LocalDate.now()
+        val oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done,
+                performed, 0, emptyList(),"", Period.month, account.id, balance.id, BigDecimal.ONE,
+                BigDecimal.ONE)
+        val items: List<MoneyOperItem> = oper.items
+        assertEquals(2, items.size)
+        val item0 = items[0]
+        assertEquals(account, item0.balance)
+        assertEquals(BigDecimal.ONE.negate(), item0.value)
+        val item1 = items[1]
+        assertEquals(balance, item1.balance)
+        assertEquals(BigDecimal.ONE, item1.value)
+    }
 
-    cash = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", now, false, "RUB",
-        BigDecimal.valueOf(10000L, 2));
-    when(accountRepo.findById(cash.getId())).thenReturn(Optional.of(cash));
+    @Test
+    fun createMoneyOperByMoneyTrn() {
+    }
 
-    currentAccount = new Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account", now, false, "RUB",
-        BigDecimal.valueOf(10000L, 2));
-    when(accountRepo.findById(currentAccount.getId())).thenReturn(Optional.of(currentAccount));
-  }
+    @Test
+    fun moneyOperToMoneyTrn() {
+    }
 
-  @Test
-  @Disabled
-  void newMoneyOper_simpleExpense() {
-    List<Label> labels = new ArrayList<>();
-    labels.add(new Label(UUID.randomUUID(), balanceSheet, "label"));
-    LocalDate performed = LocalDate.now();
-    String comment = "my comment";
-    MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, labels,
-        comment, Period.month, cash.getId(), balanceSheet.getUncatCosts().getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
+    @Test
+    fun createReserveMoneyOper() {
+    }
 
-    assertEquals(balanceSheet, oper.getBalanceSheet());
+    @get:Test
+    val labelsByStrings: Unit
+        get() {
+        }
 
-    List<MoneyOperItem> items = oper.getItems();
-    assertEquals(1, items.size());
+    @get:Test
+    val stringsByLabels: Unit
+        get() {
+        }
 
-    MoneyOperItem item = items.get(0);
-    assertEquals(oper, item.getMoneyOper());
-    assertEquals(cash, item.getBalance());
-    assertEquals(BigDecimal.ONE.negate(), item.getValue());
-    assertEquals(0, item.getIndex());
-    assertEquals(performed, item.getPerformed());
-
-    assertEquals(cash.getId(), oper.getFromAccId());
-    assertEquals(balanceSheet.getUncatCosts().getId(), oper.getToAccId());
-
-    assertEquals(Period.month, oper.getPeriod());
-    assertEquals(MoneyOperStatus.done, oper.getStatus());
-    assertEquals(comment, oper.getComment());
-    assertEquals(labels, oper.getLabels());
-    assertEquals(0, oper.getDateNum());
-  }
-
-  @Test
-  @Disabled
-  void newMoneyOper_simpleIncome() {
-    LocalDate performed = LocalDate.now();
-    MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
-        "", Period.month, balanceSheet.getUncatIncome().getId(), currentAccount.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
-
-    List<MoneyOperItem> items = oper.getItems();
-    assertEquals(1, items.size());
-
-    MoneyOperItem item = items.get(0);
-    assertEquals(currentAccount, item.getBalance());
-    assertEquals(BigDecimal.ONE, item.getValue());
-  }
-
-  @Test
-  @Disabled
-  void newMoneyOper_simpleTransfer() {
-    LocalDate performed = LocalDate.now();
-    MoneyOper oper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.done, performed, 0, null,
-        "", Period.month, currentAccount.getId(), cash.getId(), BigDecimal.ONE, BigDecimal.ONE, null, null);
-
-    List<MoneyOperItem> items = oper.getItems();
-    assertEquals(2, items.size());
-
-    MoneyOperItem item0 = items.get(0);
-    assertEquals(currentAccount, item0.getBalance());
-    assertEquals(BigDecimal.ONE.negate(), item0.getValue());
-
-    MoneyOperItem item1 = items.get(1);
-    assertEquals(cash, item1.getBalance());
-    assertEquals(BigDecimal.ONE, item1.getValue());
-  }
-
-  @Test
-  void createMoneyOperByMoneyTrn() {
-  }
-
-  @Test
-  void moneyOperToMoneyTrn() {
-  }
-
-  @Test
-  void createReserveMoneyOper() {
-  }
-
-
-  @Test
-  void getLabelsByStrings() {
-  }
-
-  @Test
-  void getStringsByLabels() {
-  }
-
-
+    init {
+        moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, accountRepo, balanceRepo, moneyOperRepo, labelRepo,
+                moneyOperItemRepo, categoryRepo)
+        Mockito.`when`(accountRepo.findByIdOrNull(balanceSheet.uncatCosts!!.id)).thenReturn(balanceSheet.uncatCosts)
+        Mockito.`when`(accountRepo.findByIdOrNull(balanceSheet.uncatIncome!!.id)).thenReturn(balanceSheet.uncatIncome)
+    }
 }

@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney
+package ru.serdtsev.homemoney.account
 
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.PathVariable

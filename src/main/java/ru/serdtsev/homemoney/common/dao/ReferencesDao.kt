@@ -1,8 +1,8 @@
-package ru.serdtsev.homemoney.dao
+package ru.serdtsev.homemoney.common.dao
 
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Component
-import ru.serdtsev.homemoney.dto.HmCurrency
+import ru.serdtsev.homemoney.common.dto.HmCurrency
 import java.util.*
 import java.util.stream.Collectors
 import javax.sql.DataSource

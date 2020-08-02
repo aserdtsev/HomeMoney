@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney
+package ru.serdtsev.homemoney.user
 
 import com.google.common.base.Charsets
 import com.google.common.hash.Hashing
@@ -12,7 +12,6 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet.Companion.newInstance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
-import ru.serdtsev.homemoney.user.*
 import java.util.*
 
 @RestController

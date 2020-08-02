@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.filter
+package ru.serdtsev.homemoney.config
 
 import net.sf.ehcache.Cache
 import net.sf.ehcache.CacheManager
