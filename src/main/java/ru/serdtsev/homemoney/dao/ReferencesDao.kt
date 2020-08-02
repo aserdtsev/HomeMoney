@@ -12,7 +12,7 @@ import javax.sql.DataSource
 class ReferencesDao (dataSource: DataSource) {
     private val jdbcTemplate: JdbcTemplate
 
-    fun getCurrencies(bsId: UUID?): List<HmCurrency> {
+    fun getCurrencies(bsId: UUID): List<HmCurrency> {
         val sql = """
             select b.currency_code  from accounts a, balances b  
                 where a.balance_sheet_id = ? and b.id = a.id  

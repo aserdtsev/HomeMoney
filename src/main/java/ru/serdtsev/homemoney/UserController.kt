@@ -5,7 +5,6 @@ import com.google.common.hash.Hashing
 import mu.KotlinLogging
 import net.sf.ehcache.Cache
 import net.sf.ehcache.CacheManager
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
@@ -18,14 +17,15 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/user")
-class UserResource @Autowired constructor(private val userRepo: UserRepository,
-        private val userAuthTokenRepo: UserAuthTokenRepository, private val balanceSheetRepo: BalanceSheetRepository
+class UserController(
+        private val userRepo: UserRepository,
+        private val userAuthTokenRepo: UserAuthTokenRepository,
+        private val balanceSheetRepo: BalanceSheetRepository
 ) {
     @RequestMapping("/balance-sheet-id")
     @Transactional(readOnly = true)
     fun getBalanceSheetId(@CookieValue(value = "userId", required = false) userId: UUID?): HmResponse {
-        val response: HmResponse
-        response = try {
+        return try {
             if (userId == null) {
                 throw HmException(HmException.Code.UserIdCookieIsEmpty)
             }
@@ -34,7 +34,6 @@ class UserResource @Autowired constructor(private val userRepo: UserRepository,
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
         }
-        return response
     }
 
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])

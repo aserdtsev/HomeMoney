@@ -16,7 +16,7 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/{bsId}/categories")
-class CategoriesResource @Autowired constructor(
+class CategoriesController @Autowired constructor(
         private val balanceSheetRepo: BalanceSheetRepository,
         private val categoryRepo: CategoryRepository
 ) {
