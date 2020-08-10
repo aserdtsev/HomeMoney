@@ -10,6 +10,7 @@ import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.Period
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.sql.Date
 import java.time.LocalDate
 import java.util.*
@@ -33,11 +34,11 @@ open class Balance(
         get() = field ?: "RUB"
 
     open var value: BigDecimal? = value
-        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, 0)
+        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, RoundingMode.UP)
 
     @Column(name = "min_value")
     open var minValue: BigDecimal? = null
-        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, 0)
+        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, RoundingMode.UP)
 
     @get:JsonIgnore
     @OneToOne
@@ -46,7 +47,7 @@ open class Balance(
 
     @Column(name = "credit_limit")
     open var creditLimit: BigDecimal? = null
-        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, 0)
+        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, RoundingMode.UP)
 
     open var num: Long? = null
         get() = field ?: 0L
@@ -69,7 +70,7 @@ open class Balance(
         minValue = balance.minValue
         reserve = balance.reserveId?.let { reserveRepo.findByIdOrNull(it) }
         if (balance.value!!.compareTo(value) != 0) {
-            val balanceSheet = balanceSheet
+            val balanceSheet = balanceSheet!!
             val more = balance.value!!.compareTo(value) > 0
             val fromAccId = if (more) balanceSheet.uncatIncome!!.id else balance.id
             val toAccId = if (more) balance.id else balanceSheet.uncatCosts!!.id

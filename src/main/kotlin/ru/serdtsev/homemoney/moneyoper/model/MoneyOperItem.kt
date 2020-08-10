@@ -22,7 +22,7 @@ class MoneyOperItem(
         var performed: LocalDate,
         var index: Int = 0
 ) : Serializable {
-    @ManyToOne @JoinColumn(name = "bs_id") val balanceSheet: BalanceSheet = balance.balanceSheet
+    @ManyToOne @JoinColumn(name = "bs_id") val balanceSheet: BalanceSheet = balance.balanceSheet!!
     fun getBalanceId(): UUID = balance.id
 
     override fun equals(other: Any?): Boolean {

@@ -3,9 +3,9 @@ import org.codehaus.groovy.runtime.GStringImpl
 
 buildscript {
     ext {
-        javaVersion = '1.8'
+        javaVersion = '11'
         kotlinVersion = '1.3.72'
-        springBootVersion = '2.3.1.RELEASE'
+        springBootVersion = '2.3.2.RELEASE'
     }
 }
 
@@ -13,9 +13,7 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "$kotlinVersion"
     id "org.jetbrains.kotlin.plugin.allopen" version "$kotlinVersion"
     id "org.jetbrains.kotlin.plugin.noarg" version "$kotlinVersion"
-    id "io.spring.dependency-management" version "1.0.9.RELEASE"
     id 'org.springframework.boot' version "$springBootVersion"
-    id "io.freefair.lombok" version "5.1.0"
 }
 
 apply plugin: 'idea'
@@ -24,8 +22,6 @@ apply plugin: 'kotlin'
 apply plugin: 'kotlin-spring'
 apply plugin: 'kotlin-jpa'
 apply plugin: 'org.springframework.boot'
-apply plugin: 'io.spring.dependency-management'
-apply plugin: "io.freefair.lombok"
 
 idea {
     module {
@@ -33,8 +29,15 @@ idea {
     }
 }
 
+noArg {
+    annotation("com.autoxpl.clientapiservice.config.NoArgConstructor")
+    annotation("com.fasterxml.jackson.annotation.JsonTypeInfo")
+}
+
 group = 'ru.serdtsev'
 version = '1.0.2-SNAPSHOT'
+java.sourceCompatibility(JavaVersion.VERSION_11)
+java.targetCompatibility(JavaVersion.VERSION_11)
 
 configurations {
     developmentOnly
@@ -55,6 +58,7 @@ repositories {
 }
 
 dependencies {
+    implementation platform("org.springframework.boot:spring-boot-dependencies:$springBootVersion")
     implementation('org.springframework.boot:spring-boot-starter-actuator')
     implementation('org.springframework.boot:spring-boot-starter-jdbc')
     implementation('org.springframework.boot:spring-boot-starter-data-jpa')

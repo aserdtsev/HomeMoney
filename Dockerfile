@@ -1,4 +1,4 @@
-FROM java:8
+FROM openjdk:11.0.6-jre-slim
 
 MAINTAINER Andrey Serdtsev <andrey.serdtsev@gmail.com>
 

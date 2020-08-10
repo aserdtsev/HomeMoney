@@ -13,10 +13,10 @@ import javax.persistence.*
 @DiscriminatorValue("category")
 open class Category(
         id: UUID,
-        balanceSheet: BalanceSheet,
+        balanceSheet: BalanceSheet?,
         type: AccountType,
         name: String,
-        createdDate: Date,
+        createdDate: Date?,
         isArc: Boolean? = null,
         @JsonIgnore @ManyToOne @JoinColumn(name = "root_id") open var root: Category? = null
 ) : Account(id, balanceSheet, type, name, createdDate, isArc), Comparable<Account> {
