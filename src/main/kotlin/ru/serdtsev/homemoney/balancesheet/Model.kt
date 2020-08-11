@@ -41,7 +41,6 @@ data class BalanceSheet(
     val balances: List<Balance>?
         @JsonIgnore get() = this.accounts
                 ?.filterIsInstance<Balance>()
-                ?.map { account -> account as Balance }
                 .orEmpty()
 
     fun init(): BalanceSheet {

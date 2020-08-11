@@ -121,7 +121,7 @@ class MoneyOper(
 
     fun complete() {
         assert(status == MoneyOperStatus.pending || status == MoneyOperStatus.cancelled) { status!! }
-        assert(!performed!!.isAfter(LocalDate.now()))
+        assert(!performed.isAfter(LocalDate.now()))
         changeBalances(false)
         status = MoneyOperStatus.done
     }

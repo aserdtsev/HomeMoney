@@ -99,6 +99,7 @@ class MoneyOperController(
         var page: Page<*>
         val pager: Function<Pageable, Page<*>>
         val adder: Consumer<Page<*>>
+        @Suppress("UNCHECKED_CAST")
         when {
             search.matches(SearchDateRegex) -> {
                 // по дате в формате ISO
