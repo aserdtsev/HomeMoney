@@ -1,18 +1,19 @@
 package ru.serdtsev.homemoney.moneyoper
 
+import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito
 import org.springframework.data.repository.findByIdOrNull
 import ru.serdtsev.homemoney.account.AccountRepository
 import ru.serdtsev.homemoney.account.BalanceRepository
 import ru.serdtsev.homemoney.account.CategoryRepository
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet.Companion.newInstance
+import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.moneyoper.model.Label
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem
@@ -24,8 +25,18 @@ import java.time.LocalDate
 import java.util.*
 
 internal class MoneyOperControllerTest {
-    private val moneyOperController: MoneyOperController
-    private val accountRepo: AccountRepository = mock {  }
+    private val now = Date.valueOf(LocalDate.now())
+    private val balanceSheet = BalanceSheet.newInstance()
+    private val balance = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", now, false,
+            "RUB", BigDecimal.valueOf(10000L, 2))
+    private val account = Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account",
+        now, false, "RUB", BigDecimal.valueOf(10000L, 2))
+    private val accountRepo: AccountRepository = mock {
+        whenever(it.findById(balanceSheet.uncatCosts!!.id)).thenReturn(Optional.of(balanceSheet.uncatCosts!!))
+        whenever(it.findById(balanceSheet.uncatIncome!!.id)).thenReturn(Optional.of(balanceSheet.uncatIncome!!))
+        whenever(it.findById(balance.id)).thenReturn(Optional.of(balance))
+        whenever(it.findById(account.id)).thenReturn(Optional.of(account))
+    }
     private val moneyOperService: MoneyOperService = mock {  }
     private val balanceSheetRepo: BalanceSheetRepository = mock {  }
     private val balanceRepo: BalanceRepository = mock {  }
@@ -33,19 +44,11 @@ internal class MoneyOperControllerTest {
     private val labelRepo: LabelRepository = mock {  }
     private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
     private val categoryRepo: CategoryRepository = mock {  }
-    private val balanceSheet = newInstance()
-    private lateinit var balance: Balance
-    private lateinit var account: Balance
+    private val moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, accountRepo, balanceRepo,
+            moneyOperRepo, labelRepo, moneyOperItemRepo, categoryRepo)
 
     @BeforeEach
     fun setUp() {
-        val now = Date.valueOf(LocalDate.now())
-        balance = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", now, false, "RUB",
-                BigDecimal.valueOf(10000L, 2))
-        Mockito.`when`(accountRepo.findById(balance.id)).thenReturn(Optional.of(balance))
-        account = Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account", now, false, "RUB",
-                BigDecimal.valueOf(10000L, 2))
-        Mockito.`when`(accountRepo.findById(account.id)).thenReturn(Optional.of(account))
     }
 
     @Test
@@ -105,34 +108,5 @@ internal class MoneyOperControllerTest {
         val item1 = items[1]
         assertEquals(balance, item1.balance)
         assertEquals(BigDecimal.ONE, item1.value)
-    }
-
-    @Test
-    fun createMoneyOperByMoneyTrn() {
-    }
-
-    @Test
-    fun moneyOperToMoneyTrn() {
-    }
-
-    @Test
-    fun createReserveMoneyOper() {
-    }
-
-    @get:Test
-    val labelsByStrings: Unit
-        get() {
-        }
-
-    @get:Test
-    val stringsByLabels: Unit
-        get() {
-        }
-
-    init {
-        moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, accountRepo, balanceRepo, moneyOperRepo, labelRepo,
-                moneyOperItemRepo, categoryRepo)
-        Mockito.`when`(accountRepo.findByIdOrNull(balanceSheet.uncatCosts!!.id)).thenReturn(balanceSheet.uncatCosts)
-        Mockito.`when`(accountRepo.findByIdOrNull(balanceSheet.uncatIncome!!.id)).thenReturn(balanceSheet.uncatIncome)
     }
 }

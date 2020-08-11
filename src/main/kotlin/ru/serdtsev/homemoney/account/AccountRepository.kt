@@ -9,6 +9,7 @@ import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import java.util.*
 
 interface AccountRepository : CrudRepository<Account, UUID>
+
 interface BalanceRepository : CrudRepository<Balance, UUID> {
     fun findByBalanceSheet(balanceSheet: BalanceSheet): List<Balance>
 }

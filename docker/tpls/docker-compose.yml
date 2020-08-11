@@ -1,12 +1,12 @@
 version: "3"
 services:
     homemoney:
-        image: "${IMAGE}:${VERSION}"
+        image: @image@:@version@
         container_name: homemoney
         hostname: homemoney
         volumes:
-            - ./log:/opt/homemoney/log
             - ./config:/opt/homemoney/config
+            - ./log:/opt/homemoney/log
             - ./work:/opt/homemoney/work
         ports:
             - 8001:8080
