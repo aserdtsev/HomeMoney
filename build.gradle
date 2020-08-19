@@ -1,5 +1,5 @@
 import org.apache.tools.ant.filters.*
-import org.codehaus.groovy.runtime.GStringImpl
+import com.bmuschko.gradle.docker.tasks.image.*
 
 buildscript {
     ext {
@@ -14,6 +14,7 @@ plugins {
     id "org.jetbrains.kotlin.plugin.allopen" version "$kotlinVersion"
     id "org.jetbrains.kotlin.plugin.noarg" version "$kotlinVersion"
     id 'org.springframework.boot' version "$springBootVersion"
+    id 'com.bmuschko.docker-remote-api' version '6.6.1'
 }
 
 apply plugin: 'idea'
@@ -106,10 +107,9 @@ jar {
     }
 }
 
-ext {
-    image = 'homemoney'
-    dockerDir = "$projectDir/docker" as GStringImpl
-}
+
+def image = 'homemoney'
+def dockerDir = "$projectDir/docker"
 
 task copyJar(type: Copy, dependsOn: bootJar) {
     group = 'docker'
@@ -120,9 +120,9 @@ task copyJar(type: Copy, dependsOn: bootJar) {
     into("${dockerDir}/jars")
 }
 
-task createDockerCompose(type: Copy) {
+task createDockerFiles(type: Copy) {
     group = 'docker'
-    description = 'Creates a docker-compose.yml'
+    description = 'Creates Docker files'
     from("$dockerDir/tpls") {
         include '*'
         filter(ReplaceTokens, tokens: [
@@ -133,7 +133,7 @@ task createDockerCompose(type: Copy) {
     into("$dockerDir")
 }
 
-task createDockerConfig(type: Copy) {
+task createConfigs(type: Copy) {
     group = 'docker'
     description = 'Creates config files'
     from("$projectDir/config") {
@@ -142,16 +142,22 @@ task createDockerConfig(type: Copy) {
     into("$dockerDir/config")
 }
 
-task buildDockerImage(type: Exec, dependsOn: [clean, build, copyJar, createDockerCompose, createDockerConfig]) {
+task removeImage(type: DockerRemoveImage) {
     group = 'docker'
-    description = 'Builds a docker image'
-    workingDir "${dockerDir}"
-    commandLine './build-docker.sh'
+    description = 'Removes a docker image'
+    force = true
+    targetImageId("$image:$version")
+    onError { e ->
+        if (e.message != null && !e.message.contains('NotModifiedException') && !e.message.contains('No such image')) {
+            throw new RuntimeException(e)
+        }
+    }
 }
 
-task buildAndPublishDockerImage(type: Exec, dependsOn: buildDockerImage) {
+task buildImage(type: DockerBuildImage) {
     group = 'docker'
-    description = 'Publishes a docker image'
-    workingDir "${dockerDir}"
-    commandLine './publish-docker.sh'
+    description = 'Builds a docker image'
+    dependsOn clean, build, copyJar, createDockerFiles, createConfigs, removeImage
+    inputDir = file(dockerDir)
+    images.add("$image:$version")
 }
