@@ -21,7 +21,7 @@ import javax.persistence.*
 @DiscriminatorValue("balance")
 open class Balance(
         id: UUID,
-        balanceSheet: BalanceSheet,
+        balanceSheet: BalanceSheet?,
         type: AccountType,
         name: String,
         createdDate: Date,
