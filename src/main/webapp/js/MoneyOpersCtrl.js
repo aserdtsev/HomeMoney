@@ -234,8 +234,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     var oper;
     if (typeof param.id !== 'undefined') {
       var recurrenceOper = param;
-      oper = {type: recurrenceOper.type, fromAccId: recurrenceOper.fromAccId, amount: recurrenceOper.amount, toAccId: recurrenceOper.toAccId,
-        comment: recurrenceOper.comment, labels: recurrenceOper.labels, period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
+      oper = {type: recurrenceOper.type, fromAccId: recurrenceOper.fromAccId, amount: recurrenceOper.amount,
+        toAccId: recurrenceOper.toAccId, comment: recurrenceOper.comment, labels: recurrenceOper.labels,
+        period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
     } else {
       oper = {type: param, labels: []};
     }
@@ -261,6 +262,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.saveOper = function(oper) {
     delete oper.isEdited;
+    if (typeof oper.amount === 'string' && oper.amount.includes(',')) {
+      oper.amount = oper.amount.replace(',', '.')
+    }
     if (oper.status === 'doneNew') {
       $scope.createOper(oper);
     } else {
