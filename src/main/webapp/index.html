@@ -220,7 +220,7 @@
             <span>{{recurrenceOper.nextDate}}</span>
             <span ng-bind-html="getAmountAsHtml(recurrenceOper)"
                   class="{{recurrenceOper.type == 'transfer' ? 'money' : (recurrenceOper.type == 'income' ? 'positive-money' : 'negative-money')}}">
-        </span>
+            </span>
             <span ng-bind="recurrenceOper.items[0].balanceName"></span>
             <span ng-show="recurrenceOper.items.length > 1">&rarr;</span>
             <span ng-show="recurrenceOper.items.length > 1" ng-bind="recurrenceOper.items[1].balanceName"></span>
@@ -229,9 +229,9 @@
               <span>{{recurrenceOper['comment']}}</span>
               <div><span class="label" ng-repeat="label in recurrenceOper['labels']">{{label}}</span></div>
               <span>
-            <a href="" ng-click="recurrenceOper.isEdited=true">изменить</a>
-            <a href="" ng-click="deleteRecurrenceOper(recurrenceOper)">удалить</a>
-          </span>
+                <a href="" ng-click="recurrenceOper.isEdited=true">изменить</a>
+                <a href="" ng-click="deleteRecurrenceOper(recurrenceOper)">удалить</a>
+              </span>
             </div>
           </div>
           <div ng-show="recurrenceOper.isEdited">
@@ -239,15 +239,30 @@
               <div>
                 <input class="date" ng-model="recurrenceOper.nextDate" placeholder="Дата"/>
                 <select
-                    ng-model="recurrenceOper.type === 'income' ? recurrenceOper.toAccId : recurrenceOper.fromAccId"
-                    ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)"
-                    ng-click="refreshToAccounts(recurrenceOper.fromAccId)">
+                        ng-if="recurrenceOper.type !== 'income'"
+                        ng-model="recurrenceOper.fromAccId"
+                        ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)"
+                        ng-click="refreshToAccounts(recurrenceOper.fromAccId)">
                 </select>
                 <input class="amount" ng-model="recurrenceOper.amount" placeholder="Сумма"/>
                 <select
-                    ng-model="recurrenceOper.type === 'income' ? recurrenceOper.fromAccId : recurrenceOper.toAccId"
-                    ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)"
-                    ng-click="refreshFromAccounts(recurrenceOper.toAccId)">
+                        ng-if="recurrenceOper.type !== 'income'"
+                        ng-model="recurrenceOper.toAccId"
+                        ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)"
+                        ng-click="refreshFromAccounts(recurrenceOper.toAccId)">
+                </select>
+                <select
+                        ng-if="recurrenceOper.type === 'income'"
+                        ng-model="recurrenceOper.toAccId"
+                        ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)"
+                        ng-click="refreshToAccounts(recurrenceOper.fromAccId)">
+                </select>
+                <input class="amount" ng-model="recurrenceOper.amount" placeholder="Сумма"/>
+                <select
+                        ng-if="recurrenceOper.type === 'income'"
+                        ng-model="recurrenceOper.fromAccId"
+                        ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)"
+                        ng-click="refreshFromAccounts(recurrenceOper.toAccId)">
                 </select>
                 <select ng-model="recurrenceOper.period">
                   <option value="month">Месяц</option>
@@ -258,15 +273,15 @@
               <div>
                 <input ng-model="recurrenceOper.comment" placeholder="Комментарий"/>
                 <span>
-              <span ng-repeat="label in recurrenceOper['labels']">
-                <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
-                <input class="label" ng-show="labelIsEdited[$index]" ng-model="label"
+                  <span ng-repeat="label in recurrenceOper['labels']">
+                    <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
+                    <input class="label" ng-show="labelIsEdited[$index]" ng-model="label"
                        ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, recurrenceOper)"/>
-              </span>
-              <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
-              <input class="label" ng-hide="!isNewLabel" ng-model="label"
+                  </span>
+                  <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
+                  <input class="label" ng-hide="!isNewLabel" ng-model="label"
                      ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, recurrenceOper);label=$event.keyCode==13 ? null : label"/>
-            </span>
+                </span>
               </div>
               <div>
                 <input type="submit"
