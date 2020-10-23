@@ -56,7 +56,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadAccounts = function() {
     if (!$scope.isLogged()) return;
-    var response = AccountsSvc.query({bsId: $rootScope.bsId}, function() {
+    let response = AccountsSvc.query({bsId: $rootScope.bsId}, function() {
       $scope.accounts = response.data.filter(function(account) {
         return !account['isArc'];
       });
@@ -65,13 +65,13 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadBalances = function() {
     if (!$scope.isLogged()) return;
-    var response = BalancesSvc.query({bsId: $rootScope.bsId}, function() {
+    let response = BalancesSvc.query({bsId: $rootScope.bsId}, function() {
       $scope.balances = response.data;
     })
   }
 
   $scope.getGroupList = function(caption) {
-    var result;
+    let result;
     $scope.opers.data.forEach(function(groupList) {
       if (typeof result === 'undefined' && groupList.caption === caption) {
         result = groupList;
@@ -92,10 +92,10 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.addToOpers = function(list) {
-    var today = $scope.getToday();
+    let today = $scope.getToday();
     list.forEach(function(oper) {
-      var groupName = (oper.status === "done") ? oper.operDate : "Ближайшие";
-      var groupList = $scope.getGroupList(groupName);
+      let groupName = (oper.status === "done") ? oper.operDate : "Ближайшие";
+      let groupList = $scope.getGroupList(groupName);
       groupList.items = groupList.items.concat(oper);
       if (groupName === 'Ближайшие' && (new Date(oper.operDate) - today) === 0) {
         groupList.expanded = true;
@@ -105,34 +105,34 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadRecurrenceOpers = function() {
     if (!$scope.isLogged()) return;
-    var response = RecurrenceOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
+    let response = RecurrenceOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
       $scope.recurrenceOpers = response.data;
     });
   }
 
   $scope.loadOpersFirstPage = function(limit) {
     if (!$scope.isLogged()) return;
-    var qLimit = limit;
+    let qLimit = limit;
     if (typeof limit === 'undefined') {
       qLimit = $scope.pageSize;
     }
-    var response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search, limit: qLimit, offset: 0}, function() {
-      $scope.opers = {data: [], hasNext: response.data.paging.hasNext};
+    let response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search, limit: qLimit, offset: 0}, function() {
+      $scope.opers = {data: [], hasNext: response.data['paging'].hasNext};
       $scope.addToOpers(response.data.items);
     });
   };
 
   $scope.loadOpersNextPage = function(search) {
-    var offset = $scope.getOpersLength();
-    var response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
+    let offset = $scope.getOpersLength();
+    let response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
       $scope.addToOpers(response.data.items);
-      $scope.opers.hasNext = response.data.paging.hasNext;
+      $scope.opers.hasNext = response.data['paging'].hasNext;
     });
   };
 
   // Возвращает количество завершенных операций в $scope.opers.
   $scope.getOpersLength = function() {
-    var length = 0;
+    let length = 0;
     $scope.opers.data.forEach(function(groupList) {
       length += groupList.isDone ? groupList.items.length : 0;
     });
@@ -154,7 +154,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   };
 
   $scope.getToday = function() {
-    var today = new Date();
+    let today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
   }
@@ -168,11 +168,11 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
         if (account.type === 'expense' || account.type === 'income') {
           return false;
         }
-        var result = true;
+        let result = true;
         if (typeof oper.toAccId !== 'undefined') {
           result = account.id !== oper.toAccId;
           if (result) {
-            var toAccount = $scope.getAccount(oper.toAccId);
+            let toAccount = $scope.getAccount(oper.toAccId);
             if (toAccount.type === 'reserve' || toAccount.type === 'service') {
               result = account.type === 'reserve' || account.type === 'service';
             } else {
@@ -193,11 +193,11 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     }
     return $scope.accounts.filter(function(account) {
       if (oper.type === 'transfer') {
-        var result = true;
+        let result = true;
         if (typeof oper.fromAccId !== 'undefined') {
           result = account.id !== oper.fromAccId;
           if (result) {
-            var fromAccount = $scope.getAccount(oper.fromAccId);
+            let fromAccount = $scope.getAccount(oper.fromAccId);
             if (fromAccount.type === 'reserve' || fromAccount.type === 'service') {
               result = account.type === 'reserve' || account.type === 'service';
             } else {
@@ -213,7 +213,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.loadLabels = function() {
-    var response = MoneyOpersSvc.labels({bsId: $rootScope.bsId}, function() {
+    let response = MoneyOpersSvc.labels({bsId: $rootScope.bsId}, function() {
       $scope.labels = response.data;
     });
   }
@@ -231,24 +231,43 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.newOper = function(param) {
-    var oper;
+    let performedAt = formatDate($scope.getDefaultDate());
+    let oper;
     if (typeof param.id !== 'undefined') {
-      var recurrenceOper = param;
+      let recurrenceOper = param;
       oper = {type: recurrenceOper.type, fromAccId: recurrenceOper.fromAccId, amount: recurrenceOper.amount,
         toAccId: recurrenceOper.toAccId, comment: recurrenceOper.comment, labels: recurrenceOper.labels,
         period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
     } else {
-      oper = {type: param, labels: []};
+      let type = param;
+      let items = [{id: randomUUID(), balanceId: null, value: null, performedAt: performedAt, index: 0}]
+      oper = {type: type, items: items, labels: []};
+      if (type === 'transfer') {
+        items.push({id: randomUUID(), balanceId: null, value: null, performedAt: performedAt, index: 1})
+      }
     }
     oper.status = 'doneNew';
-    oper.operDate = formatDate($scope.getDefaultDate());
+    oper.operDate = performedAt;
     oper.isEdited = true;
-    var groupList = $scope.getGroupList('Новые');
+    let groupList = $scope.getGroupList('Новые');
     groupList.items.splice(0, 0, oper);
   };
 
+  $scope.validOper = function(oper) {
+    let isValid;
+    if (oper.type === 'transfer') {
+      isValid = oper.items.length === 2;
+    } else {
+      isValid = oper.items.length === 1;
+    }
+    isValid &&= oper.items.reduce(function(checkResult, operItem) {
+      return checkResult && operItem.balanceId !== null && operItem.value !== null;
+    }, true)
+    return isValid;
+  }
+
   $scope.completeOper = function(oper) {
-    var today = formatDate(new Date());
+    let today = formatDate(new Date());
     if (oper.operDate > today) {
       oper.operDate = today;
     }
@@ -275,7 +294,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.createOper = function(oper) {
     oper.id = randomUUID();
-    var response = MoneyOpersSvc.create({bsId: $rootScope.bsId}, oper, function() {
+    let response = MoneyOpersSvc.create({bsId: $rootScope.bsId}, oper, function() {
       $scope.loadOpersFirstPage($scope.getOpersLength() + response.data.length);
       $rootScope.$broadcast('refreshBalanceSheet');
     });
@@ -321,7 +340,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   // item - экземпляр Oper или RecurrenceOper.
   function addLabel(item, label) {
     if (typeof label !== 'undefined' && label.length > 0) {
-      var labels = item['labels'];
+      let labels = item['labels'];
       labels.splice(labels.length, 0, label);
     }
   }
@@ -329,7 +348,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   // item - экземпляр Oper или RecurrenceOper.
   $scope.editLabelKeyPressed = function(event, index, label, item) {
     if (event.keyCode === 13) {
-      var labels = item['labels'];
+      let labels = item['labels'];
       if (typeof label !== 'undefined' && label.length > 0) {
         labels[index] = label;
       } else {
@@ -338,17 +357,13 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     }
   };
 
-  $scope.getSignedAmount = function(oper) {
-    return oper['amount'] * (oper['type'] === 'e' ? -1 : 1);
-  };
-
   $scope.getPeriodName = function(oper) {
-    var period = oper['period'];
+    let period = oper['period'];
     return (period === 'month') ? 'Месяц' :
         (period === 'quarter') ? 'Квартал' :
         (period === 'year') ? 'Год' :
         (period === 'single') ? 'Разовая' : '?';
-  }
+  };
 
   $scope.formatMoney = function(amount, currencySymbol) {
     return $rootScope.formatMoney(amount, currencySymbol);
@@ -360,13 +375,13 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       $scope.search = '';
       $scope.refresh();
     }
-  }
+  };
 
   $scope.skipMoneyOperByRecurrenceOper = function(recurrenceOper) {
     RecurrenceOpersSvc.skip({bsId: $rootScope.bsId}, recurrenceOper, function() {
       $scope.refresh();
     });
-  }
+  };
 
   $scope.cancelRecurrenceOper = function() {
     $scope.loadRecurrenceOpers();
@@ -401,12 +416,12 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
    * Возвращает true, если счета, заданные идентификаторами @param id1 и @param id2, в разных валютах.
    * Если хотя бы один из счетов не определен или счета в одной валюте, возвращает false.
    */
-  $scope.balanceCysIsNotEqual = function(id1, id2) {
+  $scope.balanceCurrenciesIsNotEqual = function(id1, id2) {
     if (typeof id1 === 'undefined' || typeof id2 === 'undefined') {
       return false;
     }
-    var balance1 = $scope.getBalance(id1);
-    var balance2 = $scope.getBalance(id2);
+    let balance1 = $scope.getBalance(id1);
+    let balance2 = $scope.getBalance(id2);
     if (typeof balance1 === 'undefined' || typeof balance2 === 'undefined') {
       return false;
     }
@@ -414,9 +429,18 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.getAmountAsHtml = function(oper) {
-    var result = $scope.formatMoney($scope.getSignedAmount(oper), oper['currencySymbol'])
-    if (oper['currencyCode'] !== oper['toCurrencyCode'])
-      result = result + " (" + $scope.formatMoney(oper['toAmount'], oper['toCurrencySymbol']) + ")"
-    return result
+    let arrow = '';
+    if (oper.type !== 'transfer') {
+      if (oper.items[0].value > 0) arrow = '↗'; else arrow = '↘';
+    }
+    let result = $scope.formatMoney($scope.getAbsAmount(oper), oper.items[0]['currencySymbol']) + '&nbsp;' + arrow;
+    if (oper.type === 'transfer' && oper.items.length > 1 && oper.items[0]['currencyCode'] !== oper.items[1]['currencyCode']) {
+      result = result + " (" + $scope.formatMoney(oper.items[1]['value'], oper.items[1]['currencySymbol']) + ")";
+    }
+    return result;
   }
+
+  $scope.getAbsAmount = function(oper) {
+    return oper.items[0]['value'] * (oper['type'] !== 'income' ? -1 : 1);
+  };
 }

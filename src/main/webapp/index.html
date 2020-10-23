@@ -148,32 +148,21 @@
             </div>
             <div>
               <input class="date" ng-model="oper.operDate" placeholder="Дата"/>
-              <input class="amount" ng-model="oper.amount" placeholder="Сумма"/>
+              <input class="amount" ng-model="oper.items[0].value" placeholder="Сумма"/>
               <span ng-bind="oper.type == 'income' ? 'Куда: ' : 'Откуда: '"></span>
               <select
-                  ng-if="oper.type != 'income'"
-                  ng-model="oper.fromAccId"
+                  ng-model="oper.items[0].balanceId"
                   ng-options="acc.id as acc.name for acc in getFirstAccounts(oper)">
               </select>
+              <span ng-if="oper.type == 'transfer'">Куда: </span>
               <select
-                  ng-if="oper.type == 'income'"
-                  ng-model="oper.toAccId"
-                  ng-options="acc.id as acc.name for acc in getFirstAccounts(oper)">
-              </select>
-              <span ng-bind="oper.type == 'transfer' ? 'Куда: ' : 'Категория: '"></span>
-              <select
-                  ng-if="oper.type != 'income'"
-                  ng-model="oper.toAccId"
-                  ng-options="acc.id as acc.name for acc in getSecondAccounts(oper)">
-              </select>
-              <select
-                  ng-if="oper.type == 'income'"
-                  ng-model="oper.fromAccId"
+                  ng-if="oper.type == 'transfer'"
+                  ng-model="oper.items[1].balanceId"
                   ng-options="acc.id as acc.name for acc in getSecondAccounts(oper)">
               </select>
               <input class="amount"
-                     ng-if="oper.type == 'transfer' && balanceCysIsNotEqual(oper.fromAccId, oper.toAccId)"
-                     ng-model="oper.toAmount"
+                     ng-if="oper.type == 'transfer' && balanceCurrenciesIsNotEqual(oper.items[0].balanceId, oper.items[1].balanceId)"
+                     ng-model="oper.items[1].value"
                      placeholder="Сумма"/>
             </div>
             <div>
@@ -192,7 +181,7 @@
                 </span>
                 <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
                 <input class="label" ng-hide="!isNewLabel" ng-model="newLabel" list="labelList"
-                       ng-keypress="isNewLabel=$event.keyCode!=13; newLabelKeyPressed($event, newLabel, oper);newLabel = $event.keyCode==13 ? null : newLabel"/>
+                       ng-keypress="isNewLabel=$event.keyCode!=13; newLabelKeyPressed($event, newLabel, oper); newLabel = $event.keyCode==13 ? null : newLabel"/>
                 <datalist id="labelList">
                   <option ng-repeat="tag in labels" value="{{tag}}"></option>
                 </datalist>
@@ -201,7 +190,7 @@
             <div>
               <input type="submit"
                      ng-click="saveOper(oper)"
-                     ng-disabled="!oper.amount.length && !oper.fromAccId && !oper.toAccId"
+                     ng-disabled="!validOper(oper)"
                      value="сохранить"/>
               <a href="" ng-click="cancelOper(oper)">отменить</a>
             </div>

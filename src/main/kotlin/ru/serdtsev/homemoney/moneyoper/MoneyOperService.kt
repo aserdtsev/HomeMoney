@@ -7,7 +7,9 @@ import org.springframework.core.convert.ConversionService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.account.AccountRepository
-import ru.serdtsev.homemoney.account.model.Balance
+import ru.serdtsev.homemoney.account.BalanceRepository
+import ru.serdtsev.homemoney.account.model.Reserve
+import ru.serdtsev.homemoney.account.model.ServiceAccount
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.moneyoper.model.*
@@ -25,6 +27,7 @@ class MoneyOperService @Autowired constructor(
         private val moneyOperRepo: MoneyOperRepo,
         private val recurrenceOperRepo: RecurrenceOperRepo,
         private val accountRepo: AccountRepository,
+        private val balanceRepo: BalanceRepository,
         private val labelRepo: LabelRepository
 ) {
     fun save(moneyOper: MoneyOper) {
@@ -45,7 +48,7 @@ class MoneyOperService @Autowired constructor(
     fun getNextRecurrenceOpers(balanceSheet: BalanceSheet, search: String, beforeDate: LocalDate?): List<MoneyOper> {
         return getRecurrenceOpers(balanceSheet, search)
                 .filter { it.nextDate.isBefore(beforeDate) }
-                .map { createMoneyOperByTemplate(balanceSheet, it) }
+                .map { createMoneyOperByRecurrenceOper(balanceSheet, it) }
     }
 
     /**
@@ -81,13 +84,12 @@ class MoneyOperService @Autowired constructor(
         }
     }
 
-    private fun createMoneyOperByTemplate(balanceSheet: BalanceSheet?, recurrenceOper: RecurrenceOper): MoneyOper {
+    private fun createMoneyOperByRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOper: RecurrenceOper): MoneyOper {
         val template = recurrenceOper.template
-        val oper = MoneyOper(UUID.randomUUID(), balanceSheet!!, MoneyOperStatus.recurrence,
-                recurrenceOper.nextDate, 0, template.labels, template.comment, template.period)
-        oper.addItems(template.items)
-        oper.fromAccId = template.fromAccId
-        oper.toAccId = template.toAccId
+        val performed = recurrenceOper.nextDate
+        val oper = MoneyOper(balanceSheet, MoneyOperStatus.recurrence, performed, 0, template.labels,
+                template.comment, template.period)
+        template.items.forEach { oper.addItem(it.balance, it.value, performed) }
         oper.recurrenceId = template.recurrenceId
         return oper
     }
@@ -95,10 +97,10 @@ class MoneyOperService @Autowired constructor(
     fun createRecurrenceOper(balanceSheet: BalanceSheet, operId: UUID) {
         val sample = moneyOperRepo.findByIdOrNull(operId)!!
         checkMoneyOperBelongsBalanceSheet(sample, balanceSheet.id)
-        val template = newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.template, sample.performed, null,
-                sample.labels, sample.comment, sample.period, sample.fromAccId, sample.toAccId, sample.getAmount(),
-                sample.getToAmount(), null, null)
-        val recurrenceOper = RecurrenceOper(UUID.randomUUID(), balanceSheet, template, sample.performed)
+        val template = MoneyOper(balanceSheet, MoneyOperStatus.template, sample.performed, 0, sample.labels,
+                sample.comment, sample.period)
+        sample.items.forEach { template.addItem(it.balance, it.value, it.performed) }
+        val recurrenceOper = RecurrenceOper(balanceSheet, template, sample.performed)
         recurrenceOper.skipNextDate()
         moneyOperRepo.save(template)
         recurrenceOperRepo.save(recurrenceOper)
@@ -123,78 +125,61 @@ class MoneyOperService @Autowired constructor(
         recurrenceOperRepo.save(recurrenceOper)
     }
 
-    /**
-     * Создает экземпляр MoneyOper.
-     */
-    fun newMoneyOper(balanceSheet: BalanceSheet, moneyOperId: UUID, status: MoneyOperStatus, performed: LocalDate,
-            dateNum: Int?, labels: Collection<Label>, comment: String?, period: Period?, fromAccId: UUID, toAccId: UUID,
-            amount: BigDecimal, toAmount: BigDecimal, parentId: UUID? = null, recurrenceId: UUID? = null): MoneyOper {
-        val oper = MoneyOper(moneyOperId, balanceSheet, status, performed, dateNum, labels, comment, period)
-        oper.recurrenceId = recurrenceId
-        oper.fromAccId = fromAccId
-        val fromAcc = accountRepo.findById(fromAccId).get()
-        if (fromAcc is Balance) {
-            oper.addItem(fromAcc, amount.negate(), performed)
+    fun updateRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOperDto: RecurrenceOperDto) {
+        val origRecurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceOperDto.id)!!
+        origRecurrenceOper.nextDate = recurrenceOperDto.nextDate
+        val origTemplate = origRecurrenceOper.template
+        recurrenceOperDto.items.forEach { item ->
+            val origItem = origTemplate.items.firstOrNull { origItem -> origItem.id == item.id }
+            if (origItem != null) with (origItem) {
+                balance = balanceRepo.findByIdOrNull(item.balanceId)!!
+                value = item.value
+                index = item.index
+            } else {
+                val balance = balanceRepo.findByIdOrNull(item.balanceId)!!
+                origTemplate.addItem(balance, item.value, index = item.index)
+            }
         }
-        oper.toAccId = toAccId
-        val toAcc = accountRepo.findById(toAccId).get()
-        if (toAcc is Balance) {
-            oper.addItem(toAcc, toAmount, performed)
+        origTemplate.items.removeIf {
+            origTemplateItem -> !recurrenceOperDto.items.any { it.id == origTemplateItem.id }
         }
-        if (parentId != null) {
-            val parentOper = moneyOperRepo.findById(parentId).get()
-            oper.parentOper = parentOper
+        origTemplate.comment = recurrenceOperDto.comment
+        val labels: Collection<Label> = getLabelsByStrings(balanceSheet, recurrenceOperDto.labels)
+        origTemplate.setLabels(labels)
+        recurrenceOperRepo.save(origRecurrenceOper)
+    }
+
+    fun moneyOperDtoToMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper {
+        val dateNum = moneyOperDto.dateNum ?: 0
+        val labels = getLabelsByStrings(balanceSheet, moneyOperDto.labels)
+        val period = moneyOperDto.period ?: Period.month
+        val oper = MoneyOper(balanceSheet, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, labels,
+                moneyOperDto.comment, period)
+        moneyOperDto.items.forEach {
+            val balance = balanceRepo.findByIdOrNull(it.balanceId)!!
+            oper.addItem(balance, it.value, it.performedAt, it.index)
         }
         return oper
     }
 
-    fun updateRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOperDto: RecurrenceOperDto) {
-        val recurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceOperDto.id)!!
-        recurrenceOper.nextDate = recurrenceOperDto.nextDate
-        val template = recurrenceOper.template
-        updateFromAccount(template, recurrenceOperDto.fromAccId)
-        updateToAccount(template, recurrenceOperDto.toAccId)
-        updateAmount(template, recurrenceOperDto.amount)
-        updateToAmount(template, recurrenceOperDto.toAmount)
-        template.comment = recurrenceOperDto.comment
-        val labels: Collection<Label> = getLabelsByStrings(balanceSheet, recurrenceOperDto.labels)
-        template.setLabels(labels)
-        recurrenceOperRepo.save(recurrenceOper)
-    }
-
-    fun updateAmount(oper: MoneyOper, amount: BigDecimal) {
-        if (oper.getAmount().compareTo(amount) == 0) return
-        oper.items
-                .filter { it.value.signum() < 0 }
-                .forEach { it.value = amount.negate() }
-    }
-
-    fun updateToAmount(oper: MoneyOper, amount: BigDecimal?) {
-        if (oper.getToAmount().compareTo(amount) == 0) return
-        oper.items
-                .filter { it.value.signum() > 0 }
-                .forEach { it.value = amount!! }
-    }
-
-    fun updateFromAccount(oper: MoneyOper, accId: UUID) {
-        if (oper.fromAccId == accId) return
-        replaceBalance(oper, oper.fromAccId, accId)
-        oper.fromAccId = accId
-    }
-
-    private fun replaceBalance(oper: MoneyOper, oldAccId: UUID, newAccId: UUID) {
-        oper.items
-                .filter { it.balance.id == oldAccId }
-                .forEach {
-                    val balance = accountRepo.findByIdOrNull(newAccId) as Balance
-                    it.balance = balance
-                }
-    }
-
-    fun updateToAccount(oper: MoneyOper, accId: UUID) {
-        if (oper.toAccId == accId) return
-        replaceBalance(oper, oper.toAccId, accId)
-        oper.toAccId = accId
+    fun updateMoneyOper(toOper: MoneyOper, fromOper: MoneyOper) {
+        fromOper.items.forEach { item ->
+            val origItem = toOper.items.firstOrNull { origItem -> origItem.id == item.id }
+            if (origItem != null) with (origItem) {
+                performed = item.performed
+                balance = item.balance
+                value = item.value
+                index = item.index
+            } else {
+                toOper.addItem(item.balance, item.value, item.performed, item.index)
+            }
+        }
+        toOper.items.retainAll(fromOper.items)
+        toOper.performed = fromOper.performed
+        toOper.setLabels(fromOper.labels)
+        toOper.dateNum = fromOper.dateNum
+        toOper.period = fromOper.period
+        toOper.comment = fromOper.comment
     }
 
     fun checkMoneyOperBelongsBalanceSheet(oper: MoneyOper, bsId: UUID) =
@@ -225,14 +210,14 @@ class MoneyOperService @Autowired constructor(
     }
 
     fun moneyOperToDto(moneyOper: MoneyOper): MoneyOperDto =
-            MoneyOperDto(moneyOper.id, moneyOper.status, moneyOper.performed,
-                    moneyOper.fromAccId, moneyOper.toAccId, moneyOper.getAmount().abs(), moneyOper.currencyCode,
-                    moneyOper.getToAmount(), moneyOper.toCurrencyCode, moneyOper.period, moneyOper.comment,
+            MoneyOperDto(moneyOper.id, moneyOper.status, moneyOper.performed, moneyOper.period, moneyOper.comment,
                     getStringsByLabels(moneyOper.labels), moneyOper.dateNum, moneyOper.getParentOperId(),
                     moneyOper.recurrenceId, moneyOper.created).apply {
-                fromAccName = getAccountName(moneyOper.fromAccId)
-                toAccName = getAccountName(moneyOper.toAccId)
-                type = moneyOper.type.name
+                if (moneyOper.type == MoneyOperType.transfer && moneyOper.items.any { it.balance is Reserve }) {
+                    val operItem = moneyOper.items.first { it.balance is Reserve }
+                    type = if (operItem.value.signum() > 0) MoneyOperType.income.name else MoneyOperType.expense.name
+                } else
+                    type = moneyOper.type.name
                 items = moneyOper.items
                         .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
                         .sortedBy { it.value }

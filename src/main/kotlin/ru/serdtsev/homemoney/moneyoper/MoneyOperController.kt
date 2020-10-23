@@ -10,10 +10,6 @@ import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.account.AccountRepository
 import ru.serdtsev.homemoney.account.BalanceRepository
 import ru.serdtsev.homemoney.account.CategoryRepository
-import ru.serdtsev.homemoney.account.model.Account
-import ru.serdtsev.homemoney.account.model.AccountType
-import ru.serdtsev.homemoney.account.model.Balance
-import ru.serdtsev.homemoney.account.model.Category
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.HmException
@@ -186,23 +182,13 @@ class MoneyOperController(
             }
             moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, bsId)
             val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-            val oper = newMoneyOper(balanceSheet, moneyOperDto)
+            val oper = moneyOperService.moneyOperDtoToMoneyOper(balanceSheet, moneyOperDto)
             val essentialEquals = origOper.essentialEquals(oper)
             val origPrevStatus = origOper.status
             if (!essentialEquals && origOper.status == MoneyOperStatus.done) {
                 origOper.cancel()
             }
-            origOper.performed = oper.performed
-            origOper.setLabels(oper.labels)
-            origOper.dateNum = oper.dateNum
-            origOper.period = oper.period
-            origOper.comment = oper.comment
-            moneyOperService.updateFromAccount(origOper, oper.fromAccId)
-            moneyOperService.updateToAccount(origOper, oper.toAccId)
-            moneyOperService.updateAmount(origOper, oper.getAmount())
-            val toCurrencyCode = oper.toCurrencyCode ?: oper.currencyCode
-            val toAmount = if (oper.currencyCode == toCurrencyCode) oper.getAmount() else oper.getToAmount()
-            moneyOperService.updateToAmount(origOper, toAmount)
+            moneyOperService.updateMoneyOper(origOper, oper)
             if (!essentialEquals && origPrevStatus == MoneyOperStatus.done || origOper.status == MoneyOperStatus.pending
                     && moneyOperDto.status == MoneyOperStatus.done) {
                 origOper.complete()
@@ -294,90 +280,31 @@ class MoneyOperController(
         val mainOper = newMainMoneyOper(balanceSheet, moneyOperDto)
         moneyOperRepo.save(mainOper)
         moneyOpers.add(mainOper)
-        newReserveMoneyOper(balanceSheet, moneyOperDto)?.let { moneyOpers.add(it) }
-        if (Objects.nonNull(mainOper.recurrenceId)) {
-            moneyOperService.skipRecurrenceOper(balanceSheet, mainOper.recurrenceId!!)
+        newReserveMoneyOper(balanceSheet, mainOper)?.let { moneyOpers.add(it) }
+        mainOper.recurrenceId?.also { moneyOperService.skipRecurrenceOper(balanceSheet, it) }
+        if ((moneyOperDto.status == MoneyOperStatus.done || moneyOperDto.status == MoneyOperStatus.doneNew)
+                && !mainOper.performed.isAfter(LocalDate.now())) {
+            moneyOpers.forEach { it.complete() }
         }
-        if ((moneyOperDto.status == MoneyOperStatus.done || moneyOperDto.status == MoneyOperStatus.doneNew) && !mainOper.performed.isAfter(LocalDate.now())) {
-            moneyOpers.forEach(Consumer { obj: MoneyOper -> obj.complete() })
-        }
-        moneyOpers.forEach(Consumer { moneyOper: MoneyOper? -> moneyOperService.save(moneyOper!!) })
+        moneyOpers.forEach { moneyOperService.save(it) }
         return moneyOpers
     }
 
     private fun newMainMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper =
-            newMoneyOper(balanceSheet, moneyOperDto)
+            moneyOperService.moneyOperDtoToMoneyOper(balanceSheet, moneyOperDto)
 
-    private fun newReserveMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper? {
-        var fromAcc: Account? = balanceSheet.svcRsv
-        var account = accountRepo.findById(moneyOperDto.fromAccId!!).get()
-        if (account.type == AccountType.debit) {
-            val balance = account as Balance
-            if (balance.reserve != null) {
-                fromAcc = balance.reserve
-            }
+    private fun newReserveMoneyOper(balanceSheet: BalanceSheet, oper: MoneyOper): MoneyOper? {
+        return if (oper.items.any { it.balance.reserve != null }) {
+            val labels = oper.labels
+            val dateNum = oper.dateNum ?: 0 + 1
+            val reserveMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, oper.performed, dateNum, labels,
+                    oper.comment, oper.period)
+            oper.items
+                    .filter { it.balance.reserve != null }
+                    .forEach { reserveMoneyOper.addItem(it.balance.reserve!!, it.value, it.performed, it.index + 1) }
+            reserveMoneyOper
         }
-        var toAcc: Account? = balanceSheet.svcRsv
-        account = accountRepo.findById(moneyOperDto.toAccId!!).get()
-        if (account.type == AccountType.debit) {
-            val balance = account as Balance
-            if (balance.reserve != null) {
-                toAcc = balance.reserve
-            }
-        }
-        var reserveMoneyOper: MoneyOper? = null
-        if (fromAcc != toAcc) {
-            val labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyOperDto.labels)
-            val dateNum = moneyOperDto.dateNum ?: 0
-            reserveMoneyOper = moneyOperService.newMoneyOper(balanceSheet, UUID.randomUUID(), MoneyOperStatus.pending,
-                    moneyOperDto.operDate!!, dateNum, labels, moneyOperDto.comment, moneyOperDto.period, fromAcc!!.id,
-                    toAcc!!.id, moneyOperDto.amount, moneyOperDto.amount, moneyOperDto.id)
-        }
-        return reserveMoneyOper
-    }
-
-    private fun newMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper {
-        val labels = moneyOperService.getLabelsByStrings(balanceSheet, moneyOperDto.labels)
-        categoryToLabel(balanceSheet, moneyOperDto)?.let { labels.add(it) }
-        var amount: BigDecimal? = moneyOperDto.amount
-        if (Objects.isNull(amount) && Objects.nonNull(moneyOperDto.toAmount)) {
-            amount = moneyOperDto.toAmount
-        }
-        assert(Objects.nonNull(amount))
-        val fromBalance = balanceRepo.findById(moneyOperDto.fromAccId!!).orElse(null)
-        val toBalance = balanceRepo.findById(moneyOperDto.toAccId!!).orElse(null)
-        val currencyCode = if (fromBalance != null) fromBalance.currencyCode else toBalance!!.currencyCode
-        val toCurrencyCode = if (toBalance != null) toBalance.currencyCode else currencyCode
-        val toAmount = if (currencyCode == toCurrencyCode) amount else moneyOperDto.toAmount
-        val dateNum = moneyOperDto.dateNum ?: 0
-        val period = moneyOperDto.period ?: Period.month
-        return moneyOperService.newMoneyOper(balanceSheet, moneyOperDto.id, MoneyOperStatus.pending, moneyOperDto.operDate!!,
-                dateNum, labels, moneyOperDto.comment, period, moneyOperDto.fromAccId, moneyOperDto.toAccId, amount!!,
-                toAmount!!, recurrenceId = moneyOperDto.recurrenceId)
-    }
-
-    private fun categoryToLabel(balanceSheet: BalanceSheet, operDto: MoneyOperDto): Label? {
-        val category: Category = when(MoneyOperType.valueOf(operDto.type!!)) {
-            MoneyOperType.expense -> categoryRepo.findByIdOrNull(operDto.toAccId!!)
-            MoneyOperType.income -> categoryRepo.findByIdOrNull(operDto.fromAccId!!)
-            else -> null
-        } ?: return null
-        return labelRepo.findByBalanceSheetAndName(balanceSheet, category.name) ?: run {
-            val rootLabel: Label? = category.root?.let { rootCategory ->
-                labelRepo.findByBalanceSheetAndName(balanceSheet, rootCategory.name) ?: run {
-                    val rootCategoryType = CategoryType.valueOf(rootCategory.type.name)
-                    Label(UUID.randomUUID(), balanceSheet, rootCategory.name, null, true,
-                            rootCategoryType).apply {
-                        labelRepo.save<Label>(this)
-                    }
-                }
-            }
-            val rootLabelId = rootLabel?.id
-            val categoryType = CategoryType.valueOf(category.type.name)
-            Label(UUID.randomUUID(), balanceSheet, category.name, rootLabelId, true, categoryType).apply {
-                labelRepo.save<Label>(this)
-            }
-        }
+        else null
     }
 
     @RequestMapping(value = ["/suggest-labels"], method = [RequestMethod.POST])

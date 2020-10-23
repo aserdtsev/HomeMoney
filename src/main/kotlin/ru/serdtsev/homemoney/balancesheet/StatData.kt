@@ -39,14 +39,14 @@ class StatData(
                     val value = if (item.balance.currencyCode != balanceSheet.currencyCode && item.moneyOper.isForeignCurrencyTransaction)
                         item.moneyOper.valueInNationalCurrency.negate()
                     else item.value
-                    val turnover = Turnover(item.performed, balance.type, value)
+                    val turnover = Turnover(item.performed!!, balance.type, value)
                     itemTurnovers.add(turnover)
 
                     item.moneyOper.labels
                             .firstOrNull { it.category!! }?.let {
                                 if (balance.type == AccountType.debit) {
                                     val accountType = if (item.value.signum() < 0) AccountType.expense else AccountType.income
-                                    itemTurnovers.add(Turnover(item.performed, accountType, item.value.abs()))
+                                    itemTurnovers.add(Turnover(item.performed!!, accountType, item.value.abs()))
                                 }
                             }
 
@@ -73,7 +73,7 @@ class StatData(
                 .filter { it.balance.type.isBalance && it.balance.type != AccountType.reserve }
                 .sortedBy { it.performed }
                 .flatMap { item ->
-                    val trendDate = item.performed.plusMonths(1)
+                    val trendDate = item.performed!!.plusMonths(1)
                     val turnover1 = Turnover(trendDate, item.balance.type, item.value)
                     val turnover2 = Turnover(trendDate, AccountType.valueOf(item.moneyOper.type.name), item.value.abs())
                     listOf(turnover1, turnover2)

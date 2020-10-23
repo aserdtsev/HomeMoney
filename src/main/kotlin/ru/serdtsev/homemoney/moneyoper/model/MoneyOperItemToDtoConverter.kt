@@ -12,7 +12,7 @@ class MoneyOperItemToDtoConverter(private val appCtx: ApplicationContext) : Conv
     override fun convert(item: MoneyOperItem): MoneyOperItemDto {
         val balance = getBalanceRepo().findById(item.getBalanceId()).get()
         return MoneyOperItemDto(item.id, item.getBalanceId(), balance.name, item.value,
-                item.performed, item.index)
+                item.balance.currencyCode, item.performed, item.index)
     }
 
     private fun getBalanceRepo(): BalanceRepository {

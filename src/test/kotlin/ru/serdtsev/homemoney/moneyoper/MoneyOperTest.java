@@ -33,9 +33,9 @@ class MoneyOperTest {
   void setUp() {
     balanceSheet = BalanceSheet.Companion.newInstance();
     cash = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", Date.valueOf(LocalDate.now()), false,
-        "RUB", BigDecimal.TEN);
+        BigDecimal.TEN, "RUB");
     checkingAccount = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Checking account",
-            Date.valueOf(LocalDate.now()), false,"RUB", BigDecimal.valueOf(1000L));
+            Date.valueOf(LocalDate.now()), false,BigDecimal.valueOf(1000L), "RUB");
   }
 
   @Test
@@ -105,7 +105,7 @@ class MoneyOperTest {
     assertFalse(oper.essentialEquals(origOper));
 
     oper = SerializationUtils.clone(origOper);
-    oper.addItem(cash, BigDecimal.TEN);
+    oper.addItem(cash, BigDecimal.TEN, LocalDate.now(), 0, UUID.randomUUID());
     assertFalse(oper.essentialEquals(origOper));
 
     origOper = createTransferFromCheckingAccountToCash(done);
@@ -117,14 +117,14 @@ class MoneyOperTest {
   private MoneyOper createExpenseFromCash(MoneyOperStatus status) {
     MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
-    oper.addItem(cash, BigDecimal.ONE.negate());
+    oper.addItem(cash, BigDecimal.ONE.negate(), LocalDate.now(), 0, UUID.randomUUID());
     return oper;
   }
 
   private MoneyOper createIncomeToCash(MoneyOperStatus status) {
     MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
-    oper.addItem(cash, BigDecimal.ONE);
+    oper.addItem(cash, BigDecimal.ONE, LocalDate.now(), 0, UUID.randomUUID());
     return oper;
   }
 
@@ -132,8 +132,8 @@ class MoneyOperTest {
     MoneyOper oper = new MoneyOper(UUID.randomUUID(), balanceSheet, status, LocalDate.now(), 0,
         new ArrayList<>(), "", null);
     BigDecimal amount = BigDecimal.ONE;
-    oper.addItem(checkingAccount, amount.negate());
-    oper.addItem(cash, amount);
+    oper.addItem(checkingAccount, amount.negate(), LocalDate.now(), 0, UUID.randomUUID());
+    oper.addItem(cash, amount, LocalDate.now(), 0, UUID.randomUUID());
     return oper;
   }
 

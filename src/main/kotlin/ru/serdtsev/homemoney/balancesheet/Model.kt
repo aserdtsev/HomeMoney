@@ -22,7 +22,7 @@ data class BalanceSheet(
         val created: Instant,
 
         @Column(name = "currency_code")
-        var currencyCode: String? = null,
+        var currencyCode: String,
 
         @OneToOne @JoinColumn(name = "svc_rsv_id", insertable = false) @get:JsonIgnore
         var svcRsv: ServiceAccount? = null,

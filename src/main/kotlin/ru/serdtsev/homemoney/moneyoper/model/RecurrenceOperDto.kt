@@ -10,16 +10,8 @@ class RecurrenceOperDto(
         val lastMoneyTrnId: UUID,
         val nextDate: LocalDate,
         val period: Period,
-        val fromAccId: UUID,
-        val toAccId: UUID,
-        val amount: BigDecimal,
-        val toAmount: BigDecimal,
-        val comment: String,
+        val comment: String?,
         val labels: List<String>,
-        val currencyCode: String,
-        val toCurrencyCode: String,
-        val fromAccName: String,
-        val toAccName: String,
         val type: String
 ) {
     var status: Status? = null
