@@ -136,12 +136,12 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
     }
 
     fun essentialEquals(other: MoneyOper): Boolean {
-        assert(this == other)
-        return itemsEssentialEquals(other)
+        assert(other.id == this.id)
+        return other.type == this.type && itemsEssentialEquals(other)
     }
 
     fun itemsEssentialEquals(other: MoneyOper): Boolean {
-        return items.all { item: MoneyOperItem -> other.items.any { i: MoneyOperItem -> i == item } }
+        return items.all { item -> other.items.any { it == item } }
     }
 
     override fun toString(): String {

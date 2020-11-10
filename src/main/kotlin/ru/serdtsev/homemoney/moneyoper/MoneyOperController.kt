@@ -7,9 +7,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import ru.serdtsev.homemoney.account.AccountRepository
-import ru.serdtsev.homemoney.account.BalanceRepository
-import ru.serdtsev.homemoney.account.CategoryRepository
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.HmException
@@ -31,12 +28,8 @@ import java.util.stream.IntStream
 class MoneyOperController(
         private val moneyOperService: MoneyOperService,
         private val balanceSheetRepo: BalanceSheetRepository,
-        private val accountRepo: AccountRepository,
-        private val balanceRepo: BalanceRepository,
         private val moneyOperRepo: MoneyOperRepo,
-        private val labelRepo: LabelRepository,
         private val moneyOperItemRepo: MoneyOperItemRepo,
-        private val categoryRepo: CategoryRepository
 ) {
     @RequestMapping
     @Transactional(readOnly = true)
@@ -307,15 +300,16 @@ class MoneyOperController(
         else null
     }
 
-    @RequestMapping(value = ["/suggest-labels"], method = [RequestMethod.POST])
+    @RequestMapping(value = ["/suggest-labels"], method = [RequestMethod.GET])
     @Transactional(readOnly = true)
     fun suggestLabels(
-            @PathVariable bsId: UUID?,
-            @RequestBody moneyOperDto: MoneyOperDto?): HmResponse {
-        val labels = moneyOperService.getSuggestLabels(bsId!!, moneyOperDto!!).stream()
+            @PathVariable bsId: UUID,
+            @RequestParam operType: String,
+            @RequestParam search: String?,
+            @RequestParam labels: Array<String>?) : HmResponse {
+        val suggestLabels = moneyOperService.getSuggestLabels(bsId, operType, search, labels?.toList() ?: emptyList())
                 .map(Label::name)
-                .collect(Collectors.toList())
-        return HmResponse.getOk(labels)
+        return HmResponse.getOk(suggestLabels)
     }
 
     @RequestMapping(value = ["/labels"])

@@ -39,8 +39,7 @@ internal class MoneyOperControllerTest {
     private val labelRepo: LabelRepository = mock {  }
     private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
     private val categoryRepo: CategoryRepository = mock {  }
-    private val moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, accountRepo, balanceRepo,
-            moneyOperRepo, labelRepo, moneyOperItemRepo, categoryRepo)
+    private val moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, moneyOperRepo, moneyOperItemRepo)
 
     @BeforeEach
     fun setUp() {

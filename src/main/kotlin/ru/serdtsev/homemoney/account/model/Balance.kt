@@ -27,7 +27,7 @@ open class Balance(
         createdDate: Date,
         isArc: Boolean? = null,
         open var value: BigDecimal,
-        var currencyCode: String
+        open var currencyCode: String
 ) : Account(id, balanceSheet, type, name, createdDate, isArc) {
     @Column(name = "min_value")
     open var minValue: BigDecimal? = null

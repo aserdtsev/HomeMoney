@@ -47,7 +47,7 @@ class RecurrenceOperResource @Autowired constructor(
                 recurrenceOper.nextDate, oper.period!!, oper.comment, getStringsByLabels(oper.labels), oper.type.name)
         val items = oper.items
                 .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
-                .sortedBy { it.value }
+                .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }
         dto.items = items
         return dto
     }

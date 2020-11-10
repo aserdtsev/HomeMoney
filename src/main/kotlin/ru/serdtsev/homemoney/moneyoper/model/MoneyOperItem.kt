@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import java.io.Serializable

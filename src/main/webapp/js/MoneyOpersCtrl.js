@@ -11,6 +11,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.opers;
   $scope.recurrenceOpers;
   $scope.labels;
+  $scope.suggestLabels;
 
   $scope.$on('login', function() {
     $scope.loadRecurrenceOpers();
@@ -240,10 +241,12 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
         period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
     } else {
       let type = param;
-      let items = [{id: randomUUID(), balanceId: null, value: null, performedAt: performedAt, index: 0}]
+      let sgn;
+      if (type === 'income') sgn = 1; else sgn = -1;
+      let items = [{id: randomUUID(), balanceId: null, value: null, sgn: sgn, performedAt: performedAt, index: 0}]
       oper = {type: type, items: items, labels: []};
       if (type === 'transfer') {
-        items.push({id: randomUUID(), balanceId: null, value: null, performedAt: performedAt, index: 1})
+        items.push({id: randomUUID(), balanceId: null, value: null, sgn: 1, performedAt: performedAt, index: 1})
       }
     }
     oper.status = 'doneNew';
@@ -334,6 +337,8 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.newLabelKeyPressed = function(event, label, item) {
     if (event.keyCode === 13) {
       addLabel(item, label);
+    } else {
+      $scope.getSuggestLabels(item, label);
     }
   };
 
@@ -431,16 +436,22 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.getAmountAsHtml = function(oper) {
     let arrow = '';
     if (oper.type !== 'transfer') {
-      if (oper.items[0].value > 0) arrow = '↗'; else arrow = '↘';
+      if (oper.items[0].sgn > 0) arrow = '↗'; else arrow = '↘';
     }
-    let result = $scope.formatMoney($scope.getAbsAmount(oper), oper.items[0]['currencySymbol']) + '&nbsp;' + arrow;
+    let result = arrow + '&nbsp;' + $scope.formatMoney($scope.getOperAmount(oper), oper.items[0]['currencySymbol']);
     if (oper.type === 'transfer' && oper.items.length > 1 && oper.items[0]['currencyCode'] !== oper.items[1]['currencyCode']) {
       result = result + " (" + $scope.formatMoney(oper.items[1]['value'], oper.items[1]['currencySymbol']) + ")";
     }
     return result;
   }
 
-  $scope.getAbsAmount = function(oper) {
-    return oper.items[0]['value'] * (oper['type'] !== 'income' ? -1 : 1);
+  $scope.getOperAmount = function(oper) {
+    return oper.items[0]['value'];
   };
+
+  $scope.getSuggestLabels = function(oper, search) {
+    let response = MoneyOpersSvc.suggestLabels({bsId: $rootScope.bsId, operType: oper.type, search: search, labels: oper.labels}, function() {
+      $scope.suggestLabels = response.data;
+    });
+  }
 }

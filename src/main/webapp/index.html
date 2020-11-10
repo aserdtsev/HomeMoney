@@ -181,9 +181,10 @@
                 </span>
                 <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
                 <input class="label" ng-hide="!isNewLabel" ng-model="newLabel" list="labelList"
-                       ng-keypress="isNewLabel=$event.keyCode!=13; newLabelKeyPressed($event, newLabel, oper); newLabel = $event.keyCode==13 ? null : newLabel"/>
+                       ng-keypress="isNewLabel=$event.keyCode!=13; newLabelKeyPressed($event, newLabel, oper); newLabel = $event.keyCode==13 ? null : newLabel"
+                       ng-focus="getSuggestLabels(oper, newLabel)"/>
                 <datalist id="labelList">
-                  <option ng-repeat="tag in labels" value="{{tag}}"></option>
+                  <option ng-repeat="tag in suggestLabels" value="{{tag}}"></option>
                 </datalist>
               </span>
             </div>

@@ -63,7 +63,8 @@ class MoneyOperServiceTest {
 
     MoneyOper moneyOper = newMoneyOperWithLabels(new ArrayList<>());
     MoneyOperDto moneyOperDto = service.moneyOperToDto(moneyOper);
-    Collection<Label> checkLabels = service.getSuggestLabels(null, moneyOperDto);
+    Collection<Label> checkLabels = service.getSuggestLabels(moneyOper.getItems().get(0).getBalanceId(),
+            MoneyOperType.expense.name(), null, moneyOperDto.getLabels());
 
     List<Label> expectedLabels = asList(clothes, food, car);
     Assertions.assertIterableEquals(expectedLabels, checkLabels);

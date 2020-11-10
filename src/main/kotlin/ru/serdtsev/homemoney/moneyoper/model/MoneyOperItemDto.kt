@@ -9,7 +9,8 @@ data class MoneyOperItemDto (
         val balanceId: UUID,
         val balanceName: String?,
         val value: BigDecimal,
-        val currencyCode: String,
+        val sgn: Int,
+        val currencyCode: String?,
         val performedAt: LocalDate?,
         val index: Int = 0
 ) {

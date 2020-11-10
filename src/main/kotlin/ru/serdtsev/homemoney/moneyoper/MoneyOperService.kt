@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.account.AccountRepository
 import ru.serdtsev.homemoney.account.BalanceRepository
 import ru.serdtsev.homemoney.account.model.Reserve
-import ru.serdtsev.homemoney.account.model.ServiceAccount
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.moneyoper.model.*
@@ -133,11 +132,12 @@ class MoneyOperService @Autowired constructor(
             val origItem = origTemplate.items.firstOrNull { origItem -> origItem.id == item.id }
             if (origItem != null) with (origItem) {
                 balance = balanceRepo.findByIdOrNull(item.balanceId)!!
-                value = item.value
+                value = item.value.multiply(item.sgn.toBigDecimal())
                 index = item.index
             } else {
                 val balance = balanceRepo.findByIdOrNull(item.balanceId)!!
-                origTemplate.addItem(balance, item.value, index = item.index)
+                val value = item.value.multiply(item.sgn.toBigDecimal())
+                origTemplate.addItem(balance, value, index = item.index)
             }
         }
         origTemplate.items.removeIf {
@@ -153,11 +153,12 @@ class MoneyOperService @Autowired constructor(
         val dateNum = moneyOperDto.dateNum ?: 0
         val labels = getLabelsByStrings(balanceSheet, moneyOperDto.labels)
         val period = moneyOperDto.period ?: Period.month
-        val oper = MoneyOper(balanceSheet, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, labels,
+        val oper = MoneyOper(moneyOperDto.id, balanceSheet, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, labels,
                 moneyOperDto.comment, period)
         moneyOperDto.items.forEach {
             val balance = balanceRepo.findByIdOrNull(it.balanceId)!!
-            oper.addItem(balance, it.value, it.performedAt, it.index)
+            val value = it.value.multiply(it.sgn.toBigDecimal())
+            oper.addItem(balance, value, it.performedAt, it.index, it.id)
         }
         return oper
     }
@@ -196,17 +197,28 @@ class MoneyOperService @Autowired constructor(
 
     fun getStringsByLabels(labels: Collection<Label>): List<String> = labels.map { it.name }
 
-    fun getSuggestLabels(bsId: UUID, moneyOper: MoneyOperDto): List<Label> {
-        // Найдем 10 наиболее часто используемых меток-категорий за последние 30 дней.
-        val startDate = LocalDate.now().minusDays(30)
+    fun getSuggestLabels(bsId: UUID, operType: String, search: String?, labels: List<String>): List<Label> {
         val balanceSheet = balanceSheetRepo.findById(bsId).get()
-        return moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
-                .flatMap { it.labels }
-                .filter { !moneyOper.labels.contains(it.name) }
-                .groupingBy { it }.eachCount()
-                .entries
-                .sortedByDescending { it.value }
-                .map { it.key }
+        return if (search.isNullOrEmpty()) {
+            if (operType != MoneyOperType.transfer.name && labels.isEmpty()) {
+                // Вернем только тэги-категории в зависимости от типа операции.
+                labelRepo.findByBalanceSheetOrderByName(balanceSheet)
+                        .filter { !(it.arc ?: false) && (it.category ?: false) && it.categoryType!!.name == operType }
+            } else {
+                // Найдем 10 наиболее часто используемых тегов-некатегорий за последние 30 дней.
+                val startDate = LocalDate.now().minusDays(30)
+                moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
+                        .flatMap { it.labels }
+                        .filter { !(it.arc ?: false) && !(it.category ?: false) && !labels.contains(it.name) }
+                        .groupingBy { it }.eachCount()
+                        .entries
+                        .sortedByDescending { it.value }
+                        .map { it.key }
+            }
+        } else {
+            labelRepo.findByBalanceSheetOrderByName(balanceSheet)
+                    .filter { !(it.arc ?: false) && it.name.startsWith(search, true) }
+        }
     }
 
     fun moneyOperToDto(moneyOper: MoneyOper): MoneyOperDto =
@@ -220,7 +232,7 @@ class MoneyOperService @Autowired constructor(
                     type = moneyOper.type.name
                 items = moneyOper.items
                         .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
-                        .sortedBy { it.value }
+                        .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }
             }
 
     fun getAccountName(accountId: UUID): String {
