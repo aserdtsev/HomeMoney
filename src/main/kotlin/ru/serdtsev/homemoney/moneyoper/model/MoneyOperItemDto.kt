@@ -14,5 +14,6 @@ data class MoneyOperItemDto (
         val performedAt: LocalDate?,
         val index: Int = 0
 ) {
-    fun getCurrencySymbol() = Currency.getInstance(currencyCode).symbol
+    val currencySymbol: String
+        get() = Currency.getInstance(currencyCode).symbol
 }
