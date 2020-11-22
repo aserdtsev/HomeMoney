@@ -141,7 +141,7 @@
             Периодичность: <span ng-bind="getPeriodName(oper)"></span>
           </div>
         </div>
-        <div ng-if="oper.isEdited">
+        <div ng-if="typeof(oper.isEdited) !== 'undefined' && oper.isEdited">
           <div class="form">
             <div>
               <span ng-bind="oper.type == 'expense' ? 'расход' : oper.type == 'income' ? 'доход' : 'перевод'"></span>
@@ -224,7 +224,7 @@
               </span>
             </div>
           </div>
-          <div ng-show="recurrenceOper.isEdited">
+          <div ng-if="typeof(recurrenceOper.isEdited) !== 'undefined' && recurrenceOper.isEdited">
             <div class="form">
               <div>
                 <input class="date" ng-model="recurrenceOper.nextDate" placeholder="Дата"/>

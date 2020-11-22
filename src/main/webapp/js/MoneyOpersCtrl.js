@@ -161,7 +161,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.getFirstAccounts = function(oper) {
-    if (typeof $scope.accounts === 'undefined') {
+    if (typeof($scope.accounts) === 'undefined') {
       return [];
     }
     return $scope.accounts.filter(function(account) {
@@ -170,10 +170,12 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
           return false;
         }
         let result = true;
-        if (typeof oper.toAccId !== 'undefined') {
-          result = account.id !== oper.toAccId;
+        let items = oper.items;
+        let toBalanceId = items[1]['balanceId']
+        if (toBalanceId !== null) {
+          result = account.id !== toBalanceId;
           if (result) {
-            let toAccount = $scope.getAccount(oper.toAccId);
+            let toAccount = $scope.getAccount(toBalanceId);
             if (toAccount.type === 'reserve' || toAccount.type === 'service') {
               result = account.type === 'reserve' || account.type === 'service';
             } else {
@@ -194,11 +196,16 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     }
     return $scope.accounts.filter(function(account) {
       if (oper.type === 'transfer') {
+        if (account.type === 'expense' || account.type === 'income') {
+          return false;
+        }
         let result = true;
-        if (typeof oper.fromAccId !== 'undefined') {
-          result = account.id !== oper.fromAccId;
+        let items = oper.items;
+        let fromBalanceId = items[0]['balanceId']
+        if (fromBalanceId !== null) {
+          result = account.id !== fromBalanceId;
           if (result) {
-            let fromAccount = $scope.getAccount(oper.fromAccId);
+            let fromAccount = $scope.getAccount(fromBalanceId);
             if (fromAccount.type === 'reserve' || fromAccount.type === 'service') {
               result = account.type === 'reserve' || account.type === 'service';
             } else {
@@ -236,8 +243,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     let oper;
     if (typeof param.id !== 'undefined') {
       let recurrenceOper = param;
-      oper = {type: recurrenceOper.type, fromAccId: recurrenceOper.fromAccId, amount: recurrenceOper.amount,
-        toAccId: recurrenceOper.toAccId, comment: recurrenceOper.comment, labels: recurrenceOper.labels,
+      oper = {type: recurrenceOper.type, comment: recurrenceOper.comment, labels: recurrenceOper.labels,
         period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
     } else {
       let type = param;
@@ -404,7 +410,6 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.updateRecurrenceOper = function(recurrenceOper) {
     delete recurrenceOper.isEdited;
-    recurrenceOper.toAmount = recurrenceOper.amount;
     RecurrenceOpersSvc.update({bsId: $rootScope.bsId}, recurrenceOper, function() {
       $scope.refresh();
     });
