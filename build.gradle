@@ -37,7 +37,7 @@ noArg {
 }
 
 group = 'ru.serdtsev'
-version = '1.0.3-SNAPSHOT'
+version = '1.0.3'
 java.sourceCompatibility(JavaVersion.VERSION_11)
 java.targetCompatibility(JavaVersion.VERSION_11)
 
