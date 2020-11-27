@@ -24,9 +24,9 @@ internal class MoneyOperItemTest {
     fun setUp() {
         val balanceSheet = newInstance()
         cash = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", Date.valueOf(LocalDate.now()), false,
-                "RUB", BigDecimal.TEN)
+                BigDecimal.TEN, "RUB")
         checkingAccount = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Checking account",
-                Date.valueOf(LocalDate.now()), false,"RUB", BigDecimal.valueOf(1000L))
+                Date.valueOf(LocalDate.now()), false, BigDecimal.valueOf(1000L),"RUB")
         oper = MoneyOper(UUID.randomUUID(), balanceSheet, MoneyOperStatus.pending, LocalDate.now(), 0,
                 ArrayList(), "", null)
     }

@@ -22,7 +22,7 @@ open class Reserve(
         value: BigDecimal,
         open var target: BigDecimal = BigDecimal.ZERO,
         isArc: Boolean? = null
-) : Balance(id, balanceSheet, AccountType.reserve, name, createdDate, isArc, currencyCode, value) {
+) : Balance(id, balanceSheet, AccountType.reserve, name, createdDate, isArc, value, currencyCode) {
     fun merge(reserve: Reserve, reserveRepo: ReserveRepository, moneyOperService: MoneyOperService) {
         super.merge(reserve, reserveRepo, moneyOperService)
         target = reserve.target

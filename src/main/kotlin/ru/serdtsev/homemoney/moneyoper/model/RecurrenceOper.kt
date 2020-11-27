@@ -8,14 +8,20 @@ import javax.persistence.*
 @Entity
 @Table(name = "recurrence_oper")
 class RecurrenceOper(
-        @Id val id: UUID,
-        @ManyToOne @JoinColumn(name = "bs_id") val balanceSheet: BalanceSheet,
-        @OneToOne @JoinColumn(name = "template_id") val template: MoneyOper,
+        @Id
+        val id: UUID,
+        @ManyToOne @JoinColumn(name = "bs_id")
+        val balanceSheet: BalanceSheet,
+        @OneToOne @JoinColumn(name = "template_id")
+        val template: MoneyOper,
         @Column(name = "next_date") var nextDate: LocalDate
 ) {
     @Column(name = "is_arc")
     var arc: Boolean = false
         private set
+
+    constructor(balanceSheet: BalanceSheet, template: MoneyOper, nextDate: LocalDate) :
+            this(UUID.randomUUID(), balanceSheet, template, nextDate)
 
     fun skipNextDate(): LocalDate {
         nextDate = calcNextDate(nextDate)

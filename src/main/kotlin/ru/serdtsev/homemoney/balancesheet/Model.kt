@@ -22,7 +22,7 @@ data class BalanceSheet(
         val created: Instant,
 
         @Column(name = "currency_code")
-        var currencyCode: String? = null,
+        var currencyCode: String,
 
         @OneToOne @JoinColumn(name = "svc_rsv_id", insertable = false) @get:JsonIgnore
         var svcRsv: ServiceAccount? = null,
@@ -79,7 +79,7 @@ data class BsStat(
 
     @Suppress("unused")
     val freeAmount: BigDecimal
-        get() = debitSaldo.subtract(reserveSaldo)
+        get() = debitSaldo.subtract(reserveSaldo).plus(creditSaldo)
 
     @Suppress("MemberVisibilityCanBePrivate")
     val reserveSaldo: BigDecimal
@@ -123,10 +123,13 @@ data class BsDayStat(@JsonIgnore val localDate: LocalDate) {
 
     @Suppress("unused")
     val freeAmount: BigDecimal
-        get() = getSaldo(AccountType.debit).subtract(reserveSaldo)
+        get() = getSaldo(AccountType.debit).subtract(reserveSaldo).plus(creditSaldo)
 
     private val reserveSaldo: BigDecimal
         get() = getSaldo(AccountType.reserve)
+
+    private val creditSaldo: BigDecimal
+        get() = getSaldo(AccountType.credit)
 
     private fun getSaldo(type: AccountType): BigDecimal {
         return saldoMap.getOrDefault(type, BigDecimal.ZERO)

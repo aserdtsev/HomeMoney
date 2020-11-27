@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.core.convert.ConversionService;
 import ru.serdtsev.homemoney.account.AccountRepository;
+import ru.serdtsev.homemoney.account.BalanceRepository;
 import ru.serdtsev.homemoney.account.model.Account;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Balance;
@@ -30,6 +31,7 @@ class MoneyOperServiceTest {
   private MoneyOperRepo moneyOperRepo;
   private BalanceSheet balanceSheet;
   private AccountRepository accountRepo;
+  private BalanceRepository balanceRepo;
 
   @BeforeEach
   void setUp() {
@@ -41,7 +43,7 @@ class MoneyOperServiceTest {
     accountRepo = mock(AccountRepository.class);
     val conversionService = mock(ConversionService.class);
     service = new MoneyOperService(conversionService, balanceSheetRepo, moneyOperRepo, mock(RecurrenceOperRepo.class),
-        accountRepo, mock(LabelRepository.class));
+        accountRepo, balanceRepo, mock(LabelRepository.class));
   }
 
   @Test
@@ -61,7 +63,8 @@ class MoneyOperServiceTest {
 
     MoneyOper moneyOper = newMoneyOperWithLabels(new ArrayList<>());
     MoneyOperDto moneyOperDto = service.moneyOperToDto(moneyOper);
-    Collection<Label> checkLabels = service.getSuggestLabels(null, moneyOperDto);
+    Collection<Label> checkLabels = service.getSuggestLabels(moneyOper.getItems().get(0).getBalanceId(),
+            MoneyOperType.expense.name(), null, moneyOperDto.getLabels());
 
     List<Label> expectedLabels = asList(clothes, food, car);
     Assertions.assertIterableEquals(expectedLabels, checkLabels);
@@ -72,11 +75,11 @@ class MoneyOperServiceTest {
         labelsA, null, Period.month);
     Date created = Date.valueOf(LocalDate.now());
     Balance balance1 = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Some account name", created,
-        false, "RUB", BigDecimal.ZERO);
+        false, BigDecimal.ZERO, "RUB");
     Balance balance2 = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Some account name", created,
-            false, "RUB", BigDecimal.ZERO);
-    moneyOper.addItem(balance1, BigDecimal.valueOf(1).negate());
-    moneyOper.addItem(balance2, BigDecimal.ONE);
+            false, BigDecimal.ZERO, "RUB");
+    moneyOper.addItem(balance1, BigDecimal.valueOf(1).negate(), LocalDate.now(), 0, UUID.randomUUID());
+    moneyOper.addItem(balance2, BigDecimal.ONE, LocalDate.now(), 1, UUID.randomUUID());
     return moneyOper;
   }
 

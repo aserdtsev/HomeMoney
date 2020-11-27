@@ -4,8 +4,8 @@ import com.bmuschko.gradle.docker.tasks.image.*
 buildscript {
     ext {
         javaVersion = '11'
-        kotlinVersion = '1.3.72'
-        springBootVersion = '2.3.2.RELEASE'
+        kotlinVersion = '1.4.10'
+        springBootVersion = '2.3.4.RELEASE'
     }
 }
 

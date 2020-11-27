@@ -78,7 +78,7 @@ hmServices.factory('ReservesSvc', ['$resource',
 
 hmServices.factory('MoneyOpersSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/money-opers';
+    let baseUrl = 'api/:bsId/money-opers';
     return $resource(baseUrl, {}, {
       query: { method: 'GET', params: { search: '@search', offset: '@offset', limit: '@limit' } },
       item: { method: 'GET', url: baseUrl + '/item' },
@@ -87,7 +87,7 @@ hmServices.factory('MoneyOpersSvc', ['$resource',
       update: { method: 'POST', url: baseUrl + '/update' },
       skip: {method: 'POST', url: baseUrl + '/skip' },
       up: { method: 'POST', url: baseUrl + '/up' },
-      suggestLabels: {method: 'POST', url: baseUrl + '/suggest-labels'},
+      suggestLabels: {method: 'GET', url: baseUrl + '/suggest-labels', params: { operType: '@operType', search: '@search', labels: '@labels' } },
       labels: {method: 'GET', url: baseUrl + '/labels'}
     })
   }
@@ -95,7 +95,7 @@ hmServices.factory('MoneyOpersSvc', ['$resource',
 
 hmServices.factory('RecurrenceOpersSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/recurrence-opers';
+    let baseUrl = 'api/:bsId/recurrence-opers';
     return $resource(baseUrl, {}, {
       query: { method: 'GET', params: { search: '@search' } },
       skip: { method: 'POST', url: baseUrl + '/skip' },

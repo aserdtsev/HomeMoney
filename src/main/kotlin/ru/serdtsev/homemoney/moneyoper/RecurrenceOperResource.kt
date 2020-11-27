@@ -43,15 +43,11 @@ class RecurrenceOperResource @Autowired constructor(
 
     private fun recurrenceOperToDto(recurrenceOper: RecurrenceOper): RecurrenceOperDto {
         val oper = recurrenceOper.template
-        val fromAccName = accountRepo.findById(oper.fromAccId).get().name
-        val toAccName = accountRepo.findById(oper.toAccId).get().name
         val dto = RecurrenceOperDto(recurrenceOper.id, oper.id, oper.id,
-                recurrenceOper.nextDate, oper.period!!, oper.fromAccId, oper.toAccId, oper.getAmount(), oper.getToAmount(),
-                oper.comment!!, getStringsByLabels(oper.labels), oper.currencyCode!!, oper.toCurrencyCode!!, fromAccName,
-                toAccName, oper.type.name)
+                recurrenceOper.nextDate, oper.period!!, oper.comment, getStringsByLabels(oper.labels), oper.type.name)
         val items = oper.items
                 .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
-                .sortedBy { it.value }
+                .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }
         dto.items = items
         return dto
     }

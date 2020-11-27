@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import java.io.Serializable
@@ -16,11 +15,17 @@ import javax.persistence.*
         query = "select m from MoneyOperItem m where balanceSheet = ?1 and abs(value) = ?2 order by performed desc")
 class MoneyOperItem(
         @Id val id: UUID,
-        @ManyToOne @JoinColumn(name = "oper_id") @JsonIgnore val moneyOper: MoneyOper,
-        @ManyToOne @JoinColumn(name = "balance_id") @JsonIgnore var balance: Balance,
+
+        @ManyToOne @JoinColumn(name = "oper_id")
+        var moneyOper: MoneyOper,
+
+        @ManyToOne
+        @JoinColumn(name = "balance_id")
+        var balance: Balance,
+
         var value: BigDecimal,
-        var performed: LocalDate,
-        var index: Int = 0
+        var performed: LocalDate? = null,
+        var index: Int
 ) : Serializable {
     @ManyToOne @JoinColumn(name = "bs_id") val balanceSheet: BalanceSheet = balance.balanceSheet!!
     fun getBalanceId(): UUID = balance.id
