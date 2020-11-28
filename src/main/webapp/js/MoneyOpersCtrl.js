@@ -290,8 +290,11 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.saveOper = function(oper) {
     delete oper.isEdited;
-    if (typeof oper.amount === 'string' && oper.amount.includes(',')) {
-      oper.amount = oper.amount.replace(',', '.')
+    for (let item of oper.items) {
+      let value = item.value;
+      if (typeof(value) === 'string' && value.includes(',')) {
+        item.value = value.replace(',', '.')
+      }
     }
     if (oper.status === 'doneNew') {
       $scope.createOper(oper);

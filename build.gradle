@@ -123,6 +123,9 @@ task copyJar(type: Copy, dependsOn: bootJar) {
 task createDockerFiles(type: Copy) {
     group = 'docker'
     description = 'Creates Docker files'
+    delete fileTree("$dockerDir").matching {
+        include('docker-compose.yml', 'Dockerfile')
+    }
     from("$dockerDir/tpls") {
         include '*'
         filter(ReplaceTokens, tokens: [
