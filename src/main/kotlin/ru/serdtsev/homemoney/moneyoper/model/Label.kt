@@ -19,7 +19,7 @@ class Label(
         @Column(name = "root_id")
         val rootId: UUID? = null,
 
-        category: Boolean? = null,
+        isCategory: Boolean? = null,
 
         @Column(name = "cat_type")
         @Enumerated(EnumType.STRING)
@@ -29,9 +29,9 @@ class Label(
         val arc: Boolean? = null
 ) {
     @Column(name = "is_category")
-    val category: Boolean? = category
+    val isCategory: Boolean? = isCategory
         get() = field ?: false
 
     constructor(id: UUID, balanceSheet: BalanceSheet, name: String) : this(id, balanceSheet, name, null,
-            null,null, null)
+            null, null, null)
 }

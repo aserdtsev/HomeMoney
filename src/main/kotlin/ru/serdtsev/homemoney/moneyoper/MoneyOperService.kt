@@ -203,13 +203,13 @@ class MoneyOperService @Autowired constructor(
             if (operType != MoneyOperType.transfer.name && labels.isEmpty()) {
                 // Вернем только тэги-категории в зависимости от типа операции.
                 labelRepo.findByBalanceSheetOrderByName(balanceSheet)
-                        .filter { !(it.arc ?: false) && (it.category ?: false) && it.categoryType!!.name == operType }
+                        .filter { !(it.arc ?: false) && it.isCategory!! && it.categoryType!!.name == operType }
             } else {
                 // Найдем 10 наиболее часто используемых тегов-некатегорий за последние 30 дней.
                 val startDate = LocalDate.now().minusDays(30)
                 moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
                         .flatMap { it.labels }
-                        .filter { !(it.arc ?: false) && !(it.category ?: false) && !labels.contains(it.name) }
+                        .filter { !(it.arc ?: false) && !it.isCategory!! && !labels.contains(it.name) }
                         .groupingBy { it }.eachCount()
                         .entries
                         .sortedByDescending { it.value }

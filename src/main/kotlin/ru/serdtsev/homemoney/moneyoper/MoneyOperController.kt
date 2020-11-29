@@ -30,6 +30,7 @@ class MoneyOperController(
         private val balanceSheetRepo: BalanceSheetRepository,
         private val moneyOperRepo: MoneyOperRepo,
         private val moneyOperItemRepo: MoneyOperItemRepo,
+        private val labelRepository: LabelRepository
 ) {
     @RequestMapping
     @Transactional(readOnly = true)
@@ -123,10 +124,10 @@ class MoneyOperController(
                 pager = Function { pageable: Pageable? -> moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageable!!) }
                 adder = Consumer { p: Page<*> ->
                     val opersChunk = (p as Page<MoneyOper>).content
-                            .filter { oper: MoneyOper ->  // по имени счета
+                            .filter { oper: MoneyOper ->
                                 (oper.items.any { item: MoneyOperItem -> item.balance.name.toLowerCase().contains(search) } // по комментарию
                                         || oper.comment?.toLowerCase()?.contains(search) ?: false // по меткам
-                                        || oper.labels.any { label: Label -> label.name.toLowerCase().contains(search) })
+                                        || oper.labels.any { labelContains(it, search) })
                             }
                     opers.addAll(opersChunk)
                 }
@@ -138,6 +139,11 @@ class MoneyOperController(
             pageRequest = pageRequest.next()
         } while (opers.size - offset < limit && page.hasNext())
         return opers.subList(offset, opers.size).take(limit)
+    }
+
+    fun labelContains(label: Label, search: String): Boolean {
+        return label.name.toLowerCase().contains(search)
+                || label.isCategory!! && label.rootId != null && labelContains(labelRepository.findByIdOrNull(label.rootId)!!, search)
     }
 
     @RequestMapping("/item")
