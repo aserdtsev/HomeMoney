@@ -155,6 +155,7 @@ class MoneyOperService @Autowired constructor(
         val period = moneyOperDto.period ?: Period.month
         val oper = MoneyOper(moneyOperDto.id, balanceSheet, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, labels,
                 moneyOperDto.comment, period)
+        oper.recurrenceId = moneyOperDto.recurrenceId
         moneyOperDto.items.forEach {
             val balance = balanceRepo.findByIdOrNull(it.balanceId)!!
             val value = it.value.multiply(it.sgn.toBigDecimal())

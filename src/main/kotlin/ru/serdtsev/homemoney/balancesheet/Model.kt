@@ -3,10 +3,11 @@ package ru.serdtsev.homemoney.balancesheet
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
-import ru.serdtsev.homemoney.account.model.*
+import ru.serdtsev.homemoney.account.model.Account
+import ru.serdtsev.homemoney.account.model.AccountType
+import ru.serdtsev.homemoney.account.model.Balance
 import java.io.Serializable
 import java.math.BigDecimal
-import java.sql.Date
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -19,43 +20,26 @@ data class BalanceSheet(
         @Id
         val id: UUID,
 
-        val created: Instant,
+        val createdTs: Instant,
 
         @Column(name = "currency_code")
         var currencyCode: String,
-
-        @OneToOne @JoinColumn(name = "svc_rsv_id", insertable = false) @get:JsonIgnore
-        var svcRsv: ServiceAccount? = null,
-
-        @OneToOne @JoinColumn(name = "uncat_costs_id", insertable = false) @get:JsonIgnore
-        var uncatCosts: Category? = null,
-
-        @OneToOne @JoinColumn(name = "uncat_income_id", insertable = false) @get:JsonIgnore
-        var uncatIncome: Category? = null,
 
         @OneToMany
         @JoinColumn(name = "balance_sheet_id")
         @get:JsonIgnore
         var accounts: MutableList<Account>? = null
 ) : Serializable {
-    val balances: List<Balance>?
+    val balances: List<Balance>
         @JsonIgnore get() = this.accounts
                 ?.filterIsInstance<Balance>()
                 .orEmpty()
 
-    fun init(): BalanceSheet {
-        val now = Date.valueOf(LocalDate.now())
-        svcRsv = ServiceAccount(UUID.randomUUID(),this, "Service reserve", now, false)
-        uncatCosts = Category(UUID.randomUUID(),this, AccountType.expense, "<Без категории>", now,false)
-        uncatIncome = Category(UUID.randomUUID(),this, AccountType.income, "<Без категории>", now, false)
-        return this
-    }
-
-    override fun toString() = "BalanceSheet{id=$id, created=$created, currencyCode=$currencyCode}"
+    override fun toString() = "BalanceSheet{id=$id, created=$createdTs, currencyCode=$currencyCode}"
 
     companion object {
         fun newInstance(): BalanceSheet {
-            return BalanceSheet(UUID.randomUUID(), Instant.now(), "RUB").init()
+            return BalanceSheet(UUID.randomUUID(), Instant.now(), "RUB")
         }
     }
 }

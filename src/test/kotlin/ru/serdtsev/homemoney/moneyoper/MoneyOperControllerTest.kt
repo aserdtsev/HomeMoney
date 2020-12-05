@@ -27,8 +27,6 @@ internal class MoneyOperControllerTest {
     private val account = Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account",
         now, false, BigDecimal.valueOf(10000L, 2), "RUB")
     private val accountRepo: AccountRepository = mock {
-        whenever(it.findById(balanceSheet.uncatCosts!!.id)).thenReturn(Optional.of(balanceSheet.uncatCosts!!))
-        whenever(it.findById(balanceSheet.uncatIncome!!.id)).thenReturn(Optional.of(balanceSheet.uncatIncome!!))
         whenever(it.findById(balance.id)).thenReturn(Optional.of(balance))
         whenever(it.findById(account.id)).thenReturn(Optional.of(account))
     }

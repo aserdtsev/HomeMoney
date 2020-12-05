@@ -185,7 +185,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
         }
         return result;
       } else {
-        return account.type === 'debit' || account.type === 'credit' || account.type === 'asset';
+        return account.type === 'debit' || account.type === 'credit' || account.type === 'asset' || account.type === 'reserve';
       }
     });
   }
@@ -266,6 +266,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     let isValid;
     if (oper.type === 'transfer') {
       isValid = oper.items.length === 2;
+      if (isValid) {
+        oper.items[1]['value'] = oper.items[0]['value'];
+      }
     } else {
       isValid = oper.items.length === 1;
     }
@@ -295,6 +298,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       if (typeof(value) === 'string' && value.includes(',')) {
         item.value = value.replace(',', '.')
       }
+      item.performedAt = oper.operDate;
     }
     if (oper.status === 'doneNew') {
       $scope.createOper(oper);
