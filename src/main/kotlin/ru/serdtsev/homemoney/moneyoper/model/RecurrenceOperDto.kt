@@ -11,7 +11,7 @@ class RecurrenceOperDto(
         val nextDate: LocalDate,
         val period: Period,
         val comment: String?,
-        val labels: List<String>,
+        val tags: List<String>,
         val type: String
 ) {
     var status: Status? = null

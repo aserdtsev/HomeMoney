@@ -16,7 +16,7 @@ import javax.persistence.*
 @Entity
 @Table(name = "money_oper")
 class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
-        performed: LocalDate = LocalDate.now(), dateNum: Int? = 0, labels: Collection<Label> = mutableListOf(),
+        performed: LocalDate = LocalDate.now(), dateNum: Int? = 0, tags: Collection<Tag> = mutableListOf(),
         comment: String? = null, period: Period? = null) : Serializable {
     @Id
     val id = id
@@ -47,14 +47,14 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
     var dateNum = dateNum
 
     @ManyToMany
-    @JoinTable(name = "labels2objs",
+    @JoinTable(name = "tag2obj",
             joinColumns = [JoinColumn(name = "obj_id", foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT))],
-            inverseJoinColumns = [JoinColumn(name = "label_id")])
-    val labels: MutableSet<Label> = labels.toMutableSet()
+            inverseJoinColumns = [JoinColumn(name = "tag_id")])
+    val tags: MutableSet<Tag> = tags.toMutableSet()
 
-    fun setLabels(labels: Collection<Label>) {
-        this.labels.retainAll(labels)
-        this.labels.addAll(labels)
+    fun setTags(tags: Collection<Tag>) {
+        this.tags.retainAll(tags)
+        this.tags.addAll(tags)
     }
 
     @Column(name = "created_ts")
@@ -100,9 +100,9 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
                 .reduce { acc, value -> acc.add(value) }
 
     constructor(balanceSheet: BalanceSheet, status: MoneyOperStatus,
-            performed: LocalDate = LocalDate.now(), dateNum: Int = 0, labels: Collection<Label> = mutableListOf(),
+            performed: LocalDate = LocalDate.now(), dateNum: Int = 0, tags: Collection<Tag> = mutableListOf(),
             comment: String? = null, period: Period? = null) : this(UUID.randomUUID(), balanceSheet, status, performed,
-            dateNum, labels, comment, period)
+            dateNum, tags, comment, period)
 
     fun complete() {
         assert(status == MoneyOperStatus.pending || status == MoneyOperStatus.cancelled) { status }

@@ -30,7 +30,7 @@ class MoneyOperController(
         private val balanceSheetRepo: BalanceSheetRepository,
         private val moneyOperRepo: MoneyOperRepo,
         private val moneyOperItemRepo: MoneyOperItemRepo,
-        private val labelRepository: LabelRepository
+        private val tagRepository: TagRepository
 ) {
     @RequestMapping
     @Transactional(readOnly = true)
@@ -127,7 +127,7 @@ class MoneyOperController(
                             .filter { oper: MoneyOper ->
                                 (oper.items.any { item: MoneyOperItem -> item.balance.name.toLowerCase().contains(search) } // по комментарию
                                         || oper.comment?.toLowerCase()?.contains(search) ?: false // по меткам
-                                        || oper.labels.any { labelContains(it, search) })
+                                        || oper.tags.any { tagContains(it, search) })
                             }
                     opers.addAll(opersChunk)
                 }
@@ -141,9 +141,9 @@ class MoneyOperController(
         return opers.subList(offset, opers.size).take(limit)
     }
 
-    fun labelContains(label: Label, search: String): Boolean {
-        return label.name.toLowerCase().contains(search)
-                || label.isCategory!! && label.rootId != null && labelContains(labelRepository.findByIdOrNull(label.rootId)!!, search)
+    fun tagContains(tag: Tag, search: String): Boolean {
+        return tag.name.toLowerCase().contains(search)
+                || tag.isCategory!! && tag.rootId != null && tagContains(tagRepository.findByIdOrNull(tag.rootId)!!, search)
     }
 
     @RequestMapping("/item")
@@ -294,9 +294,9 @@ class MoneyOperController(
 
     private fun newReserveMoneyOper(balanceSheet: BalanceSheet, oper: MoneyOper): MoneyOper? {
         return if (oper.items.any { it.balance.reserve != null }) {
-            val labels = oper.labels
+            val tags = oper.tags
             val dateNum = oper.dateNum ?: 0 + 1
-            val reserveMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, oper.performed, dateNum, labels,
+            val reserveMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, oper.performed, dateNum, tags,
                     oper.comment, oper.period)
             oper.items
                     .filter { it.balance.reserve != null }
@@ -306,27 +306,26 @@ class MoneyOperController(
         else null
     }
 
-    @RequestMapping(value = ["/suggest-labels"], method = [RequestMethod.GET])
+    @RequestMapping(value = ["/suggest-tags"], method = [RequestMethod.GET])
     @Transactional(readOnly = true)
-    fun suggestLabels(
+    fun suggestTags(
             @PathVariable bsId: UUID,
             @RequestParam operType: String,
             @RequestParam search: String?,
-            @RequestParam labels: Array<String>?) : HmResponse {
-        val suggestLabels = moneyOperService.getSuggestLabels(bsId, operType, search, labels?.toList() ?: emptyList())
-                .map(Label::name)
-        return HmResponse.getOk(suggestLabels)
+            @RequestParam tags: Array<String>?) : HmResponse {
+        val suggestTags = moneyOperService.getSuggestTags(bsId, operType, search, tags?.toList() ?: emptyList())
+                .map(Tag::name)
+        return HmResponse.getOk(suggestTags)
     }
 
-    @RequestMapping(value = ["/labels"])
+    @RequestMapping(value = ["/tags"])
     @Transactional(readOnly = true)
-    fun labels(
-            @PathVariable bsId: UUID?): HmResponse {
-        val labels = moneyOperService.getLabels(bsId!!)
+    fun tags(@PathVariable bsId: UUID?): HmResponse {
+        val tags = moneyOperService.getTags(bsId!!)
                 .stream()
-                .map(Label::name)
+                .map(Tag::name)
                 .collect(Collectors.toList())
-        return HmResponse.getOk(labels)
+        return HmResponse.getOk(tags)
     }
 
     companion object {

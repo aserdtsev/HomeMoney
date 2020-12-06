@@ -13,7 +13,7 @@ data class MoneyOperDto(
         val operDate: LocalDate,
         val period: Period?,
         val comment: String?,
-        val labels: List<String>,
+        val tags: List<String>,
         val dateNum: Int?,
         val parentId: UUID?,
         val recurrenceId: UUID?,
@@ -21,7 +21,6 @@ data class MoneyOperDto(
 {
     var items: List<MoneyOperItemDto> = ArrayList()
     var type: String? = null
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

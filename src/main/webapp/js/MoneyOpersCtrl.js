@@ -10,15 +10,15 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.search = '';
   $scope.opers;
   $scope.recurrenceOpers;
-  $scope.labels;
-  $scope.suggestLabels;
+  $scope.tags;
+  $scope.suggestTags;
 
   $scope.$on('login', function() {
     $scope.loadRecurrenceOpers();
     $scope.loadOpersFirstPage($scope.pageSize);
     $scope.loadAccounts();
     $scope.loadBalances();
-    $scope.loadLabels();
+    $scope.loadTags();
   });
 
   $scope.$on('logout', function() {
@@ -52,7 +52,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.refreshOpers = function() {
     $scope.loadOpersFirstPage($scope.getOpersLength());
-    $scope.loadLabels();
+    $scope.loadTags();
   }
 
   $scope.loadAccounts = function() {
@@ -220,9 +220,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     });
   }
 
-  $scope.loadLabels = function() {
-    let response = MoneyOpersSvc.labels({bsId: $rootScope.bsId}, function() {
-      $scope.labels = response.data;
+  $scope.loadTags = function() {
+    let response = MoneyOpersSvc.tags({bsId: $rootScope.bsId}, function() {
+      $scope.tags = response.data;
     });
   }
 
@@ -243,14 +243,14 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     let oper;
     if (typeof param.id !== 'undefined') {
       let recurrenceOper = param;
-      oper = {type: recurrenceOper.type, comment: recurrenceOper.comment, labels: recurrenceOper.labels,
+      oper = {type: recurrenceOper.type, comment: recurrenceOper.comment, tags: recurrenceOper.tags,
         period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
     } else {
       let type = param;
       let sgn;
       if (type === 'income') sgn = 1; else sgn = -1;
       let items = [{id: randomUUID(), balanceId: null, value: null, sgn: sgn, performedAt: performedAt, index: 0}]
-      oper = {type: type, items: items, labels: []};
+      oper = {type: type, items: items, tags: []};
       if (type === 'transfer') {
         items.push({id: randomUUID(), balanceId: null, value: null, sgn: 1, performedAt: performedAt, index: 1})
       }
@@ -347,30 +347,30 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   };
 
   // item - экземпляр Oper или RecurrenceOper.
-  $scope.newLabelKeyPressed = function(event, label, item) {
+  $scope.newTagKeyPressed = function(event, tag, item) {
     if (event.keyCode === 13) {
-      addLabel(item, label);
+      addTag(item, tag);
     } else {
-      $scope.getSuggestLabels(item, label);
+      $scope.getSuggestTags(item, tag);
     }
   };
 
   // item - экземпляр Oper или RecurrenceOper.
-  function addLabel(item, label) {
-    if (typeof label !== 'undefined' && label.length > 0) {
-      let labels = item['labels'];
-      labels.splice(labels.length, 0, label);
+  function addTag(item, tag) {
+    if (typeof tag !== 'undefined' && tag.length > 0) {
+      let tags = item['tags'];
+      tags.splice(tags.length, 0, tag);
     }
   }
 
   // item - экземпляр Oper или RecurrenceOper.
-  $scope.editLabelKeyPressed = function(event, index, label, item) {
+  $scope.editTagKeyPressed = function(event, index, tag, item) {
     if (event.keyCode === 13) {
-      let labels = item['labels'];
-      if (typeof label !== 'undefined' && label.length > 0) {
-        labels[index] = label;
+      let tags = item['tags'];
+      if (typeof tag !== 'undefined' && tag.length > 0) {
+        tags[index] = tag;
       } else {
-        labels.splice(index, 1);
+        tags.splice(index, 1);
       }
     }
   };
@@ -461,9 +461,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     return oper.items[0]['value'];
   };
 
-  $scope.getSuggestLabels = function(oper, search) {
-    let response = MoneyOpersSvc.suggestLabels({bsId: $rootScope.bsId, operType: oper.type, search: search, labels: oper.labels}, function() {
-      $scope.suggestLabels = response.data;
+  $scope.getSuggestTags = function(oper, search) {
+    let response = MoneyOpersSvc.suggestTags({bsId: $rootScope.bsId, operType: oper.type, search: search, tags: oper.tags}, function() {
+      $scope.suggestTags = response.data;
     });
   }
 }

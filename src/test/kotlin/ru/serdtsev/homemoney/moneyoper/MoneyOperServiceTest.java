@@ -43,36 +43,36 @@ class MoneyOperServiceTest {
     accountRepo = mock(AccountRepository.class);
     val conversionService = mock(ConversionService.class);
     service = new MoneyOperService(conversionService, balanceSheetRepo, moneyOperRepo, mock(RecurrenceOperRepo.class),
-        accountRepo, balanceRepo, mock(LabelRepository.class));
+        accountRepo, balanceRepo, mock(TagRepository.class));
   }
 
   @Test
   @Disabled
-  void getLabelsSuggest() {
-    Label car = newLabel("car");
-    Label food = newLabel("food");
-    Label clothes = newLabel("clothes");
-    List<Label> labelsA = asList(car, food, clothes);
-    List<Label> labelsB = asList(food, clothes);
-    List<Label> labelsC = asList(clothes);
-    List<MoneyOper> opers = asList(newMoneyOperWithLabels(labelsA), newMoneyOperWithLabels(labelsB), newMoneyOperWithLabels(labelsC));
+  void getTagsSuggest() {
+    Tag car = newTag("car");
+    Tag food = newTag("food");
+    Tag clothes = newTag("clothes");
+    List<Tag> tagsA = asList(car, food, clothes);
+    List<Tag> tagsB = asList(food, clothes);
+    List<Tag> tagsC = asList(clothes);
+    List<MoneyOper> opers = asList(newMoneyOperWithTags(tagsA), newMoneyOperWithTags(tagsB), newMoneyOperWithTags(tagsC));
     when(moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(any(), any(), any()))
         .thenReturn(opers);
     Account account = new Account(UUID.randomUUID(), balanceSheet, AccountType.debit, "Some account name", java.sql.Date.valueOf(LocalDate.now()), false);
     when(accountRepo.findById(any())).thenReturn(Optional.of(account));
 
-    MoneyOper moneyOper = newMoneyOperWithLabels(new ArrayList<>());
+    MoneyOper moneyOper = newMoneyOperWithTags(new ArrayList<>());
     MoneyOperDto moneyOperDto = service.moneyOperToDto(moneyOper);
-    Collection<Label> checkLabels = service.getSuggestLabels(moneyOper.getItems().get(0).getBalanceId(),
-            MoneyOperType.expense.name(), null, moneyOperDto.getLabels());
+    Collection<Tag> checkTags = service.getSuggestTags(moneyOper.getItems().get(0).getBalanceId(),
+            MoneyOperType.expense.name(), null, moneyOperDto.getTags());
 
-    List<Label> expectedLabels = asList(clothes, food, car);
-    Assertions.assertIterableEquals(expectedLabels, checkLabels);
+    List<Tag> expectedTags = asList(clothes, food, car);
+    Assertions.assertIterableEquals(expectedTags, checkTags);
   }
 
-  private MoneyOper newMoneyOperWithLabels(List<Label> labelsA) {
+  private MoneyOper newMoneyOperWithTags(List<Tag> tags) {
     MoneyOper moneyOper = new MoneyOper(UUID.randomUUID(), balanceSheet, MoneyOperStatus.doneNew, LocalDate.now(), 0,
-        labelsA, null, Period.month);
+        tags, null, Period.month);
     Date created = Date.valueOf(LocalDate.now());
     Balance balance1 = new Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Some account name", created,
         false, BigDecimal.ZERO, "RUB");
@@ -83,8 +83,8 @@ class MoneyOperServiceTest {
     return moneyOper;
   }
 
-  private Label newLabel(String name) {
-    return new Label(UUID.randomUUID(), Mockito.mock(BalanceSheet.class), name);
+  private Tag newTag(String name) {
+    return new Tag(UUID.randomUUID(), Mockito.mock(BalanceSheet.class), name);
   }
 
 }

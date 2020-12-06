@@ -34,11 +34,11 @@ internal class MoneyOperControllerTest {
     private val balanceSheetRepo: BalanceSheetRepository = mock {  }
     private val balanceRepo: BalanceRepository = mock {  }
     private val moneyOperRepo: MoneyOperRepo = mock {  }
-    private val labelRepo: LabelRepository = mock {  }
+    private val tagRepo: TagRepository = mock {  }
     private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
     private val categoryRepo: CategoryRepository = mock {  }
     private val moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, moneyOperRepo,
-            moneyOperItemRepo, labelRepo)
+            moneyOperItemRepo, tagRepo)
 
     @BeforeEach
     fun setUp() {
@@ -47,8 +47,8 @@ internal class MoneyOperControllerTest {
     @Test
     @Disabled
     fun newMoneyOper_simpleExpense() {
-        val labels: MutableList<Label> = ArrayList()
-        labels.add(Label(UUID.randomUUID(), balanceSheet, "label"))
+        val tags: MutableList<Tag> = ArrayList()
+        tags.add(Tag(UUID.randomUUID(), balanceSheet, "tag"))
         val performed = LocalDate.now()
         val comment = "my comment"
         val oper = MoneyOper(balanceSheet, MoneyOperStatus.done, period = Period.month)
@@ -66,7 +66,7 @@ internal class MoneyOperControllerTest {
         assertEquals(Period.month, oper.period)
         assertEquals(MoneyOperStatus.done, oper.status)
         assertEquals(comment, oper.comment)
-        assertEquals(labels, oper.labels)
+        assertEquals(tags, oper.tags)
         assertEquals(0, oper.dateNum)
     }
 

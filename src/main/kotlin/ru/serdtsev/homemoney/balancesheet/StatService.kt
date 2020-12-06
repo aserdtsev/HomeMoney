@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.account.model.AccountType
-import ru.serdtsev.homemoney.moneyoper.LabelRepository
+import ru.serdtsev.homemoney.moneyoper.TagRepository
 import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperType
@@ -19,7 +19,7 @@ import java.util.*
 @Transactional(readOnly = true)
 class StatService(
         private val balanceSheetRepo: BalanceSheetRepository,
-        private val labelRepository: LabelRepository,
+        private val tagRepository: TagRepository,
         private val moneyOperItemRepo: MoneyOperItemRepo,
         private val jdbcTemplate: JdbcTemplate,
         private val statData: StatData
@@ -129,10 +129,10 @@ class StatService(
                 .filter { item -> item.moneyOper.type == MoneyOperType.expense || item.balance.type == AccountType.reserve }
                 .map { item ->
                     val oper = item.moneyOper
-                    var category = oper.labels.firstOrNull { it.isCategory!! }
+                    var category = oper.tags.firstOrNull { it.isCategory!! }
                     val rootId = category?.rootId
                     if (rootId != null) {
-                        category = labelRepository.findByIdOrNull(rootId)
+                        category = tagRepository.findByIdOrNull(rootId)
                     }
 
                     val isReserveIncrease = item.balance.type == AccountType.reserve && item.value.signum() > 0

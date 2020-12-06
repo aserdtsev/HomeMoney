@@ -44,7 +44,7 @@ class RecurrenceOperResource @Autowired constructor(
     private fun recurrenceOperToDto(recurrenceOper: RecurrenceOper): RecurrenceOperDto {
         val oper = recurrenceOper.template
         val dto = RecurrenceOperDto(recurrenceOper.id, oper.id, oper.id,
-                recurrenceOper.nextDate, oper.period!!, oper.comment, getStringsByLabels(oper.labels), oper.type.name)
+                recurrenceOper.nextDate, oper.period!!, oper.comment, getStringsByTags(oper.tags), oper.type.name)
         val items = oper.items
                 .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
                 .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }
@@ -52,7 +52,7 @@ class RecurrenceOperResource @Autowired constructor(
         return dto
     }
 
-    private fun getStringsByLabels(labels: Collection<Label>): List<String> = labels.map(Label::name)
+    private fun getStringsByTags(tags: Collection<Tag>): List<String> = tags.map(Tag::name)
 
     @RequestMapping("/create")
     fun create(

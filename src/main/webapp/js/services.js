@@ -87,8 +87,8 @@ hmServices.factory('MoneyOpersSvc', ['$resource',
       update: { method: 'POST', url: baseUrl + '/update' },
       skip: {method: 'POST', url: baseUrl + '/skip' },
       up: { method: 'POST', url: baseUrl + '/up' },
-      suggestLabels: {method: 'GET', url: baseUrl + '/suggest-labels', params: { operType: '@operType', search: '@search', labels: '@labels' } },
-      labels: {method: 'GET', url: baseUrl + '/labels'}
+      suggestTags: {method: 'GET', url: baseUrl + '/suggest-tags', params: { operType: '@operType', search: '@search', tags: '@tags' } },
+      tags: {method: 'GET', url: baseUrl + '/tags'}
     })
   }
 ]);

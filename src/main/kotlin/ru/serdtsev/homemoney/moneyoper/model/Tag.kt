@@ -5,8 +5,8 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
-@Table(name = "labels")
-class Label(
+@Table(name = "tag")
+class Tag(
         @Id
         val id: UUID,
 

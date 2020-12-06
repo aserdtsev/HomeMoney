@@ -27,7 +27,7 @@ class MoneyOperService @Autowired constructor(
         private val recurrenceOperRepo: RecurrenceOperRepo,
         private val accountRepo: AccountRepository,
         private val balanceRepo: BalanceRepository,
-        private val labelRepo: LabelRepository
+        private val tagRepo: TagRepository
 ) {
     fun save(moneyOper: MoneyOper) {
         moneyOperRepo.save(moneyOper)
@@ -77,7 +77,7 @@ class MoneyOperService @Autowired constructor(
             }
             else -> {
                 (template.items.any { it.balance.name.toLowerCase().contains(search) }
-                        || template.labels.any { it.name.toLowerCase().contains(search) })
+                        || template.tags.any { it.name.toLowerCase().contains(search) })
                         || template.comment?.toLowerCase()?.contains(search) ?: false
             }
         }
@@ -86,7 +86,7 @@ class MoneyOperService @Autowired constructor(
     private fun createMoneyOperByRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOper: RecurrenceOper): MoneyOper {
         val template = recurrenceOper.template
         val performed = recurrenceOper.nextDate
-        val oper = MoneyOper(balanceSheet, MoneyOperStatus.recurrence, performed, 0, template.labels,
+        val oper = MoneyOper(balanceSheet, MoneyOperStatus.recurrence, performed, 0, template.tags,
                 template.comment, template.period)
         template.items.forEach { oper.addItem(it.balance, it.value, performed) }
         oper.recurrenceId = template.recurrenceId
@@ -96,7 +96,7 @@ class MoneyOperService @Autowired constructor(
     fun createRecurrenceOper(balanceSheet: BalanceSheet, operId: UUID) {
         val sample = moneyOperRepo.findByIdOrNull(operId)!!
         checkMoneyOperBelongsBalanceSheet(sample, balanceSheet.id)
-        val template = MoneyOper(balanceSheet, MoneyOperStatus.template, sample.performed, 0, sample.labels,
+        val template = MoneyOper(balanceSheet, MoneyOperStatus.template, sample.performed, 0, sample.tags,
                 sample.comment, sample.period)
         sample.items.forEach { template.addItem(it.balance, it.value, it.performed) }
         val recurrenceOper = RecurrenceOper(balanceSheet, template, sample.performed)
@@ -144,16 +144,16 @@ class MoneyOperService @Autowired constructor(
             origTemplateItem -> !recurrenceOperDto.items.any { it.id == origTemplateItem.id }
         }
         origTemplate.comment = recurrenceOperDto.comment
-        val labels: Collection<Label> = getLabelsByStrings(balanceSheet, recurrenceOperDto.labels)
-        origTemplate.setLabels(labels)
+        val tags: Collection<Tag> = getTagsByStrings(balanceSheet, recurrenceOperDto.tags)
+        origTemplate.setTags(tags)
         recurrenceOperRepo.save(origRecurrenceOper)
     }
 
     fun moneyOperDtoToMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper {
         val dateNum = moneyOperDto.dateNum ?: 0
-        val labels = getLabelsByStrings(balanceSheet, moneyOperDto.labels)
+        val tags = getTagsByStrings(balanceSheet, moneyOperDto.tags)
         val period = moneyOperDto.period ?: Period.month
-        val oper = MoneyOper(moneyOperDto.id, balanceSheet, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, labels,
+        val oper = MoneyOper(moneyOperDto.id, balanceSheet, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, tags,
                 moneyOperDto.comment, period)
         oper.recurrenceId = moneyOperDto.recurrenceId
         moneyOperDto.items.forEach {
@@ -178,7 +178,7 @@ class MoneyOperService @Autowired constructor(
         }
         toOper.items.retainAll(fromOper.items)
         toOper.performed = fromOper.performed
-        toOper.setLabels(fromOper.labels)
+        toOper.setTags(fromOper.tags)
         toOper.dateNum = fromOper.dateNum
         toOper.period = fromOper.period
         toOper.comment = fromOper.comment
@@ -187,44 +187,44 @@ class MoneyOperService @Autowired constructor(
     fun checkMoneyOperBelongsBalanceSheet(oper: MoneyOper, bsId: UUID) =
             assert(oper.balanceSheet.id == bsId) { "MoneyOper id='${oper.id}' belongs the other balance sheet." }
 
-    fun getLabelsByStrings(balanceSheet: BalanceSheet, strLabels: List<String>): MutableList<Label> =
-            strLabels.map { findOrCreateLabel(balanceSheet, it) }.toMutableList()
+    fun getTagsByStrings(balanceSheet: BalanceSheet, strTags: List<String>): MutableList<Tag> =
+            strTags.map { findOrCreateTag(balanceSheet, it) }.toMutableList()
 
-    fun findOrCreateLabel(balanceSheet: BalanceSheet, name: String): Label =
-            labelRepo.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleLabel(balanceSheet, name) }
+    fun findOrCreateTag(balanceSheet: BalanceSheet, name: String): Tag =
+            tagRepo.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleTag(balanceSheet, name) }
 
-    private fun createSimpleLabel(balanceSheet: BalanceSheet, name: String): Label =
-            Label(UUID.randomUUID(), balanceSheet, name).apply { labelRepo.save(this) }
+    private fun createSimpleTag(balanceSheet: BalanceSheet, name: String): Tag =
+            Tag(UUID.randomUUID(), balanceSheet, name).apply { tagRepo.save(this) }
 
-    fun getStringsByLabels(labels: Collection<Label>): List<String> = labels.map { it.name }
+    fun getStringsByTags(tags: Collection<Tag>): List<String> = tags.map { it.name }
 
-    fun getSuggestLabels(bsId: UUID, operType: String, search: String?, labels: List<String>): List<Label> {
+    fun getSuggestTags(bsId: UUID, operType: String, search: String?, tags: List<String>): List<Tag> {
         val balanceSheet = balanceSheetRepo.findById(bsId).get()
         return if (search.isNullOrEmpty()) {
-            if (operType != MoneyOperType.transfer.name && labels.isEmpty()) {
+            if (operType != MoneyOperType.transfer.name && tags.isEmpty()) {
                 // Вернем только тэги-категории в зависимости от типа операции.
-                labelRepo.findByBalanceSheetOrderByName(balanceSheet)
+                tagRepo.findByBalanceSheetOrderByName(balanceSheet)
                         .filter { !(it.arc ?: false) && it.isCategory!! && it.categoryType!!.name == operType }
             } else {
                 // Найдем 10 наиболее часто используемых тегов-некатегорий за последние 30 дней.
                 val startDate = LocalDate.now().minusDays(30)
                 moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
-                        .flatMap { it.labels }
-                        .filter { !(it.arc ?: false) && !it.isCategory!! && !labels.contains(it.name) }
+                        .flatMap { it.tags }
+                        .filter { !(it.arc ?: false) && !it.isCategory!! && !tags.contains(it.name) }
                         .groupingBy { it }.eachCount()
                         .entries
                         .sortedByDescending { it.value }
                         .map { it.key }
             }
         } else {
-            labelRepo.findByBalanceSheetOrderByName(balanceSheet)
+            tagRepo.findByBalanceSheetOrderByName(balanceSheet)
                     .filter { !(it.arc ?: false) && it.name.startsWith(search, true) }
         }
     }
 
     fun moneyOperToDto(moneyOper: MoneyOper): MoneyOperDto =
             MoneyOperDto(moneyOper.id, moneyOper.status, moneyOper.performed, moneyOper.period, moneyOper.comment,
-                    getStringsByLabels(moneyOper.labels), moneyOper.dateNum, moneyOper.getParentOperId(),
+                    getStringsByTags(moneyOper.tags), moneyOper.dateNum, moneyOper.getParentOperId(),
                     moneyOper.recurrenceId, moneyOper.created).apply {
                 if (moneyOper.type == MoneyOperType.transfer && moneyOper.items.any { it.balance is Reserve }) {
                     val operItem = moneyOper.items.first { it.balance is Reserve }
@@ -241,9 +241,9 @@ class MoneyOperService @Autowired constructor(
         return account.name
     }
 
-    fun getLabels(bsId: UUID): List<Label> {
+    fun getTags(bsId: UUID): List<Tag> {
         val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-        return labelRepo.findByBalanceSheetOrderByName(balanceSheet)
+        return tagRepo.findByBalanceSheetOrderByName(balanceSheet)
     }
 
     companion object {

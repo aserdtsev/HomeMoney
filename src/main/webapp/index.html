@@ -116,7 +116,7 @@
           <span ng-bind="oper.items[0].balanceName"></span>
           <span ng-show="oper.items.length > 1">&rarr;</span>
           <span ng-show="oper.items.length > 1" ng-bind="oper.items[1].balanceName"></span>
-          <span class="label" ng-repeat="label in oper['labels']">{{label}}</span>
+          <span class="tag" ng-repeat="tag in oper['tags']">{{tag}}</span>
           <span>
             <a href=""
                ng-show="oper.status == 'done'"
@@ -174,17 +174,17 @@
               </select>
               <input ng-model="oper.comment" placeholder="Комментарий"/>
               <span>
-                <span ng-repeat="label in oper['labels']">
-                  <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
-                  <input class="label" ng-show="labelIsEdited[$index]" ng-model="label"
-                         ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, oper)"/>
+                <span ng-repeat="tag in oper['tags']">
+                  <a href="" class="tag" ng-show="!tagIsEdited[$index]" ng-click="tagIsEdited[$index]=true">{{tag}}</a>
+                  <input class="tag" ng-show="tagIsEdited[$index]" ng-model="tag"
+                         ng-keypress="tagIsEdited[$index]=$event.keyCode!=13;editTagKeyPressed($event, $index, tag, oper)"/>
                 </span>
-                <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
-                <input class="label" ng-hide="!isNewLabel" ng-model="newLabel" list="labelList"
-                       ng-keypress="isNewLabel=$event.keyCode!=13; newLabelKeyPressed($event, newLabel, oper); newLabel = $event.keyCode==13 ? null : newLabel"
-                       ng-focus="getSuggestLabels(oper, newLabel)"/>
-                <datalist id="labelList">
-                  <option ng-repeat="tag in suggestLabels" value="{{tag}}"></option>
+                <a href="" ng-show="!isNewTag" ng-click="isNewTag=true" class="tag">+</a>
+                <input class="tag" ng-hide="!isNewTag" ng-model="newTag" list="tagList"
+                       ng-keypress="isNewTag=$event.keyCode!=13; newTagKeyPressed($event, newTag, oper); newTag = $event.keyCode==13 ? null : newTag"
+                       ng-focus="getSuggestTags(oper, newTag)"/>
+                <datalist id="tagList">
+                  <option ng-repeat="tag in suggestTags" value="{{tag}}"></option>
                 </datalist>
               </span>
             </div>
@@ -217,7 +217,7 @@
             <span>Периодичность: {{getPeriodName(recurrenceOper)}}</span>
             <div>
               <span>{{recurrenceOper['comment']}}</span>
-              <div><span class="label" ng-repeat="label in recurrenceOper['labels']">{{label}}</span></div>
+              <div><span class="tag" ng-repeat="tag in recurrenceOper['tags']">{{tag}}</span></div>
               <span>
                 <a href="" ng-click="recurrenceOper.isEdited=true">изменить</a>
                 <a href="" ng-click="deleteRecurrenceOper(recurrenceOper)">удалить</a>
@@ -263,14 +263,14 @@
               <div>
                 <input ng-model="recurrenceOper.comment" placeholder="Комментарий"/>
                 <span>
-                  <span ng-repeat="label in recurrenceOper['labels']">
-                    <a href="" class="label" ng-show="!labelIsEdited[$index]" ng-click="labelIsEdited[$index]=true">{{label}}</a>
-                    <input class="label" ng-show="labelIsEdited[$index]" ng-model="label"
-                       ng-keypress="labelIsEdited[$index]=$event.keyCode!=13;editLabelKeyPressed($event, $index, label, recurrenceOper)"/>
+                  <span ng-repeat="tag in recurrenceOper['tags']">
+                    <a href="" class="tag" ng-show="!tagIsEdited[$index]" ng-click="tagIsEdited[$index]=true">{{tag}}</a>
+                    <input class="tag" ng-show="tagIsEdited[$index]" ng-model="tag"
+                       ng-keypress="tagIsEdited[$index]=$event.keyCode!=13;editTagKeyPressed($event, $index, tag, recurrenceOper)"/>
                   </span>
-                  <a href="" ng-show="!isNewLabel" ng-click="isNewLabel=true" class="label">+</a>
-                  <input class="label" ng-hide="!isNewLabel" ng-model="label"
-                     ng-keypress="isNewLabel=$event.keyCode!=13;newLabelKeyPressed($event, label, recurrenceOper);label=$event.keyCode==13 ? null : label"/>
+                  <a href="" ng-show="!isNewTag" ng-click="isNewTag=true" class="tag">+</a>
+                  <input class="tag" ng-hide="!isNewTag" ng-model="tag"
+                     ng-keypress="isNewTag=$event.keyCode!=13;newTagKeyPressed($event, tag, recurrenceOper);tag=$event.keyCode==13 ? null : tag"/>
                 </span>
               </div>
               <div>

@@ -42,7 +42,7 @@ class StatData(
                     val turnover = Turnover(item.performed!!, balance.type, value)
                     itemTurnovers.add(turnover)
 
-                    item.moneyOper.labels
+                    item.moneyOper.tags
                             .firstOrNull { it.isCategory!! }?.let {
                                 if (balance.type == AccountType.debit) {
                                     val accountType = if (item.value.signum() < 0) AccountType.expense else AccountType.income
