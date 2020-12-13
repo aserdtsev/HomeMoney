@@ -19,7 +19,6 @@ import java.time.LocalDate
 import java.util.*
 import java.util.function.Consumer
 import java.util.function.Function
-import java.util.stream.Collectors
 import java.util.stream.IntStream
 
 @RestController
@@ -320,11 +319,8 @@ class MoneyOperController(
 
     @RequestMapping(value = ["/tags"])
     @Transactional(readOnly = true)
-    fun tags(@PathVariable bsId: UUID?): HmResponse {
-        val tags = moneyOperService.getTags(bsId!!)
-                .stream()
-                .map(Tag::name)
-                .collect(Collectors.toList())
+    fun tags(@PathVariable bsId: UUID): HmResponse {
+        val tags = moneyOperService.getTags(bsId).map(Tag::name)
         return HmResponse.getOk(tags)
     }
 

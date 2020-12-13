@@ -226,11 +226,11 @@ class MoneyOperService @Autowired constructor(
             MoneyOperDto(moneyOper.id, moneyOper.status, moneyOper.performed, moneyOper.period, moneyOper.comment,
                     getStringsByTags(moneyOper.tags), moneyOper.dateNum, moneyOper.getParentOperId(),
                     moneyOper.recurrenceId, moneyOper.created).apply {
-                if (moneyOper.type == MoneyOperType.transfer && moneyOper.items.any { it.balance is Reserve }) {
+                type = if (moneyOper.type == MoneyOperType.transfer && moneyOper.items.any { it.balance is Reserve }) {
                     val operItem = moneyOper.items.first { it.balance is Reserve }
-                    type = if (operItem.value.signum() > 0) MoneyOperType.income.name else MoneyOperType.expense.name
+                    if (operItem.value.signum() > 0) MoneyOperType.income.name else MoneyOperType.expense.name
                 } else
-                    type = moneyOper.type.name
+                    moneyOper.type.name
                 items = moneyOper.items
                         .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
                         .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }

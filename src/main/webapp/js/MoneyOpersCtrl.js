@@ -165,12 +165,12 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       return [];
     }
     return $scope.accounts.filter(function(account) {
-      if (oper.type === 'transfer') {
+      let items = oper.items;
+      if (oper.type === 'transfer' && items.length === 2) {
         if (account.type === 'expense' || account.type === 'income') {
           return false;
         }
         let result = true;
-        let items = oper.items;
         let toBalanceId = items[1]['balanceId']
         if (toBalanceId !== null) {
           result = account.id !== toBalanceId;

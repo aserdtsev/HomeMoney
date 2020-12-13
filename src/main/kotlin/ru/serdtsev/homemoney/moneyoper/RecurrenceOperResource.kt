@@ -7,6 +7,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.account.AccountRepository
+import ru.serdtsev.homemoney.account.model.Reserve
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
@@ -43,8 +44,13 @@ class RecurrenceOperResource @Autowired constructor(
 
     private fun recurrenceOperToDto(recurrenceOper: RecurrenceOper): RecurrenceOperDto {
         val oper = recurrenceOper.template
+        val type = if (oper.type == MoneyOperType.transfer && oper.items.any { it.balance is Reserve }) {
+            val operItem = oper.items.first { it.balance is Reserve }
+            if (operItem.value.signum() > 0) MoneyOperType.income.name else MoneyOperType.expense.name
+        } else
+            oper.type.name
         val dto = RecurrenceOperDto(recurrenceOper.id, oper.id, oper.id,
-                recurrenceOper.nextDate, oper.period!!, oper.comment, getStringsByTags(oper.tags), oper.type.name)
+                recurrenceOper.nextDate, oper.period!!, oper.comment, getStringsByTags(oper.tags), type)
         val items = oper.items
                 .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
                 .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }

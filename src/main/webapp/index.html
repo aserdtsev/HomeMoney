@@ -228,32 +228,22 @@
             <div class="form">
               <div>
                 <input class="date" ng-model="recurrenceOper.nextDate" placeholder="Дата"/>
+                <input class="amount" ng-model="recurrenceOper.items[0].value" placeholder="Сумма"/>
+                <span ng-bind="recurrenceOper.type == 'income' ? 'Куда: ' : 'Откуда: '"></span>
                 <select
-                        ng-if="recurrenceOper.type !== 'income'"
-                        ng-model="recurrenceOper.fromAccId"
-                        ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)"
-                        ng-click="refreshToAccounts(recurrenceOper.fromAccId)">
+                        ng-model="recurrenceOper.items[0].balanceId"
+                        ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)">
                 </select>
-                <input class="amount" ng-model="recurrenceOper.amount" placeholder="Сумма"/>
+                <span ng-if="recurrenceOper.type == 'transfer'">Куда: </span>
                 <select
-                        ng-if="recurrenceOper.type !== 'income'"
-                        ng-model="recurrenceOper.toAccId"
-                        ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)"
-                        ng-click="refreshFromAccounts(recurrenceOper.toAccId)">
+                        ng-if="recurrenceOper.type == 'transfer'"
+                        ng-model="recurrenceOper.items[1].balanceId"
+                        ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)">
                 </select>
-                <select
-                        ng-if="recurrenceOper.type === 'income'"
-                        ng-model="recurrenceOper.toAccId"
-                        ng-options="acc.id as acc.name for acc in getFirstAccounts(recurrenceOper)"
-                        ng-click="refreshToAccounts(recurrenceOper.fromAccId)">
-                </select>
-                <input class="amount" ng-model="recurrenceOper.amount" placeholder="Сумма"/>
-                <select
-                        ng-if="recurrenceOper.type === 'income'"
-                        ng-model="recurrenceOper.fromAccId"
-                        ng-options="acc.id as acc.name for acc in getSecondAccounts(recurrenceOper)"
-                        ng-click="refreshFromAccounts(recurrenceOper.toAccId)">
-                </select>
+                <input class="amount"
+                       ng-if="recurrenceOper.type == 'transfer' && balanceCurrenciesIsNotEqual(recurrenceOper.items[0].balanceId, recurrenceOper.items[1].balanceId)"
+                       ng-model="recurrenceOper.items[1].value"
+                       placeholder="Сумма"/>
                 <select ng-model="recurrenceOper.period">
                   <option value="month">Месяц</option>
                   <option value="quarter">Квартал</option>
