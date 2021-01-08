@@ -17,7 +17,7 @@ class AccountsController (private val balanceSheetRepo: BalanceSheetRepository) 
     fun getAccountList(@PathVariable bsId: UUID): HmResponse {
         val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
         val accounts = balanceSheet.accounts
-                ?.sortedBy { it.getSortIndex() }
+            ?.sortedBy { it.getSortIndex() }
         return getOk(accounts)
     }
 }

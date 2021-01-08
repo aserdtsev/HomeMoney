@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import ru.serdtsev.homemoney.account.model.Account
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
+import ru.serdtsev.homemoney.moneyoper.model.CategoryType
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperType
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.Instant
@@ -154,7 +156,7 @@ data class CategoryStat(
  */
 data class Turnover(
         val operDate: LocalDate,
-        val accountType: AccountType,
+        val turnoverType: TurnoverType,
         /** Сумма оборотов со знаком */
         var amount: BigDecimal = BigDecimal.ZERO
 ) {
@@ -167,14 +169,24 @@ data class Turnover(
         other as Turnover
 
         if (operDate != other.operDate) return false
-        if (accountType != other.accountType) return false
+        if (turnoverType != other.turnoverType) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = operDate.hashCode()
-        result = 31 * result + accountType.hashCode()
+        result = 31 * result + turnoverType.hashCode()
         return result
+    }
+}
+
+enum class TurnoverType {
+    debit, credit, reserve, asset, service, income, expense;
+
+    companion object {
+        fun valueOf(accountType: AccountType): TurnoverType = valueOf(accountType.toString())
+        fun valueOf(categoryType: CategoryType): TurnoverType = valueOf(categoryType.toString())
+        fun valueOf(moneyOperType: MoneyOperType): TurnoverType = valueOf(moneyOperType.toString())
     }
 }

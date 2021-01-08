@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.support.ConversionServiceFactoryBean
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItemToDtoConverter
+import ru.serdtsev.homemoney.moneyoper.model.TagToTagDtoConverter
 import java.util.*
 
 @Configuration
@@ -18,6 +19,7 @@ class ConverterConfiguration : ApplicationContextAware {
             val bean = ConversionServiceFactoryBean()
             val converters = HashSet<Any>()
             converters.add(MoneyOperItemToDtoConverter(ctx))
+            converters.add(TagToTagDtoConverter())
             bean.setConverters(converters)
             return bean
         }

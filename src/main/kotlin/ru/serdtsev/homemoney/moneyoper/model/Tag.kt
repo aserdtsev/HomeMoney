@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
+import org.springframework.core.convert.converter.Converter
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
 import java.util.*
 import javax.persistence.*
@@ -34,4 +35,12 @@ class Tag(
 
     constructor(id: UUID, balanceSheet: BalanceSheet, name: String) : this(id, balanceSheet, name, null,
             null, null, null)
+}
+
+class TagDto(val id: UUID, val name: String, val rootId: UUID?, val isCategory: Boolean?, val categoryType: CategoryType?,
+             val isArc: Boolean?)
+
+class TagToTagDtoConverter: Converter<Tag, TagDto> {
+    override fun convert(source: Tag): TagDto = TagDto(source.id, source.name, source.rootId, source.isCategory,
+        source.categoryType, source.arc)
 }

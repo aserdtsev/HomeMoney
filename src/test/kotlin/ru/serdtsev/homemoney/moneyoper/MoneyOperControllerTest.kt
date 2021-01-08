@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import ru.serdtsev.homemoney.account.AccountRepository
 import ru.serdtsev.homemoney.account.BalanceRepository
-import ru.serdtsev.homemoney.account.CategoryRepository
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
@@ -36,7 +35,6 @@ internal class MoneyOperControllerTest {
     private val moneyOperRepo: MoneyOperRepo = mock {  }
     private val tagRepo: TagRepository = mock {  }
     private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
-    private val categoryRepo: CategoryRepository = mock {  }
     private val moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, moneyOperRepo,
             moneyOperItemRepo, tagRepo)
 

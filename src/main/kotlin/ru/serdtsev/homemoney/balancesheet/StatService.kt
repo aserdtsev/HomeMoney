@@ -111,13 +111,19 @@ class StatService(
      * Заполняет карту экземпляров BsDayStat суммами из оборотов.
      */
     private fun fillBsDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
-        turnovers.forEach { (operDate, accountType, amount) ->
+        turnovers.forEach { (operDate, turnoverType, amount) ->
             val dayStat = map.computeIfAbsent(operDate) { BsDayStat(operDate) }
-            dayStat.setDelta(accountType, dayStat.getDelta(accountType).add(amount))
-            if (accountType == AccountType.income) {
-                dayStat.incomeAmount = dayStat.incomeAmount.add(amount)
-            } else if (accountType == AccountType.expense) {
-                dayStat.chargeAmount = dayStat.chargeAmount.add(amount)
+            when (turnoverType) {
+                TurnoverType.income -> {
+                    dayStat.incomeAmount = dayStat.incomeAmount.add(amount)
+                }
+                TurnoverType.expense -> {
+                    dayStat.chargeAmount = dayStat.chargeAmount.add(amount)
+                }
+                else -> {
+                    val accountType = AccountType.valueOf(turnoverType.name)
+                    dayStat.setDelta(accountType, dayStat.getDelta(accountType).add(amount))
+                }
             }
         }
     }

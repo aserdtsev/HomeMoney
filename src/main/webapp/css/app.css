@@ -69,11 +69,41 @@ input.amount {
     padding-left: 4px;
     padding-right: 4px;
     border-radius: 4px;
-    background-color: dimgrey;
+    background-color: grey;
     color: white;
     font-family: monospace;
     text-decoration: inherit;
     border-width: 0px;
+}
+
+.tag-income {
+    display: inline-block;
+    margin: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 4px;
+    background-color: limegreen;
+    color: white;
+    font-family: monospace;
+    text-decoration: inherit;
+    border-width: 0px;
+}
+
+.tag-expense {
+    display: inline-block;
+    margin: 3px;
+    padding-left: 4px;
+    padding-right: 4px;
+    border-radius: 4px;
+    background-color: indianred;
+    color: white;
+    font-family: monospace;
+    text-decoration: inherit;
+    border-width: 0px;
+}
+
+a.tag-link {
+    color: yellow;
 }
 
 div.balance-left-block {

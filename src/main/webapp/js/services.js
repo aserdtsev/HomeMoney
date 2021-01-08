@@ -2,7 +2,7 @@
 
 /* Services */
 
-var hmServices = angular.module('hmServices', ['ngResource']);
+const hmServices = angular.module('hmServices', ['ngResource']);
 
 hmServices.factory('UserSvc', ['$resource',
   function($resource) {
@@ -24,7 +24,7 @@ hmServices.factory('BalanceSheetSvc', ['$resource',
 
 hmServices.factory('ReferencesSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/references';
+    const baseUrl = 'api/:bsId/references';
     return $resource(baseUrl, {}, {
       currencies: { method: 'GET', url: baseUrl + '/currencies' }
     })
@@ -39,21 +39,21 @@ hmServices.factory('AccountsSvc', ['$resource',
   }
 ]);
 
-hmServices.factory('CategoriesSvc', ['$resource',
+hmServices.factory('TagSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/categories';
+    const baseUrl = 'api/:bsId/tags';
     return $resource(baseUrl, {}, {
       query: { method: 'GET' },
-      create: { method: 'POST', url: baseUrl + '/create' },
-      delete: { method: 'POST', url: baseUrl + '/delete' },
-      update: { method: 'POST', url: baseUrl + '/update' }
+      create: { method: 'POST' },
+      delete: { method: 'DELETE', url: baseUrl + '/:tagId' },
+      update: { method: 'PUT' }
     })
   }
 ]);
 
 hmServices.factory('BalancesSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/balances';
+    const baseUrl = 'api/:bsId/balances';
     return $resource(baseUrl, {}, {
       query:  { method: 'GET' },
       create: { method: 'POST', url: baseUrl + '/create' },
@@ -66,7 +66,7 @@ hmServices.factory('BalancesSvc', ['$resource',
 
 hmServices.factory('ReservesSvc', ['$resource',
   function($resource) {
-    var baseUrl = 'api/:bsId/reserves';
+    const baseUrl = 'api/:bsId/reserves';
     return $resource(baseUrl, {}, {
       query: { method: 'GET' },
       create: { method: 'POST', url: baseUrl + '/create' },
@@ -78,7 +78,7 @@ hmServices.factory('ReservesSvc', ['$resource',
 
 hmServices.factory('MoneyOpersSvc', ['$resource',
   function($resource) {
-    let baseUrl = 'api/:bsId/money-opers';
+    const baseUrl = 'api/:bsId/money-opers';
     return $resource(baseUrl, {}, {
       query: { method: 'GET', params: { search: '@search', offset: '@offset', limit: '@limit' } },
       item: { method: 'GET', url: baseUrl + '/item' },
@@ -95,7 +95,7 @@ hmServices.factory('MoneyOpersSvc', ['$resource',
 
 hmServices.factory('RecurrenceOpersSvc', ['$resource',
   function($resource) {
-    let baseUrl = 'api/:bsId/recurrence-opers';
+    const baseUrl = 'api/:bsId/recurrence-opers';
     return $resource(baseUrl, {}, {
       query: { method: 'GET', params: { search: '@search' } },
       skip: { method: 'POST', url: baseUrl + '/skip' },

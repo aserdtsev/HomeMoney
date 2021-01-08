@@ -15,7 +15,7 @@
   <script src="js/UserCtrl.js"></script>
   <script src="js/InitCtrl.js"></script>
   <script src="js/BalanceSheetCtrl.js"></script>
-  <script src="js/CategoriesCtrl.js"></script>
+  <script src="js/TagCtrl.js"></script>
   <script src="js/BalancesCtrl.js"></script>
   <script src="js/ReservesCtrl.js"></script>
   <script src="js/MoneyOpersCtrl.js"></script>
@@ -280,7 +280,7 @@
 
 <div ng-controller="BalancesCtrl" class="block">
   Остатки <a href="" ng-click="newBalance()">добавить</a>
-  <div ng-repeat="balance in getBalances(arcViewed)" class="list-item-block">
+  <div ng-repeat="balance in getBalances(includeArc)" class="list-item-block">
     <div ng-hide="balance.isEdited">
       <div class="balance-left-block">
         <div>{{balance.name}} <span ng-show="balance.isArc == true">[в архиве]</span></div>
@@ -345,8 +345,8 @@
     </div>
   </div>
   <a href=""
-     ng-click="arcViewed = !arcViewed"
-     ng-bind="arcViewed ? 'скрыть архивные' : 'показать архивные'">
+     ng-click="includeArc = !includeArc"
+     ng-bind="includeArc ? 'скрыть архивные' : 'показать архивные'">
   </a>
 </div>
 
@@ -398,46 +398,45 @@
   </a>
 </div>
 
-<div ng-controller="CategoriesCtrl" class="block">
-  Категории доходов и расходов <a href="" ng-click="newCategory()">добавить</a>
-  <div ng-repeat="category in getCategories(arcViewed)" class="list-item-block">
-    <div ng-hide="category.isEdited">
-      <div class="{{getClass(category)}}">
-        {{category.name}}
-        <span ng-show="category.isArc == true"> [в архиве]</span>
-      </div>
-      <div>
-        <a href="" ng-click="category.isEdited = true">изменить</a>
-        <a href="" ng-click="deleteCategory(category)">удалить</a>
-      </div>
-    </div>
-    <div ng-show="category.isEdited">
-      <div class="form">
-        <div>
-          <input ng-model="category.name" placeholder="Название"/>
-          <input type="checkbox" ng-model="category.isArc">Архивный</input>
-          <select ng-model="category.type">
-            <option value="expense">Расходы</option>
-            <option value="income">Доходы</option>
-          </select>
-          <select
-              ng-model="category.rootId"
-              ng-options="root.id as root.name for root in rootCategories">
-          </select>
-        </div>
-        <div>
-          <input type="submit"
-                 ng-click="saveCategory(category)"
-                 ng-disabled="!category.name.length || !category.type.length" value="сохранить"/>
-          <a href="" ng-click="cancelEditCategory(category)">отменить</a>
-        </div>
-      </div>
-    </div>
+<div ng-controller="TagCtrl" class="block">
+  Теги <input ng-model="search"/>
+  <div>
+    <a href=""
+       ng-click="onlyCategories = !onlyCategories"
+       ng-bind="onlyCategories ? 'категории' : 'все'">
+    </a>
+    <a ng-show="onlyCategories"
+       href=""
+       ng-click="categoryTypeFilter = categoryTypeFilter == 'income' ? 'expense' : 'income'"
+       ng-bind="categoryTypeFilter == 'income' ? 'расходы' : 'доходы'">
+    </a>
   </div>
-  <a href=""
-     ng-click="arcViewed = !arcViewed"
-     ng-bind="arcViewed ? 'скрыть архивные' : 'показать архивные'">
-  </a>
+  <div>
+    <a href=""
+       ng-click="includeArc = !includeArc"
+       ng-bind="includeArc ? 'скрыть архивные' : 'показать архивные'">
+    </a>
+  </div>
+  <div>
+    <span ng-class="getClass(tag)"
+          ng-repeat="tag in getTags(search, onlyCategories, categoryTypeFilter, includeArc)">
+      <span ng-hide="tag.isEdited" ng-click="tag.isEdited = true">{{tag.name}}</span>
+      <span ng-show="tag.isEdited" class="form">
+        <input ng-model="tag.name" placeholder="Название"/>
+        <input type="checkbox" ng-model="tag['isCategory']">Категория</input>
+        <select ng-show="tag['isCategory']" ng-model="tag['categoryType']">
+          <option value="expense">Расходы</option>
+          <option value="income">Доходы</option>
+        </select>
+        <select ng-show="tag['isCategory']"
+                ng-model="tag['rootId']"
+                ng-options="root.id as root.name for root in getRootCategoryTags(tag)"/>
+        <input type="checkbox" ng-model="tag.isArc">Архивный</input>
+        <a href="" class="tag-link" ng-click="saveTag(tag)" ng-bind="'сохранить'"></a>
+        <a href="" class="tag-link" ng-click="cancelEditTag()" ng-bind="'отменить'"></a>
+      </span>
+    </span>
+  </div>
 </div>
 
 </body>
