@@ -17,7 +17,7 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
-@Table(name = "balances")
+@Table(name = "balance")
 @DiscriminatorValue("balance")
 open class Balance(
         id: UUID,

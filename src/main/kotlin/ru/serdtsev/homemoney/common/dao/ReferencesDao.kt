@@ -14,7 +14,7 @@ class ReferencesDao (dataSource: DataSource) {
 
     fun getCurrencies(bsId: UUID): List<HmCurrency> {
         val sql = """
-            select b.currency_code  from accounts a, balances b  
+            select b.currency_code  from account a, balance b  
                 where a.balance_sheet_id = ? and b.id = a.id  
                 group by currency_code
             """.trimIndent()

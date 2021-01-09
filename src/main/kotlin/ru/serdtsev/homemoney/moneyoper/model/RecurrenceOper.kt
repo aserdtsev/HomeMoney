@@ -10,7 +10,7 @@ import javax.persistence.*
 class RecurrenceOper(
         @Id
         val id: UUID,
-        @ManyToOne @JoinColumn(name = "bs_id")
+        @ManyToOne @JoinColumn(name = "balance_sheet_id")
         val balanceSheet: BalanceSheet,
         @OneToOne @JoinColumn(name = "template_id")
         val template: MoneyOper,

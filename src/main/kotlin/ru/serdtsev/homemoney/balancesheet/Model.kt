@@ -17,7 +17,7 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
-@Table(name = "balance_sheets")
+@Table(name = "balance_sheet")
 data class BalanceSheet(
         @Id
         val id: UUID,

@@ -9,7 +9,7 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
-@Table(name = "accounts")
+@Table(name = "account")
 @Inheritance(strategy = InheritanceType.JOINED)
 open class Account(
         @Id open val id: UUID,

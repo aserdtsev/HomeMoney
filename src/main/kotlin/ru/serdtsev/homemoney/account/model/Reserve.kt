@@ -11,7 +11,7 @@ import javax.persistence.Entity
 import javax.persistence.Table
 
 @Entity
-@Table(name = "reserves")
+@Table(name = "reserve")
 @DiscriminatorValue("reserve")
 open class Reserve(
         id: UUID,

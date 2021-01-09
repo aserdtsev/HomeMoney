@@ -7,10 +7,10 @@ import javax.persistence.Id
 import javax.persistence.Table
 
 @Entity
-@Table(name = "users")
+@Table(name = "app_user")
 class User(
-        @Id @Column(name = "user_id") val id: UUID,
-        @Column(name = "bs_id") val bsId: UUID,
-        @Column(length = 100) val email: String,
-        @Column(name = "pwd_hash", length = 50) val pwdHash: String
+        @Id @Column val id: UUID,
+        @Column(name = "balance_sheet_id") val bsId: UUID,
+        @Column val email: String,
+        @Column val pwdHash: String
 )

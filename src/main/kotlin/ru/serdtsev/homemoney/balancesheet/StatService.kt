@@ -68,7 +68,7 @@ class StatService(
      */
     private fun calcCurrentSaldo(bsStat: BsStat) {
         val aggrAccSaldoList = jdbcTemplate.query<AggrAccountSaldo>(
-                "select type, sum(saldo) as saldo from v_crnt_saldo_by_base_cry where bs_id = ? group by type",
+                "select type, sum(saldo) as saldo from v_crnt_saldo_by_base_cry where balance_sheet_id = ? group by type",
                 arrayOf(bsStat.bsId)) { rs, _ ->
             val type = AccountType.valueOf(rs.getString("type"))
             val saldo = rs.getBigDecimal("saldo")

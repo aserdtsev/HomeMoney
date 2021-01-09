@@ -12,7 +12,7 @@ class Tag(
         val id: UUID,
 
         @ManyToOne
-        @JoinColumn(name = "bs_id")
+        @JoinColumn(name = "balance_sheet_id")
         val balanceSheet: BalanceSheet,
 
         val name: String,

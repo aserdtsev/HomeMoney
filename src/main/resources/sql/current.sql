@@ -22,8 +22,8 @@ update money_oper_item i set bs_id = (
 select * from money_oper_item where abs(value) = 307.00;
 delete from money_oper_item where oper_id is null;
 
-select * from balances where id = '50bd7922-6ed2-42b8-efef-7eadfe587ca9';
-update balances set value = 39365.31+159 where id = '50bd7922-6ed2-42b8-efef-7eadfe587ca9';
+select * from balance where id = '50bd7922-6ed2-42b8-efef-7eadfe587ca9';
+update balance set value = 39365.31+159 where id = '50bd7922-6ed2-42b8-efef-7eadfe587ca9';
 
 
 

@@ -6,7 +6,7 @@ import javax.persistence.Id
 import javax.persistence.Table
 
 @Entity
-@Table(name = "auth_tokens")
+@Table(name = "auth_token")
 class UserAuthToken(@Id val token: UUID, userId: UUID) {
     var userId: UUID = userId
         private set
