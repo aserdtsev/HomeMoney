@@ -18,7 +18,7 @@ open class BalanceSheetResource(private val statService: StatService) {
     @Transactional(readOnly = true)
     open fun getBalanceSheetInfo(
             @PathVariable bsId: UUID,
-            @RequestParam(defaultValue = "30") interval: Long?): HmResponse {
+            @RequestParam(defaultValue = "30") interval: Long): HmResponse {
         log.info {"bs-stat start" }
 
         val response = try {

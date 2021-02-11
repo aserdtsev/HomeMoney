@@ -14,6 +14,7 @@ import ru.serdtsev.homemoney.moneyoper.model.Period
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
@@ -45,6 +46,7 @@ class StatData(
                     itemTurnovers.add(turnover)
 
                     item.moneyOper.tags
+                            // todo Принять во внимание случай, когда категория не установлена
                             .firstOrNull { it.isCategory!! }?.let {
                                 if (balance.type == AccountType.debit) {
                                     val categoryType = if (item.value.signum() < 0) CategoryType.expense else CategoryType.income
@@ -63,19 +65,21 @@ class StatData(
     }
 
     @Async
-    fun getTrendTurnoversFuture(balanceSheet: BalanceSheet, fromDate: LocalDate, toDate: LocalDate) =
-            CompletableFuture.completedFuture(getTrendTurnovers(balanceSheet, fromDate, toDate))!!
+    fun getTrendTurnoversFuture(balanceSheet: BalanceSheet, interval: Long) =
+            CompletableFuture.completedFuture(getTrendTurnovers(balanceSheet, interval))!!
 
-    private fun getTrendTurnovers(balanceSheet: BalanceSheet, fromDate: LocalDate, toDate: LocalDate): Collection<Turnover> {
+    private fun getTrendTurnovers(balanceSheet: BalanceSheet, interval: Long): Collection<Turnover> {
         log.info { "getTrendTurnovers start" }
+        val today = LocalDate.now()
+        val fromDate = today.minusDays(interval)
         val turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
-                fromDate, toDate, MoneyOperStatus.done)
+                fromDate, today, MoneyOperStatus.done)
                 .filter { it.moneyOper.period == Period.month && it.moneyOper.recurrenceId == null }
                 .filter { it.moneyOper.type != MoneyOperType.transfer }
                 .filter { it.balance.type.isBalance && it.balance.type != AccountType.reserve }
                 .sortedBy { it.performed }
                 .flatMap { item ->
-                    val trendDate = item.performed!!.plusMonths(1)
+                    val trendDate = today.plusDays(ChronoUnit.DAYS.between(item.performed!!, today))
                     val turnover1 = Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value)
                     val turnover2 = Turnover(trendDate, TurnoverType.valueOf(item.moneyOper.type.name), item.value.abs())
                     listOf(turnover1, turnover2)

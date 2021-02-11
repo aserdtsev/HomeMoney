@@ -27,24 +27,21 @@ class StatService(
 
     data class AggrAccountSaldo(var type: AccountType, var saldo: BigDecimal)
 
-    open fun getBsStat(bsId: UUID, interval: Long?): BsStat {
+    open fun getBsStat(bsId: UUID, interval: Long): BsStat {
         val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
 
         val today = LocalDate.now()
-        val fromDate = today.minusDays(interval!!)
+        val fromDate = today.minusDays(interval)
 
         val bsStat = BsStat(bsId, fromDate, today)
         calcCurrentSaldo(bsStat)
-
-        val trendFromDate = today.plusDays(1).minusMonths(1)
-        val trendToDate = trendFromDate.plusDays(interval - 1)
 
         val trendMap = TreeMap<LocalDate, BsDayStat>()
 
         val realTurnovers = statData.getRealTurnoversFuture(balanceSheet, MoneyOperStatus.done, fromDate, today)
         val pendingTurnovers = statData.getRealTurnoversFuture(balanceSheet, MoneyOperStatus.pending,
                 LocalDate.of(1970, 1, 1), today.plusDays(interval))
-        val trendTurnovers = statData.getTrendTurnoversFuture(balanceSheet, trendFromDate, trendToDate)
+        val trendTurnovers = statData.getTrendTurnoversFuture(balanceSheet, interval)
         val recurrenceTurnovers = statData.getRecurrenceTurnoversFuture(balanceSheet, today.plusDays(interval))
 
         val map = TreeMap<LocalDate, BsDayStat>()
@@ -114,12 +111,10 @@ class StatService(
         turnovers.forEach { (operDate, turnoverType, amount) ->
             val dayStat = map.computeIfAbsent(operDate) { BsDayStat(operDate) }
             when (turnoverType) {
-                TurnoverType.income -> {
+                TurnoverType.income ->
                     dayStat.incomeAmount = dayStat.incomeAmount.add(amount)
-                }
-                TurnoverType.expense -> {
+                TurnoverType.expense ->
                     dayStat.chargeAmount = dayStat.chargeAmount.add(amount)
-                }
                 else -> {
                     val accountType = AccountType.valueOf(turnoverType.name)
                     dayStat.setDelta(accountType, dayStat.getDelta(accountType).add(amount))
