@@ -1,5 +1,5 @@
 'use strict';
 
 /* Controllers */
-var hmControllers = angular.module('hmControllers', []);
+const hmControllers = angular.module('hmControllers', ['base64', 'ngResource']);
 

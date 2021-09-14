@@ -1,12 +1,12 @@
 'use strict';
 
-hmControllers.controller('UserCtrl', ['$scope', '$rootScope', '$cookies', 'UserSvc', 'ReferencesSvc', UserCtrl]);
-function UserCtrl($scope, $rootScope, $cookies, UserSvc, ReferencesSvc) {
+hmControllers.controller('UserCtrl', ['$scope', '$rootScope', '$cookies', '$base64', '$http', 'UserSvc', UserCtrl]);
+function UserCtrl($scope, $rootScope, $cookies, $base64, $http, UserSvc) {
   $rootScope.isLogged = false;
   $scope.email = $cookies.get('email');
 
   var response = UserSvc.getBalanceSheetId(function() {
-    if (response.status == 'OK') {
+    if (response.status === 'OK') {
       $rootScope.bsId = response.data;
       $rootScope.isLogged = true;
       $rootScope.$broadcast('login', $rootScope.bsId);
@@ -14,19 +14,19 @@ function UserCtrl($scope, $rootScope, $cookies, UserSvc, ReferencesSvc) {
   });
 
   $scope.login = function(email, pwd) {
-    var response = UserSvc.login({email: email, pwd: pwd}, function() {
-      if (typeof response != 'unassigned') {
-        if (response.status == 'OK') {
+    $http.defaults.headers.common.Authorization = 'Basic ' + $base64.encode(email + ":" + pwd);
+    const response = UserSvc.login(function() {
+      if (typeof response !== 'unassigned') {
+        if (response.status === 'OK') {
           $rootScope.bsId = response.data['bsId'];
           $rootScope.isLogged = true;
           $scope.errMsg = '';
-          var expireDate = new Date();
+          const expireDate = new Date();
           expireDate.setDate(expireDate.getDate() + 3);
           $cookies.put('email', email, {expires: expireDate});
           $cookies.put('userId', response.data['userId'], {expires: expireDate});
-          $cookies.put('authToken', response.data['token']);
           $rootScope.$broadcast('login');
-        } else if (status == 'AuthWrong') {
+        } else if (status === 'AuthWrong') {
           $rootScope.isLogged = false;
           $rootScope.bsId = undefined;
           $scope.errMsg = 'Неверный Email или пароль.';
@@ -36,9 +36,8 @@ function UserCtrl($scope, $rootScope, $cookies, UserSvc, ReferencesSvc) {
   };
 
   $scope.logout = function() {
-    UserSvc.logout(function() {
-      $rootScope.$broadcast('logout');
-    });
+    $http.defaults.headers.common.Authorization = 'Basic ';
+    $rootScope.$broadcast('logout');
   }
 
   $scope.$on('logout', function() {
@@ -46,7 +45,6 @@ function UserCtrl($scope, $rootScope, $cookies, UserSvc, ReferencesSvc) {
     $rootScope.bsId = undefined;
     $rootScope.currencies = undefined;
     $cookies.remove('userId');
-    $cookies.remove('authToken');
   });
 
   $scope.isLogged = function() {

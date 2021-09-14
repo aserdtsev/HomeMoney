@@ -7,6 +7,7 @@
   <script src="bower_components/angular/angular-resource.js"></script>
   <script src="bower_components/angular/angular-sanitize.js"></script>
   <script src="bower_components/angular/angular-cookies.js"></script>
+  <script src="bower_components/angular-base64/angular-base64.js"></script>
   <script src="bower_components/d3/d3.min.js"></script>
   <script src="bower_components/n3-line-chart/line-chart.min.js"></script>
   <script src="js/app.js"></script>
@@ -123,7 +124,7 @@
                ng-click="upOper(oper)">вверх</a>
             <a href=""
                ng-show="oper.status == 'done' && oper.period != 'SINGLE'"
-               ng-click="createRecurrenceOperByOper(oper)">шаблон</a>
+               ng-click="createRecurrenceOperByOper(oper)">повторять</a>
             <a href=""
                ng-show="oper.status == 'pending' || oper.status == 'recurrence'"
                ng-click="completeOper(oper)">выполнить</a>

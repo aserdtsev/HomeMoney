@@ -1,11 +1,8 @@
 package ru.serdtsev.homemoney.user
 
-import com.google.common.base.Charsets
-import com.google.common.hash.Hashing
 import mu.KotlinLogging
-import net.sf.ehcache.Cache
-import net.sf.ehcache.CacheManager
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.http.HttpHeaders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet.Companion.newInstance
@@ -18,7 +15,6 @@ import java.util.*
 @RequestMapping("/api/user")
 class UserController(
         private val userRepo: UserRepository,
-        private val userAuthTokenRepo: UserAuthTokenRepository,
         private val balanceSheetRepo: BalanceSheetRepository
 ) {
     @RequestMapping("/balance-sheet-id")
@@ -37,47 +33,21 @@ class UserController(
 
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])
     @Transactional
-    fun login(
-            @RequestParam("email") email: String,
-            @RequestParam("pwd") pwd: String
-    ): HmResponse {
+    fun login(@RequestHeader(HttpHeaders.AUTHORIZATION) authorization: String): HmResponse {
         return try {
+            val email = decodeAuthorization(authorization).first
             log.info { "User login; email:$email" }
-            val pwdHash = Hashing.sha1().hashString(pwd + email + SHARE_SALT, Charsets.UTF_8).toString()
-            val user = userRepo.findByEmail(email) ?: run { createUserNBalanceSheet(email, pwdHash) }
-            if (user.pwdHash != pwdHash) throw HmException(HmException.Code.WrongAuth)
-            val authToken = UUID.randomUUID()
-            saveUserAuthToken(authToken, user)
-            val auth = Authentication(user.id, user.bsId, authToken)
+            val user = userRepo.findByEmail(email)!!
+            val auth = Authentication(user.id, user.bsId)
             HmResponse.getOk(auth)
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
         }
     }
 
-    @RequestMapping(value = ["/logout"], method = [RequestMethod.POST])
-    @Transactional
-    fun logout(
-            @CookieValue(value = "userId", required = false) userId: UUID,
-            @CookieValue(value = "authToken", required = false) authToken: UUID
-    ): HmResponse {
-        val userAuthToken = userAuthTokenRepo.findByIdOrNull(authToken)!!
-        if (userAuthToken.userId != userId) {
-            throw HmException(HmException.Code.WrongUserId)
-        }
-        userAuthTokenRepo.delete(userAuthToken)
-        val element = authTokensCache[userId]
-        if (element != null) {
-            val authTokens = element.objectValue as MutableSet<*>
-            if (authTokens.contains(authToken)) {
-                authTokens.remove(authToken)
-                if (authTokens.isEmpty()) {
-                    authTokensCache.remove(userId)
-                }
-            }
-        }
-        log.info { "User logout" }
-        return HmResponse.getOk()
+    fun getUser(authorization: String): User? {
+        val login = decodeAuthorization(authorization).first
+        return userRepo.findByEmail(login)
     }
 
     @RequestMapping(method = [RequestMethod.DELETE])
@@ -86,7 +56,7 @@ class UserController(
         balanceSheetRepo.deleteById(id)
     }
 
-    fun createUserNBalanceSheet(email: String, pwdHash: String): User {
+    fun createUserWithBalanceSheet(email: String, pwdHash: String): User {
         val bs = newInstance()
         balanceSheetRepo.save(bs)
         val user = User(UUID.randomUUID(), bs.id, email, pwdHash)
@@ -94,18 +64,16 @@ class UserController(
         return user
     }
 
-    private fun saveUserAuthToken(authToken: UUID, user: User) {
-        val userAuthToken = UserAuthToken(authToken, user.id)
-        userAuthTokenRepo.save(userAuthToken)
-        log.info { "User is logged; userId:${user.id}." }
+    private fun decodeAuthorization(authorization: String): Pair<String, String> {
+        val base64Credentials = authorization.substring("Basic".length).trim()
+        val credDecoded = Base64.getDecoder().decode(base64Credentials)
+        val credentials = String(credDecoded)
+        val arrayCredential = credentials.split(":".toRegex(), 2)
+        return arrayCredential[0] to arrayCredential[1]
     }
-
-    private val authTokensCache: Cache
-        get() = CacheManager.getInstance().getCache("authTokens")
 
     companion object {
         private val log = KotlinLogging.logger {}
-        private const val SHARE_SALT = "4301"
     }
 
 }

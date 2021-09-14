@@ -243,33 +243,16 @@ create table app_user
     id uuid not null
         constraint app_user_pkey
             primary key,
-    email varchar(100) not null
+    email text not null
         constraint app_user_email_unique
             unique,
-    pwd_hash varchar(50) not null,
+    pwd_hash text not null,
     balance_sheet_id uuid not null
         constraint app_user_balance_sheet_id_fk
             references balance_sheet
 );
 
 alter table app_user owner to postgres;
-
-create table auth_token
-(
-    user_id uuid not null
-        constraint auth_token_user_id_fk
-            references app_user,
-    token uuid not null
-        constraint auth_token_token_unique
-            unique,
-    constraint auth_token_pkey
-        primary key (user_id, token)
-);
-
-alter table auth_token owner to postgres;
-
-create unique index auth_token_user_id_token_idx
-    on auth_token (user_id, token);
 
 create index app_user_balance_sheet_id_fki
     on app_user (balance_sheet_id);
