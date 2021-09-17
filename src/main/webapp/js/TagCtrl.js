@@ -40,7 +40,7 @@ function TagCtrl($scope, $rootScope, TagSvc) {
     if (!$scope.isLogged()) {
       return;
     }
-    const response = TagSvc.query({bsId: $rootScope.bsId}, function () {
+    const response = TagSvc.query(function () {
       $scope.tags = response.data;
     });
   };

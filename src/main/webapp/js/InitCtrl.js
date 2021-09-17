@@ -9,7 +9,7 @@ function InitCtrl($scope, $rootScope, ReferencesSvc) {
 
   $scope.loadCurrencies = function() {
     if ($rootScope.isLogged) {
-      var response = ReferencesSvc.currencies({bsId: $rootScope.bsId}, function () {
+      var response = ReferencesSvc.currencies(function () {
         $rootScope.currencies = response.data;
       });
     }

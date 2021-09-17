@@ -11,7 +11,7 @@ function BalanceSheetCtrl($scope, $rootScope, BalanceSheetSvc) {
     if (!$scope.isLogged()) {
       return;
     }
-    var response = BalanceSheetSvc.query({bsId: $rootScope.bsId, interval: $scope.interval}, function() {
+    var response = BalanceSheetSvc.query({interval: $scope.interval}, function() {
       if (response.status == "OK") {
         $scope.bsStat = response.data;
       } else if (response.status == "INCORRECT_AUTH_TOKEN") {

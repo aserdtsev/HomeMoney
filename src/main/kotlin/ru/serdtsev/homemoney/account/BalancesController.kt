@@ -5,8 +5,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import ru.serdtsev.homemoney.account.BalanceService
 import ru.serdtsev.homemoney.account.model.Balance
+import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.common.HmResponse.Companion.getFail
@@ -14,22 +14,21 @@ import ru.serdtsev.homemoney.common.HmResponse.Companion.getOk
 import java.util.*
 
 @RestController
-@RequestMapping("/api/{bsId}/balances")
-class BalancesController(private val balanceService: BalanceService) {
+@RequestMapping("/api/balances")
+class BalancesController(private val apiRequestContextHolder: ApiRequestContextHolder,
+        private val balanceService: BalanceService) {
     @RequestMapping
     @Transactional(readOnly = true)
-    fun getBalances(@PathVariable bsId: UUID): HmResponse {
-        val balances = balanceService.getBalances(bsId)
+    fun getBalances(): HmResponse {
+        val balances = balanceService.getBalances(apiRequestContextHolder.getBsId())
         return getOk(balances)
     }
 
     @RequestMapping("/create")
     @Transactional
-    fun createBalance(
-            @PathVariable bsId: UUID,
-            @RequestBody balance: Balance): HmResponse {
+    fun createBalance(@RequestBody balance: Balance): HmResponse {
         return try {
-            balanceService.createBalance(bsId, balance)
+            balanceService.createBalance(apiRequestContextHolder.getBsId(), balance)
             getOk()
         } catch (e: HmException) {
             getFail(e.code.name)

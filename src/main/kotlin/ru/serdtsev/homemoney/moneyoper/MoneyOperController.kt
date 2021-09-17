@@ -8,7 +8,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.common.dto.PagedList
@@ -22,25 +22,23 @@ import java.util.function.Function
 import java.util.stream.IntStream
 
 @RestController
-@RequestMapping("/api/{bsId}/money-opers")
+@RequestMapping("/api/money-opers")
 @Transactional
 class MoneyOperController(
-        private val moneyOperService: MoneyOperService,
-        private val balanceSheetRepo: BalanceSheetRepository,
-        private val moneyOperRepo: MoneyOperRepo,
-        private val moneyOperItemRepo: MoneyOperItemRepo,
-        private val tagRepository: TagRepository
-) {
+    private val apiRequestContextHolder: ApiRequestContextHolder,
+    private val moneyOperService: MoneyOperService,
+    private val moneyOperRepo: MoneyOperRepo,
+    private val moneyOperItemRepo: MoneyOperItemRepo,
+    private val tagRepository: TagRepository) {
     @RequestMapping
     @Transactional(readOnly = true)
     fun getMoneyOpers(
-            @PathVariable bsId: UUID,
             @RequestParam(required = false, defaultValue = "") search: String,
             @RequestParam(required = false, defaultValue = "10") limit: Int,
             @RequestParam(required = false, defaultValue = "0") offset: Int): HmResponse {
         return try {
             val opers = ArrayList<MoneyOperDto>()
-            val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+            val balanceSheet = apiRequestContextHolder.getBalanceSheet()
             if (offset == 0) {
                 val pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.pending, search, limit + 1, offset)
                         .map { moneyOperService.moneyOperToDto(it) }
@@ -70,7 +68,7 @@ class MoneyOperController(
         return if (search.isBlank())
             getMoneyOpers(balanceSheet, status, sort, limit, offset)
         else
-            getMoneyOpersBySearch(balanceSheet, status, search.toLowerCase(), sort, limit, offset)
+            getMoneyOpersBySearch(balanceSheet, status, search.lowercase(Locale.getDefault()), sort, limit, offset)
     }
 
     private fun getMoneyOpers(balanceSheet: BalanceSheet, status: MoneyOperStatus, sort: Sort, limit: Int,
@@ -124,8 +122,9 @@ class MoneyOperController(
                 adder = Consumer { p: Page<*> ->
                     val opersChunk = (p as Page<MoneyOper>).content
                             .filter { oper: MoneyOper ->
-                                (oper.items.any { item: MoneyOperItem -> item.balance.name.toLowerCase().contains(search) } // по комментарию
-                                        || oper.comment?.toLowerCase()?.contains(search) ?: false // по меткам
+                                (oper.items.any { item: MoneyOperItem -> item.balance.name.lowercase(Locale.getDefault())
+                                    .contains(search) } // по комментарию
+                                        || oper.comment?.lowercase(Locale.getDefault())?.contains(search) ?: false // по меткам
                                         || oper.tags.any { tagContains(it, search) })
                             }
                     opers.addAll(opersChunk)
@@ -141,18 +140,16 @@ class MoneyOperController(
     }
 
     fun tagContains(tag: Tag, search: String): Boolean {
-        return tag.name.toLowerCase().contains(search)
+        return tag.name.lowercase(Locale.getDefault()).contains(search)
                 || tag.isCategory!! && tag.rootId != null && tagContains(tagRepository.findByIdOrNull(tag.rootId)!!, search)
     }
 
     @RequestMapping("/item")
     @Transactional(readOnly = true)
-    fun getMoneyOpers(
-            @PathVariable bsId: UUID,
-            @RequestParam id: UUID): HmResponse {
+    fun getMoneyOpers(@RequestParam id: UUID): HmResponse {
         return try {
             val oper = moneyOperRepo.findByIdOrNull(id)!!
-            moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId)
+            moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, apiRequestContextHolder.getBsId())
             HmResponse.getOk(moneyOperService.moneyOperToDto(oper))
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
@@ -160,26 +157,22 @@ class MoneyOperController(
     }
 
     @RequestMapping("/create")
-    fun createMoneyOper(
-            @PathVariable bsId: UUID,
-            @RequestBody moneyOperDto: MoneyOperDto): HmResponse {
-        val moneyOperDtoList = createMoneyOperInternal(bsId, moneyOperDto)
+    fun createMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
+        val moneyOperDtoList = createMoneyOperInternal(moneyOperDto)
                 .map { moneyOperService.moneyOperToDto(it) }
         return HmResponse.getOk(moneyOperDtoList)
     }
 
     @RequestMapping("/update")
-    fun updateMoneyOper(
-            @PathVariable bsId: UUID,
-            @RequestBody moneyOperDto: MoneyOperDto): HmResponse {
+    fun updateMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
+            val balanceSheet = apiRequestContextHolder.getBalanceSheet()
             val origOper = moneyOperRepo.findByIdOrNull(moneyOperDto.id)
             if (origOper == null) {
-                createMoneyOperInternal(bsId, moneyOperDto)
+                createMoneyOperInternal(moneyOperDto)
                 return HmResponse.getOk()
             }
-            moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, bsId)
-            val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+            moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, balanceSheet.id)
             val oper = moneyOperService.moneyOperDtoToMoneyOper(balanceSheet, moneyOperDto)
             val essentialEquals = origOper.essentialEquals(oper)
             val origPrevStatus = origOper.status
@@ -199,12 +192,10 @@ class MoneyOperController(
     }
 
     @RequestMapping("/delete")
-    fun deleteMoneyOper(
-            @PathVariable bsId: UUID,
-            @RequestBody moneyOperDto: MoneyOperDto): HmResponse {
+    fun deleteMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val oper = moneyOperRepo.findByIdOrNull(moneyOperDto.id)!!
-            moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId)
+            moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, apiRequestContextHolder.getBsId())
             oper.cancel()
             moneyOperRepo.save(oper)
             HmResponse.getOk()
@@ -215,13 +206,11 @@ class MoneyOperController(
 
     @RequestMapping("/skip")
     @Throws(SQLException::class)
-    fun skipMoneyOper(
-            @PathVariable bsId: UUID,
-            @RequestBody moneyOperDto: MoneyOperDto): HmResponse {
+    fun skipMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val status = moneyOperDto.status
             if (status == MoneyOperStatus.pending) {
-                skipPendingMoneyOper(bsId, moneyOperDto)
+                skipPendingMoneyOper(apiRequestContextHolder.getBsId(), moneyOperDto)
             } else if (status == MoneyOperStatus.recurrence) {
                 skipRecurrenceMoneyOper(moneyOperDto)
             }
@@ -247,9 +236,7 @@ class MoneyOperController(
     }
 
     @RequestMapping("/up")
-    fun upMoneyOper(
-            @PathVariable bsId: UUID?,
-            @RequestBody moneyOperDto: MoneyOperDto): HmResponse {
+    fun upMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val oper = moneyOperRepo.findByIdOrNull(moneyOperDto.id)!!
             val opers = moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(oper.balanceSheet, MoneyOperStatus.done, oper.performed)
@@ -272,8 +259,8 @@ class MoneyOperController(
         }
     }
 
-    private fun createMoneyOperInternal(bsId: UUID, moneyOperDto: MoneyOperDto): List<MoneyOper> {
-        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+    private fun createMoneyOperInternal(moneyOperDto: MoneyOperDto): List<MoneyOper> {
+        val balanceSheet = apiRequestContextHolder.getBalanceSheet()
         val moneyOpers: MutableList<MoneyOper> = mutableListOf()
         val mainOper = newMainMoneyOper(balanceSheet, moneyOperDto)
         moneyOperRepo.save(mainOper)
@@ -294,7 +281,7 @@ class MoneyOperController(
     private fun newReserveMoneyOper(balanceSheet: BalanceSheet, oper: MoneyOper): MoneyOper? {
         return if (oper.items.any { it.balance.reserve != null }) {
             val tags = oper.tags
-            val dateNum = oper.dateNum ?: 0 + 1
+            val dateNum = oper.dateNum ?: 1
             val reserveMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, oper.performed, dateNum, tags,
                     oper.comment, oper.period)
             oper.items
@@ -308,10 +295,11 @@ class MoneyOperController(
     @RequestMapping(value = ["/suggest-tags"], method = [RequestMethod.GET])
     @Transactional(readOnly = true)
     fun suggestTags(
-            @PathVariable bsId: UUID,
-            @RequestParam operType: String,
-            @RequestParam search: String?,
-            @RequestParam tags: Array<String>?) : HmResponse {
+        @RequestParam operType: String,
+        @RequestParam search: String?,
+        @RequestParam tags: Array<String>?
+    ): HmResponse {
+        val bsId = apiRequestContextHolder.getBsId()
         val suggestTags = moneyOperService.getSuggestTags(bsId, operType, search, tags?.toList() ?: emptyList())
                 .map(Tag::name)
         return HmResponse.getOk(suggestTags)
@@ -319,8 +307,8 @@ class MoneyOperController(
 
     @RequestMapping(value = ["/tags"])
     @Transactional(readOnly = true)
-    fun tags(@PathVariable bsId: UUID): HmResponse {
-        val tags = moneyOperService.getTags(bsId).map(Tag::name)
+    fun tags(): HmResponse {
+        val tags = moneyOperService.getTags(apiRequestContextHolder.getBsId()).map(Tag::name)
         return HmResponse.getOk(tags)
     }
 

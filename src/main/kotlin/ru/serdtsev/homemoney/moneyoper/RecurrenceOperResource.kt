@@ -1,37 +1,32 @@
 package ru.serdtsev.homemoney.moneyoper
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.convert.ConversionService
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
-import org.springframework.web.bind.annotation.*
-import ru.serdtsev.homemoney.account.AccountRepository
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.RestController
 import ru.serdtsev.homemoney.account.model.Reserve
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.moneyoper.model.*
-import java.util.*
 import java.util.stream.Collectors
 
 @RestController
-@RequestMapping("/api/{bsId}/recurrence-opers")
+@RequestMapping("/api/recurrence-opers")
 @Transactional
-class RecurrenceOperResource @Autowired constructor(
-        private val moneyOperService: MoneyOperService,
-        private val balanceSheetRepo: BalanceSheetRepository,
-        private val accountRepo: AccountRepository,
-        @Qualifier("conversionService") private val conversionService: ConversionService) {
+class RecurrenceOperResource constructor(
+    private val apiRequestContextHolder: ApiRequestContextHolder,
+    private val moneyOperService: MoneyOperService,
+    @Qualifier("conversionService") private val conversionService: ConversionService
+) {
     @RequestMapping
     @Transactional(readOnly = true)
-    fun getList(
-            @PathVariable bsId: UUID,
-            @RequestParam(required = false, defaultValue = "") search: String
-    ): HmResponse {
+    fun getList(@RequestParam(required = false, defaultValue = "") search: String): HmResponse {
         return try {
-            val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-            val list = moneyOperService.getRecurrenceOpers(balanceSheet, search)
+            val list = moneyOperService.getRecurrenceOpers(apiRequestContextHolder.getBalanceSheet(), search)
                     .stream()
                     .sorted(Comparator.comparing(RecurrenceOper::nextDate))
                     .map { recurrenceOper: RecurrenceOper -> recurrenceOperToDto(recurrenceOper) }
@@ -61,33 +56,21 @@ class RecurrenceOperResource @Autowired constructor(
     private fun getStringsByTags(tags: Collection<Tag>): List<String> = tags.map(Tag::name)
 
     @RequestMapping("/create")
-    fun create(
-            @PathVariable bsId: UUID,
-            @RequestBody moneyOperDto: MoneyOperDto
-    ): HmResponse {
-        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-        moneyOperService.createRecurrenceOper(balanceSheet, moneyOperDto.id)
+    fun create(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
+        moneyOperService.createRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), moneyOperDto.id)
         return HmResponse.getOk()
     }
 
     @RequestMapping("/skip")
-    fun skip(
-            @PathVariable bsId: UUID,
-            @RequestBody oper: RecurrenceOperDto
-    ): HmResponse {
-        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-        moneyOperService.skipRecurrenceOper(balanceSheet, oper.id)
+    fun skip(@RequestBody oper: RecurrenceOperDto): HmResponse {
+        moneyOperService.skipRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), oper.id)
         return HmResponse.getOk()
     }
 
     @RequestMapping("/delete")
-    fun delete(
-            @PathVariable bsId: UUID,
-            @RequestBody oper: RecurrenceOperDto
-    ): HmResponse {
+    fun delete(@RequestBody oper: RecurrenceOperDto): HmResponse {
         return try {
-            val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-            moneyOperService.deleteRecurrenceOper(balanceSheet, oper.id)
+            moneyOperService.deleteRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), oper.id)
             HmResponse.getOk()
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
@@ -95,13 +78,9 @@ class RecurrenceOperResource @Autowired constructor(
     }
 
     @RequestMapping("/update")
-    fun updateRecurrenceOper(
-            @PathVariable bsId: UUID,
-            @RequestBody oper: RecurrenceOperDto?
-    ): HmResponse {
+    fun updateRecurrenceOper(@RequestBody oper: RecurrenceOperDto?): HmResponse {
         return try {
-            val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-            moneyOperService.updateRecurrenceOper(balanceSheet, oper!!)
+            moneyOperService.updateRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), oper!!)
             HmResponse.getOk()
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)

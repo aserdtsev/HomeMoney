@@ -36,7 +36,7 @@ function BalancesCtrl($scope, $rootScope, BalancesSvc, ReservesSvc) {
     if (!$scope.isLogged()) {
       return;
     }
-    var response = BalancesSvc.query({bsId: $rootScope.bsId}, function() {
+    var response = BalancesSvc.query(function() {
       $scope.balances = response.data;
     });
   };
@@ -45,7 +45,7 @@ function BalancesCtrl($scope, $rootScope, BalancesSvc, ReservesSvc) {
     if (!$scope.isLogged()) {
       return;
     }
-    var response = ReservesSvc.query({bsId: $rootScope.bsId}, function() {
+    var response = ReservesSvc.query(function() {
       var list = response.data;
       list.splice(0, 0, {id: null, name: '<без резерва>'});
       $scope.reserves = list;
@@ -95,26 +95,26 @@ function BalancesCtrl($scope, $rootScope, BalancesSvc, ReservesSvc) {
 
   $scope.createBalance = function(balance) {
     balance.id = randomUUID();
-    BalancesSvc.create({bsId: $rootScope.bsId}, balance, function() {
+    BalancesSvc.create(balance, function() {
       $rootScope.$broadcast('refreshBalanceSheet');
       $rootScope.$broadcast('refreshAccounts');
     });
   };
 
   $scope.updateBalance = function(balance) {
-    BalancesSvc.update({bsId: $rootScope.bsId}, balance, function() {
+    BalancesSvc.update(balance, function() {
       $rootScope.$broadcast('refreshAccounts');
     });
   };
 
   $scope.deleteBalance = function(balance) {
-    BalancesSvc.delete({bsId: $rootScope.bsId}, balance, function() {
+    BalancesSvc.delete(balance, function() {
       $rootScope.$broadcast('refreshAccounts');
     });
   };
 
   $scope.upBalance = function(balance) {
-    BalancesSvc.up({bsId: $rootScope.bsId}, balance, function() {
+    BalancesSvc.up(balance, function() {
       $rootScope.$broadcast('refreshAccounts');
     });
   }

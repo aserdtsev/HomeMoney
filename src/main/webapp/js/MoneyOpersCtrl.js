@@ -57,7 +57,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadAccounts = function() {
     if (!$scope.isLogged()) return;
-    let response = AccountsSvc.query({bsId: $rootScope.bsId}, function() {
+    let response = AccountsSvc.query(function() {
       $scope.accounts = response.data.filter(function(account) {
         return !account['isArc'];
       });
@@ -66,7 +66,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadBalances = function() {
     if (!$scope.isLogged()) return;
-    let response = BalancesSvc.query({bsId: $rootScope.bsId}, function() {
+    let response = BalancesSvc.query(function() {
       $scope.balances = response.data;
     })
   }
@@ -106,7 +106,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadRecurrenceOpers = function() {
     if (!$scope.isLogged()) return;
-    let response = RecurrenceOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search}, function() {
+    let response = RecurrenceOpersSvc.query({search: $scope.search}, function() {
       $scope.recurrenceOpers = response.data;
     });
   }
@@ -117,7 +117,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     if (typeof limit === 'undefined') {
       qLimit = $scope.pageSize;
     }
-    let response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: $scope.search, limit: qLimit, offset: 0}, function() {
+    let response = MoneyOpersSvc.query({search: $scope.search, limit: qLimit, offset: 0}, function() {
       $scope.opers = {data: [], hasNext: response.data['paging'].hasNext};
       $scope.addToOpers(response.data.items);
     });
@@ -125,7 +125,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadOpersNextPage = function(search) {
     let offset = $scope.getOpersLength();
-    let response = MoneyOpersSvc.query({bsId: $rootScope.bsId, search: search, limit: $scope.pageSize, offset: offset}, function () {
+    let response = MoneyOpersSvc.query({search: search, limit: $scope.pageSize, offset: offset}, function () {
       $scope.addToOpers(response.data.items);
       $scope.opers.hasNext = response.data['paging'].hasNext;
     });
@@ -221,7 +221,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   }
 
   $scope.loadTags = function() {
-    let response = MoneyOpersSvc.tags({bsId: $rootScope.bsId}, function() {
+    let response = MoneyOpersSvc.tags(function() {
       $scope.tags = response.data;
     });
   }
@@ -310,14 +310,14 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.createOper = function(oper) {
     oper.id = randomUUID();
-    let response = MoneyOpersSvc.create({bsId: $rootScope.bsId}, oper, function() {
+    let response = MoneyOpersSvc.create(oper, function() {
       $scope.loadOpersFirstPage($scope.getOpersLength() + response.data.length);
       $rootScope.$broadcast('refreshBalanceSheet');
     });
   };
 
   $scope.updateOper = function(oper) {
-    MoneyOpersSvc.update({bsId: $rootScope.bsId}, oper, function() {
+    MoneyOpersSvc.update(oper, function() {
       $scope.loadOpersFirstPage($scope.getOpersLength());
       $rootScope.$broadcast('refreshBalanceSheet');
     });
@@ -325,14 +325,14 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.deleteOper = function(oper) {
     delete oper.isEdited;
-    MoneyOpersSvc.delete({bsId: $rootScope.bsId}, oper, function() {
+    MoneyOpersSvc.delete(oper, function() {
       $scope.loadOpersFirstPage($scope.getOpersLength());
       $rootScope.$broadcast('refreshBalanceSheet');
     });
   };
 
   $scope.skipOper = function(oper) {
-    MoneyOpersSvc.skip({bsId: $rootScope.bsId}, oper, function() {
+    MoneyOpersSvc.skip(oper, function() {
       $scope.loadOpersFirstPage($scope.getOpersLength());
       $scope.loadRecurrenceOpers();
       $rootScope.$broadcast('refreshBalanceSheet');
@@ -341,7 +341,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.upOper = function(oper) {
     delete oper.isEdited;
-    MoneyOpersSvc.up({bsId: $rootScope.bsId}, oper, function() {
+    MoneyOpersSvc.up(oper, function() {
       $scope.loadOpersFirstPage($scope.getOpersLength());
     });
   };
@@ -396,7 +396,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   };
 
   $scope.skipMoneyOperByRecurrenceOper = function(recurrenceOper) {
-    RecurrenceOpersSvc.skip({bsId: $rootScope.bsId}, recurrenceOper, function() {
+    RecurrenceOpersSvc.skip(recurrenceOper, function() {
       $scope.refresh();
     });
   };
@@ -410,21 +410,21 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   };
 
   $scope.createRecurrenceOperByOper = function(oper) {
-    RecurrenceOpersSvc.create({bsId: $rootScope.bsId}, oper, function() {
+    RecurrenceOpersSvc.create(oper, function() {
       $scope.refresh();
     });
   };
 
   $scope.updateRecurrenceOper = function(recurrenceOper) {
     delete recurrenceOper.isEdited;
-    RecurrenceOpersSvc.update({bsId: $rootScope.bsId}, recurrenceOper, function() {
+    RecurrenceOpersSvc.update(recurrenceOper, function() {
       $scope.refresh();
     });
   };
 
   $scope.deleteRecurrenceOper = function(recurrenceOper) {
     delete recurrenceOper.isEdited;
-    RecurrenceOpersSvc.delete({bsId: $rootScope.bsId}, recurrenceOper, function() {
+    RecurrenceOpersSvc.delete(recurrenceOper, function() {
       $scope.refresh();
     });
   };
@@ -462,7 +462,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   };
 
   $scope.getSuggestTags = function(oper, search) {
-    let response = MoneyOpersSvc.suggestTags({bsId: $rootScope.bsId, operType: oper.type, search: search, tags: oper.tags}, function() {
+    let response = MoneyOpersSvc.suggestTags({operType: oper.type, search: search, tags: oper.tags}, function() {
       $scope.suggestTags = response.data;
     });
   }

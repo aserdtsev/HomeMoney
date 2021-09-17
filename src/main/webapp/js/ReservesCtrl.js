@@ -26,7 +26,7 @@ function ReservesCtrl($scope, $rootScope, ReservesSvc) {
     if (!$scope.isLogged()) {
       return;
     }
-    var response = ReservesSvc.query({bsId: $rootScope.bsId}, function() {
+    var response = ReservesSvc.query(function() {
       $scope.reserves = response.data;
     });
   };
@@ -67,7 +67,7 @@ function ReservesCtrl($scope, $rootScope, ReservesSvc) {
 
   $scope.createReserve = function(reserve) {
     reserve.id = randomUUID();
-    ReservesSvc.create({bsId: $rootScope.bsId}, reserve, function() {
+    ReservesSvc.create(reserve, function() {
       $scope.refresh();
       $rootScope.$broadcast('refreshBalanceSheet');
       $rootScope.$broadcast('refreshAccounts');
@@ -75,14 +75,14 @@ function ReservesCtrl($scope, $rootScope, ReservesSvc) {
   };
 
   $scope.updateReserve = function(reserve) {
-    ReservesSvc.update({bsId: $rootScope.bsId}, reserve, function() {
+    ReservesSvc.update(reserve, function() {
       $scope.refresh();
       $rootScope.$broadcast('refreshAccounts');
     });
   };
 
   $scope.deleteReserve = function(reserve) {
-    ReservesSvc.delete({bsId: $rootScope.bsId}, reserve, function() {
+    ReservesSvc.delete(reserve, function() {
       $scope.refresh();
       $rootScope.$broadcast('refreshAccounts');
     });

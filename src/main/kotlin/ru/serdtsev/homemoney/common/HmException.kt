@@ -8,6 +8,7 @@ class HmException(val code: Code, message: String? = null) : RuntimeException(me
     }
 
     enum class Code {
-        WrongAuth, UnknownAccountTypeCode, UnknownMoneyTrnStatus, IdentifiersDoNotMatch, WrongAmount, WrongUserId, UserIdCookieIsEmpty
+        WrongAuth, UnknownAccountTypeCode, UnknownMoneyTrnStatus, IdentifiersDoNotMatch, WrongAmount, WrongUserId,
+        UserIdCookieIsEmpty, BalanceSheetNotFound, BalanceSheetIdNotFound
     }
 }

@@ -19,6 +19,7 @@ function UserCtrl($scope, $rootScope, $cookies, $base64, $http, UserSvc) {
       if (typeof response !== 'unassigned') {
         if (response.status === 'OK') {
           $rootScope.bsId = response.data['bsId'];
+          $http.defaults.headers.common['X-Balance-Sheet-Id'] = $rootScope.bsId;
           $rootScope.isLogged = true;
           $scope.errMsg = '';
           const expireDate = new Date();
@@ -29,6 +30,7 @@ function UserCtrl($scope, $rootScope, $cookies, $base64, $http, UserSvc) {
         } else if (status === 'AuthWrong') {
           $rootScope.isLogged = false;
           $rootScope.bsId = undefined;
+          $http.defaults.headers.common['X-Balance-Sheet-Id'] = undefined;
           $scope.errMsg = 'Неверный Email или пароль.';
         }
       }

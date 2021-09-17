@@ -16,7 +16,7 @@ import javax.servlet.http.HttpServletResponse
 
 
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 class WebSecurityConfig(val userDetailsService: CustomUserDetailsService) : WebSecurityConfigurerAdapter() {
     override fun configure(http: HttpSecurity) {
         http.csrf().disable()
@@ -35,7 +35,7 @@ class WebSecurityConfig(val userDetailsService: CustomUserDetailsService) : WebS
     class NoPopupBasicAuthenticationEntryPoint : AuthenticationEntryPoint {
         override fun commence(request: HttpServletRequest, response: HttpServletResponse,
             authException: AuthenticationException) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.message);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.message)
         }
     }
 }
