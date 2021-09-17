@@ -7,8 +7,7 @@ const hmServices = angular.module('hmServices', ['ngResource']);
 hmServices.factory('UserSvc', ['$resource',
   function($resource) {
     return $resource('api/user', {}, {
-      login: { method: 'POST', url: 'api/user/login', hasBody: false },
-      getBalanceSheetId: { method: 'GET', url: 'api/user/balance-sheet-id' }
+      login: { method: 'POST', url: 'api/user/login', hasBody: false }
     })
   }
 ]);

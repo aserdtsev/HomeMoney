@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.user
 
 import mu.KotlinLogging
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpHeaders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
@@ -17,20 +16,6 @@ class UserController(
         private val userRepo: UserRepository,
         private val balanceSheetRepo: BalanceSheetRepository
 ) {
-    @RequestMapping("/balance-sheet-id")
-    @Transactional(readOnly = true)
-    fun getBalanceSheetId(@CookieValue(value = "userId", required = false) userId: UUID?): HmResponse {
-        return try {
-            if (userId == null) {
-                throw HmException(HmException.Code.UserIdCookieIsEmpty)
-            }
-            val user = userRepo.findByIdOrNull(userId)!!
-            HmResponse.getOk(user.bsId)
-        } catch (e: HmException) {
-            HmResponse.getFail(e.code.name)
-        }
-    }
-
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])
     @Transactional
     fun login(@RequestHeader(HttpHeaders.AUTHORIZATION) authorization: String): HmResponse {
@@ -38,7 +23,7 @@ class UserController(
             val email = decodeAuthorization(authorization).first
             log.info { "User login; email:$email" }
             val user = userRepo.findByEmail(email)!!
-            val auth = Authentication(user.id, user.bsId)
+            val auth = LoginResponse(user.bsId)
             HmResponse.getOk(auth)
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)

@@ -11,7 +11,7 @@ import kotlin.concurrent.getOrSet
 class ApiRequestContextHolder(private val balanceSheetRepo: BalanceSheetRepository) {
     companion object {
         private val requestContextTls = ThreadLocal<ApiRequestContext>()
-        var apiRequestContext: ApiRequestContext
+        private var apiRequestContext: ApiRequestContext
             get() = requestContextTls.getOrSet { ApiRequestContext() }
             set(value) = requestContextTls.set(value)
 
@@ -34,13 +34,8 @@ class ApiRequestContextHolder(private val balanceSheetRepo: BalanceSheetReposito
 
     fun getBsId(): UUID = bsId
 
-    fun getBalanceSheet(): BalanceSheet {
-        if (apiRequestContext.balanceSheet == null) {
-            apiRequestContext.balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)
-                ?: throw HmException(HmException.Code.BalanceSheetNotFound)
-        }
-        return apiRequestContext.balanceSheet!!
-    }
+    fun getBalanceSheet(): BalanceSheet =
+        balanceSheetRepo.findByIdOrNull(bsId) ?: throw HmException(HmException.Code.BalanceSheetNotFound)
 }
 
 data class ApiRequestContext(var requestId: String? = null, var bsId: UUID? = null, var balanceSheet: BalanceSheet? = null)

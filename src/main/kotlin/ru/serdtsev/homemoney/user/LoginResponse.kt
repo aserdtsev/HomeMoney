@@ -2,4 +2,4 @@ package ru.serdtsev.homemoney.user
 
 import java.util.*
 
-class Authentication(val userId: UUID, val bsId: UUID)
+class LoginResponse(val bsId: UUID)
