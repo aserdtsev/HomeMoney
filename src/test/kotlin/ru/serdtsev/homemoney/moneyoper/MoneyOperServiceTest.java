@@ -12,8 +12,12 @@ import ru.serdtsev.homemoney.account.BalanceRepository;
 import ru.serdtsev.homemoney.account.model.Account;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Balance;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository;
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository;
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo;
+import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperRepo;
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepository;
+import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto;
 import ru.serdtsev.homemoney.moneyoper.model.*;
 
 import java.math.BigDecimal;
@@ -22,7 +26,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 import static java.util.Arrays.asList;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class MoneyOperServiceTest {
@@ -32,6 +36,7 @@ class MoneyOperServiceTest {
   private BalanceSheet balanceSheet;
   private AccountRepository accountRepo;
   private BalanceRepository balanceRepo;
+  private ConversionService conversionService;
 
   @BeforeEach
   void setUp() {
@@ -42,7 +47,7 @@ class MoneyOperServiceTest {
     moneyOperRepo = mock(MoneyOperRepo.class);
     accountRepo = mock(AccountRepository.class);
     val conversionService = mock(ConversionService.class);
-    service = new MoneyOperService(conversionService, balanceSheetRepo, moneyOperRepo, mock(RecurrenceOperRepo.class),
+    service = new MoneyOperService(balanceSheetRepo, moneyOperRepo, mock(RecurrenceOperRepo.class),
         accountRepo, balanceRepo, mock(TagRepository.class));
   }
 
@@ -62,7 +67,7 @@ class MoneyOperServiceTest {
     when(accountRepo.findById(any())).thenReturn(Optional.of(account));
 
     MoneyOper moneyOper = newMoneyOperWithTags(new ArrayList<>());
-    MoneyOperDto moneyOperDto = service.moneyOperToDto(moneyOper);
+    MoneyOperDto moneyOperDto = conversionService.convert(moneyOper, MoneyOperDto.class);
     Collection<Tag> checkTags = service.getSuggestTags(moneyOper.getItems().get(0).getBalanceId(),
             MoneyOperType.expense.name(), null, moneyOperDto.getTags());
 

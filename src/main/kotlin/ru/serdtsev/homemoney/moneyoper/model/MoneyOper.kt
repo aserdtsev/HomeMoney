@@ -2,7 +2,7 @@ package ru.serdtsev.homemoney.moneyoper.model
 
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.io.Serializable
 import java.math.BigDecimal
 import java.sql.Timestamp
@@ -16,8 +16,8 @@ import javax.persistence.*
 @Entity
 @Table(name = "money_oper")
 class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
-        performed: LocalDate = LocalDate.now(), dateNum: Int? = 0, tags: Collection<Tag> = mutableListOf(),
-        comment: String? = null, period: Period? = null) : Serializable {
+                performed: LocalDate = LocalDate.now(), dateNum: Int? = 0, tags: Collection<Tag> = mutableListOf(),
+                comment: String? = null, period: Period? = null) : Serializable {
     @Id
     val id = id
 
@@ -100,8 +100,8 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
                 .reduce { acc, value -> acc.add(value) }
 
     constructor(balanceSheet: BalanceSheet, status: MoneyOperStatus,
-            performed: LocalDate = LocalDate.now(), dateNum: Int = 0, tags: Collection<Tag> = mutableListOf(),
-            comment: String? = null, period: Period? = null) : this(UUID.randomUUID(), balanceSheet, status, performed,
+                performed: LocalDate = LocalDate.now(), dateNum: Int = 0, tags: Collection<Tag> = mutableListOf(),
+                comment: String? = null, period: Period? = null) : this(UUID.randomUUID(), balanceSheet, status, performed,
             dateNum, tags, comment, period)
 
     fun complete() {

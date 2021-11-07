@@ -2,12 +2,14 @@ package ru.serdtsev.homemoney.balancesheet
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.account.model.AccountType
-import ru.serdtsev.homemoney.moneyoper.TagRepository
-import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.model.*
+import ru.serdtsev.homemoney.common.ApiRequestContextHolder
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperType
 import java.math.BigDecimal
@@ -15,25 +17,25 @@ import java.time.LocalDate
 import java.util.*
 
 @Service
-@Repository
 @Transactional(readOnly = true)
 class StatService(
-        private val balanceSheetRepo: BalanceSheetRepository,
-        private val tagRepository: TagRepository,
-        private val moneyOperItemRepo: MoneyOperItemRepo,
-        private val jdbcTemplate: JdbcTemplate,
-        private val statData: StatData
+    private val balanceSheetRepo: BalanceSheetRepository,
+    private val tagRepository: TagRepository,
+    private val moneyOperItemRepo: MoneyOperItemRepo,
+    private val jdbcTemplate: JdbcTemplate,
+    private val statData: StatData,
+    private val apiRequestContextHolder: ApiRequestContextHolder
 ) {
 
     data class AggrAccountSaldo(var type: AccountType, var saldo: BigDecimal)
 
-    open fun getBsStat(bsId: UUID, interval: Long): BsStat {
+    fun getBsStat(bsId: UUID, interval: Long): BsStat {
         val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
 
         val today = LocalDate.now()
         val fromDate = today.minusDays(interval)
 
-        val bsStat = BsStat(bsId, fromDate, today)
+        val bsStat = BsStat(fromDate, today)
         calcCurrentSaldo(bsStat)
 
         val trendMap = TreeMap<LocalDate, BsDayStat>()
@@ -64,9 +66,10 @@ class StatService(
      * Вычисляет текущие балансы счетов и резервов.
      */
     private fun calcCurrentSaldo(bsStat: BsStat) {
+        val bsId = apiRequestContextHolder.getBsId();
         val aggrAccSaldoList = jdbcTemplate.query<AggrAccountSaldo>(
                 "select type, sum(saldo) as saldo from v_crnt_saldo_by_base_cry where balance_sheet_id = ? group by type",
-                arrayOf(bsStat.bsId)) { rs, _ ->
+                arrayOf(bsId)) { rs, _ ->
             val type = AccountType.valueOf(rs.getString("type"))
             val saldo = rs.getBigDecimal("saldo")
             AggrAccountSaldo(type, saldo)
@@ -105,7 +108,7 @@ class StatService(
     }
 
     /**
-     * Заполняет карту экземпляров BsDayStat суммами из оборотов.
+     * Заполняет ассоциированный массив экземпляров BsDayStat суммами из оборотов.
      */
     private fun fillBsDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
         turnovers.forEach { (operDate, turnoverType, amount) ->

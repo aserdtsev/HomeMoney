@@ -1,6 +1,6 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.time.LocalDate
 import java.util.*
 import javax.persistence.*
@@ -8,13 +8,14 @@ import javax.persistence.*
 @Entity
 @Table(name = "recurrence_oper")
 class RecurrenceOper(
-        @Id
-        val id: UUID,
-        @ManyToOne @JoinColumn(name = "balance_sheet_id")
-        val balanceSheet: BalanceSheet,
-        @OneToOne @JoinColumn(name = "template_id")
-        val template: MoneyOper,
-        @Column(name = "next_date") var nextDate: LocalDate
+    @Id
+    val id: UUID,
+    @ManyToOne @JoinColumn(name = "balance_sheet_id")
+    val balanceSheet: BalanceSheet,
+    @OneToOne @JoinColumn(name = "template_id")
+    val template: MoneyOper,
+    @Column(name = "next_date")
+    var nextDate: LocalDate
 ) {
     @Column(name = "is_arc")
     var arc: Boolean = false

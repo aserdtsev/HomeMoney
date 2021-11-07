@@ -1,7 +1,7 @@
-package ru.serdtsev.homemoney.balancesheet
+package ru.serdtsev.homemoney.balancesheet.dao
 
 import org.springframework.data.repository.CrudRepository
-import org.springframework.stereotype.Repository
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 
 import java.util.UUID
 

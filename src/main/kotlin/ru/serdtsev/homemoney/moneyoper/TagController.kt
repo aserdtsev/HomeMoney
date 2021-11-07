@@ -1,20 +1,21 @@
 package ru.serdtsev.homemoney.moneyoper
 
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.convert.ConversionService
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.moneyoper.model.CategoryType
 import ru.serdtsev.homemoney.moneyoper.model.Tag
-import ru.serdtsev.homemoney.moneyoper.model.TagDto
+import ru.serdtsev.homemoney.moneyoper.dto.TagDto
 import java.util.*
 
 @RestController
 @RequestMapping("/api/tags")
 class TagController(
-    val apiRequestContextHolder: ApiRequestContextHolder,
-    val tagService: TagService,
-    val conversionService: ConversionService
+    private val apiRequestContextHolder: ApiRequestContextHolder,
+    private val tagService: TagService,
+    @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
     @RequestMapping
     fun getTags(search: String?, category: Boolean?, categoryType: CategoryType?): HmResponse {

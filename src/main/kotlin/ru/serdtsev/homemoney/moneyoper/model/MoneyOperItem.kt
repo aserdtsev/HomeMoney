@@ -1,7 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
 import ru.serdtsev.homemoney.account.model.Balance
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate

@@ -2,15 +2,17 @@ package ru.serdtsev.homemoney.moneyoper
 
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.core.convert.ConversionService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.account.AccountRepository
 import ru.serdtsev.homemoney.account.BalanceRepository
-import ru.serdtsev.homemoney.account.model.Reserve
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
+import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperRepo
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
+import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
+import ru.serdtsev.homemoney.moneyoper.dto.RecurrenceOperDto
 import ru.serdtsev.homemoney.moneyoper.model.*
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -21,13 +23,12 @@ import java.util.*
  */
 @Service
 class MoneyOperService @Autowired constructor(
-        @Qualifier("conversionService") private val conversionService: ConversionService,
-        private val balanceSheetRepo: BalanceSheetRepository,
-        private val moneyOperRepo: MoneyOperRepo,
-        private val recurrenceOperRepo: RecurrenceOperRepo,
-        private val accountRepo: AccountRepository,
-        private val balanceRepo: BalanceRepository,
-        private val tagRepo: TagRepository
+    private val balanceSheetRepo: BalanceSheetRepository,
+    private val moneyOperRepo: MoneyOperRepo,
+    private val recurrenceOperRepo: RecurrenceOperRepo,
+    private val accountRepo: AccountRepository,
+    private val balanceRepo: BalanceRepository,
+    private val tagRepo: TagRepository
 ) {
     fun save(moneyOper: MoneyOper) {
         moneyOperRepo.save(moneyOper)
@@ -76,9 +77,9 @@ class MoneyOperService @Autowired constructor(
                 template.items.any { it.value.plus().compareTo(BigDecimal(search)) == 0 }
             }
             else -> {
-                (template.items.any { it.balance.name.toLowerCase().contains(search) }
-                        || template.tags.any { it.name.toLowerCase().contains(search) })
-                        || template.comment?.toLowerCase()?.contains(search) ?: false
+                (template.items.any { it.balance.name.lowercase().contains(search) }
+                        || template.tags.any { it.name.lowercase().contains(search) })
+                        || template.comment?.lowercase()?.contains(search) ?: false
             }
         }
     }
@@ -196,8 +197,6 @@ class MoneyOperService @Autowired constructor(
     private fun createSimpleTag(balanceSheet: BalanceSheet, name: String): Tag =
             Tag(UUID.randomUUID(), balanceSheet, name).apply { tagRepo.save(this) }
 
-    fun getStringsByTags(tags: Collection<Tag>): List<String> = tags.map { it.name }
-
     fun getSuggestTags(bsId: UUID, operType: String, search: String?, tags: List<String>): List<Tag> {
         val balanceSheet = balanceSheetRepo.findById(bsId).get()
         return if (search.isNullOrEmpty()) {
@@ -221,20 +220,6 @@ class MoneyOperService @Autowired constructor(
                     .filter { !(it.arc ?: false) && it.name.startsWith(search, true) }
         }
     }
-
-    fun moneyOperToDto(moneyOper: MoneyOper): MoneyOperDto =
-            MoneyOperDto(moneyOper.id, moneyOper.status, moneyOper.performed, moneyOper.period, moneyOper.comment,
-                    getStringsByTags(moneyOper.tags), moneyOper.dateNum, moneyOper.getParentOperId(),
-                    moneyOper.recurrenceId, moneyOper.created).apply {
-                type = if (moneyOper.type == MoneyOperType.transfer && moneyOper.items.any { it.balance is Reserve }) {
-                    val operItem = moneyOper.items.first { it.balance is Reserve }
-                    if (operItem.value.signum() > 0) MoneyOperType.income.name else MoneyOperType.expense.name
-                } else
-                    moneyOper.type.name
-                items = moneyOper.items
-                        .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
-                        .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }
-            }
 
     fun getAccountName(accountId: UUID): String {
         val account = accountRepo.findByIdOrNull(accountId)!!

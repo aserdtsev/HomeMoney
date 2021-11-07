@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.account.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.io.Serializable
 import java.sql.Date
 import java.time.Instant
@@ -12,12 +11,12 @@ import javax.persistence.*
 @Table(name = "account")
 @Inheritance(strategy = InheritanceType.JOINED)
 open class Account(
-        @Id open val id: UUID,
-        @get:JsonIgnore @ManyToOne @JoinColumn(name = "balance_sheet_id") open var balanceSheet: BalanceSheet?,
-        @Enumerated(EnumType.STRING) open var type: AccountType,
-        open var name: String,
-        @Column(name = "created_date") open var createdDate: Date? = Date(Instant.now().toEpochMilli()),
-        @Column(name = "is_arc") open var isArc: Boolean? = null
+    @Id open val id: UUID,
+    @ManyToOne @JoinColumn(name = "balance_sheet_id") open var balanceSheet: BalanceSheet?,
+    @Enumerated(EnumType.STRING) open var type: AccountType,
+    open var name: String,
+    @Column(name = "created_date") open var createdDate: Date? = Date(Instant.now().toEpochMilli()),
+    @Column(name = "is_arc") open var isArc: Boolean? = null
 ) : Serializable {
     fun merge(account: Account) {
         type = account.type

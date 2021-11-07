@@ -3,7 +3,8 @@ package ru.serdtsev.homemoney.moneyoper
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
 import ru.serdtsev.homemoney.moneyoper.model.CategoryType
 import ru.serdtsev.homemoney.moneyoper.model.Tag
 import java.util.*
@@ -14,7 +15,7 @@ class TagService(val balanceSheetRepo: BalanceSheetRepository, val tagRepo: TagR
     fun getTags(bsId: UUID, search: String?, category: Boolean?, categoryType: CategoryType?): List<Tag> {
         val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
         return tagRepo.findByBalanceSheetOrderByName(balanceSheet)
-            .filter { search == null || it.name.toLowerCase().startsWith(search) }
+            .filter { search == null || it.name.lowercase().startsWith(search) }
             .filter { category == null || category && (categoryType == null || it.categoryType == categoryType) }
     }
 

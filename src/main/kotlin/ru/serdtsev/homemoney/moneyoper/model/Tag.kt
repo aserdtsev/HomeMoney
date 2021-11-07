@@ -1,32 +1,31 @@
 package ru.serdtsev.homemoney.moneyoper.model
 
-import org.springframework.core.convert.converter.Converter
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.util.*
 import javax.persistence.*
 
 @Entity
 @Table(name = "tag")
 class Tag(
-        @Id
+    @Id
         val id: UUID,
 
-        @ManyToOne
+    @ManyToOne
         @JoinColumn(name = "balance_sheet_id")
         val balanceSheet: BalanceSheet,
 
-        val name: String,
+    val name: String,
 
-        @Column(name = "root_id")
+    @Column(name = "root_id")
         val rootId: UUID? = null,
 
-        isCategory: Boolean? = null,
+    isCategory: Boolean? = null,
 
-        @Column(name = "cat_type")
+    @Column(name = "cat_type")
         @Enumerated(EnumType.STRING)
         val categoryType: CategoryType? = null,
 
-        @Column(name = "is_arc")
+    @Column(name = "is_arc")
         val arc: Boolean? = null
 ) {
     @Column(name = "is_category")
@@ -37,10 +36,3 @@ class Tag(
             null, null, null)
 }
 
-class TagDto(val id: UUID, val name: String, val rootId: UUID?, val isCategory: Boolean?, val categoryType: CategoryType?,
-             val isArc: Boolean?)
-
-class TagToTagDtoConverter: Converter<Tag, TagDto> {
-    override fun convert(source: Tag): TagDto = TagDto(source.id, source.name, source.rootId, source.isCategory,
-        source.categoryType, source.arc)
-}

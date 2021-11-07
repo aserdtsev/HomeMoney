@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.moneyoper.model
+package ru.serdtsev.homemoney.moneyoper.dto
 
 import java.math.BigDecimal
 import java.time.LocalDate

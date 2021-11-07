@@ -6,12 +6,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.springframework.core.convert.ConversionService
 import ru.serdtsev.homemoney.account.AccountRepository
 import ru.serdtsev.homemoney.account.BalanceRepository
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.common.ApiRequestContextHolder
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
 import ru.serdtsev.homemoney.moneyoper.model.*
 import java.math.BigDecimal
 import java.sql.Date
@@ -35,8 +40,10 @@ internal class MoneyOperControllerTest {
     private val moneyOperRepo: MoneyOperRepo = mock {  }
     private val tagRepo: TagRepository = mock {  }
     private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
-    private val moneyOperController = MoneyOperController(moneyOperService, balanceSheetRepo, moneyOperRepo,
-            moneyOperItemRepo, tagRepo)
+    private val conversionService: ConversionService = mock {  }
+    private val apiRequestContextHolder: ApiRequestContextHolder = mock {  }
+    private val moneyOperController = MoneyOperController(apiRequestContextHolder, moneyOperService, moneyOperRepo,
+        moneyOperItemRepo, tagRepo, conversionService)
 
     @BeforeEach
     fun setUp() {

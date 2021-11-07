@@ -5,29 +5,27 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
-import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo
+import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
 import java.util.*
 
 @Service
 class BalanceService(
-        private val balanceSheetRepo: BalanceSheetRepository,
-        private val balanceRepo: BalanceRepository,
-        private val moneyOperItemRepo: MoneyOperItemRepo,
-        private val reserveRepo: ReserveRepository,
-        private val moneyOperService: MoneyOperService
+    private val apiRequestContextHolder: ApiRequestContextHolder,
+    private val balanceRepo: BalanceRepository,
+    private val moneyOperItemRepo: MoneyOperItemRepo,
+    private val reserveRepo: ReserveRepository,
+    private val moneyOperService: MoneyOperService
 ) {
-    fun getBalances(bsId: UUID): List<Balance> {
-        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+    fun getBalances(): List<Balance> {
+        val balanceSheet = apiRequestContextHolder.getBalanceSheet()
         return balanceRepo.findByBalanceSheet(balanceSheet)
-                .filter { it.type != AccountType.reserve }
-                .sortedBy { it.num }
+            .filter { it.type != AccountType.reserve }
+            .sortedBy { it.num }
     }
 
-    fun createBalance(bsId: UUID, balance: Balance) {
-        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-        balance.balanceSheet = balanceSheet
+    fun createBalance(balance: Balance) {
         balance.init(reserveRepo)
         balanceRepo.save(balance)
     }
@@ -51,11 +49,11 @@ class BalanceService(
         }
     }
 
-    fun upBalance(bsId: UUID, balanceId: UUID) {
+    fun upBalance(balanceId: UUID) {
         // todo работает неправильно, исправить
-        val bs = balanceSheetRepo.findByIdOrNull(bsId)!!
+        val balanceSheet = apiRequestContextHolder.getBalanceSheet()
         val balance = balanceRepo.findByIdOrNull(balanceId)!!
-        val balances = bs.balances!!.sortedBy { it.num }.toMutableList()
+        val balances = balanceSheet.balances.sortedBy { it.num }.toMutableList()
         assert(balances.isNotEmpty())
         var prev: Balance?
         do {

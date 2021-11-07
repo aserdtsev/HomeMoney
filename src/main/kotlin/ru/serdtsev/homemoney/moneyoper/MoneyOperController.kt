@@ -1,5 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper
 
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.core.convert.ConversionService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -7,11 +9,15 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.common.dto.PagedList
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
+import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
 import ru.serdtsev.homemoney.moneyoper.model.*
 import java.math.BigDecimal
 import java.sql.SQLException
@@ -29,7 +35,9 @@ class MoneyOperController(
     private val moneyOperService: MoneyOperService,
     private val moneyOperRepo: MoneyOperRepo,
     private val moneyOperItemRepo: MoneyOperItemRepo,
-    private val tagRepository: TagRepository) {
+    private val tagRepository: TagRepository,
+    @Qualifier("conversionService") private val conversionService: ConversionService
+) {
     @RequestMapping
     @Transactional(readOnly = true)
     fun getMoneyOpers(
@@ -41,16 +49,16 @@ class MoneyOperController(
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
             if (offset == 0) {
                 val pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.pending, search, limit + 1, offset)
-                        .map { moneyOperService.moneyOperToDto(it) }
+                        .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
                 opers.addAll(pendingOpers)
                 val beforeDate = LocalDate.now().plusDays(30)
                 val recurrenceOpers = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, beforeDate)
-                        .map { moneyOperService.moneyOperToDto(it) }
+                        .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
                 opers.addAll(recurrenceOpers)
                 opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
             }
             val doneOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.done, search, limit + 1, offset)
-                    .map { moneyOperService.moneyOperToDto(it) }
+                    .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
             val hasNext = doneOpers.size > limit
             opers.addAll(if (hasNext) doneOpers.subList(0, limit) else doneOpers)
             val pagedList = PagedList(opers, limit, offset, hasNext)
@@ -61,7 +69,7 @@ class MoneyOperController(
     }
 
     private fun getMoneyOpers(balanceSheet: BalanceSheet, status: MoneyOperStatus, search: String,
-            limit: Int, offset: Int): List<MoneyOper> {
+                              limit: Int, offset: Int): List<MoneyOper> {
         val sort = Sort.by(Sort.Direction.DESC, "performed")
                 .and(Sort.by("dateNum"))
                 .and(Sort.by(Sort.Direction.DESC, "created"))
@@ -72,7 +80,7 @@ class MoneyOperController(
     }
 
     private fun getMoneyOpers(balanceSheet: BalanceSheet, status: MoneyOperStatus, sort: Sort, limit: Int,
-            offset: Int): List<MoneyOper> {
+                              offset: Int): List<MoneyOper> {
         val pageRequest: Pageable = PageRequest.of(offset / (limit - 1), limit - 1, sort)
         return moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest).content.plus(
                 moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest.next()).content.take(1)
@@ -80,7 +88,7 @@ class MoneyOperController(
     }
 
     private fun getMoneyOpersBySearch(balanceSheet: BalanceSheet, status: MoneyOperStatus, search: String,
-            sort: Sort, limit: Int, offset: Int): List<MoneyOper> {
+                                      sort: Sort, limit: Int, offset: Int): List<MoneyOper> {
         var pageRequest: Pageable = PageRequest.of(0, 100, sort)
         val opers = ArrayList<MoneyOper>()
         var page: Page<*>
@@ -150,7 +158,7 @@ class MoneyOperController(
         return try {
             val oper = moneyOperRepo.findByIdOrNull(id)!!
             moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, apiRequestContextHolder.getBsId())
-            HmResponse.getOk(moneyOperService.moneyOperToDto(oper))
+            HmResponse.getOk(conversionService.convert(oper, MoneyOperDto::class.java)!!)
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
         }
@@ -159,7 +167,7 @@ class MoneyOperController(
     @RequestMapping("/create")
     fun createMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         val moneyOperDtoList = createMoneyOperInternal(moneyOperDto)
-                .map { moneyOperService.moneyOperToDto(it) }
+                .map { conversionService.convert(it, MoneyOperDto::class.java) }
         return HmResponse.getOk(moneyOperDtoList)
     }
 

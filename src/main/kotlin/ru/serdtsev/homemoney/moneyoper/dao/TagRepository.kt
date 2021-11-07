@@ -1,7 +1,7 @@
-package ru.serdtsev.homemoney.moneyoper
+package ru.serdtsev.homemoney.moneyoper.dao
 
 import org.springframework.data.repository.CrudRepository
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.moneyoper.model.Tag
 import java.util.*
 

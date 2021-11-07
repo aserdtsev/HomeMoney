@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import ru.serdtsev.homemoney.account.ReserveRepository
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
@@ -20,14 +20,14 @@ import javax.persistence.*
 @Table(name = "balance")
 @DiscriminatorValue("balance")
 open class Balance(
-        id: UUID,
-        balanceSheet: BalanceSheet?,
-        type: AccountType,
-        name: String,
-        createdDate: Date,
-        isArc: Boolean? = null,
-        open var value: BigDecimal,
-        open var currencyCode: String
+    id: UUID,
+    balanceSheet: BalanceSheet?,
+    type: AccountType,
+    name: String,
+    createdDate: Date,
+    isArc: Boolean? = null,
+    open var value: BigDecimal,
+    open var currencyCode: String
 ) : Account(id, balanceSheet, type, name, createdDate, isArc) {
     @Column(name = "min_value")
     open var minValue: BigDecimal? = null

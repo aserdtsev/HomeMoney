@@ -4,7 +4,7 @@ import org.springframework.data.repository.CrudRepository
 import ru.serdtsev.homemoney.account.model.Account
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.account.model.Reserve
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.util.*
 
 interface AccountRepository : CrudRepository<Account, UUID>

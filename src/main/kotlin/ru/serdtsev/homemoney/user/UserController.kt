@@ -4,8 +4,8 @@ import mu.KotlinLogging
 import org.springframework.http.HttpHeaders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet.Companion.newInstance
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet.Companion.newInstance
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import java.util.*
@@ -13,8 +13,8 @@ import java.util.*
 @RestController
 @RequestMapping("/api/user")
 class UserController(
-        private val userRepo: UserRepository,
-        private val balanceSheetRepo: BalanceSheetRepository
+    private val userRepo: UserRepository,
+    private val balanceSheetRepo: BalanceSheetRepository
 ) {
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])
     @Transactional
@@ -28,11 +28,6 @@ class UserController(
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
         }
-    }
-
-    fun getUser(authorization: String): User? {
-        val login = decodeAuthorization(authorization).first
-        return userRepo.findByEmail(login)
     }
 
     @RequestMapping(method = [RequestMethod.DELETE])
@@ -51,8 +46,7 @@ class UserController(
 
     private fun decodeAuthorization(authorization: String): Pair<String, String> {
         val base64Credentials = authorization.substring("Basic".length).trim()
-        val credDecoded = Base64.getDecoder().decode(base64Credentials)
-        val credentials = String(credDecoded)
+        val credentials = String(Base64.getDecoder().decode(base64Credentials))
         val arrayCredential = credentials.split(":".toRegex(), 2)
         return arrayCredential[0] to arrayCredential[1]
     }

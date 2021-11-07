@@ -2,8 +2,8 @@ package ru.serdtsev.homemoney.common
 
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
 import java.util.*
 import kotlin.concurrent.getOrSet
 

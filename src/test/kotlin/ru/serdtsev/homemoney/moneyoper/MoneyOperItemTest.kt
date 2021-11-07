@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet.Companion.newInstance
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet.Companion.newInstance
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import java.math.BigDecimal

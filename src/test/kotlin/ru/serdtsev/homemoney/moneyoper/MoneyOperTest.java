@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Balance;
-import ru.serdtsev.homemoney.balancesheet.BalanceSheet;
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem;
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus;

@@ -7,17 +7,18 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import ru.serdtsev.homemoney.account.model.Reserve
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
-import ru.serdtsev.homemoney.moneyoper.model.*
+import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
+import ru.serdtsev.homemoney.moneyoper.dto.RecurrenceOperDto
+import ru.serdtsev.homemoney.moneyoper.model.RecurrenceOper
 import java.util.stream.Collectors
 
 @RestController
 @RequestMapping("/api/recurrence-opers")
 @Transactional
-class RecurrenceOperResource constructor(
+class RecurrenceOperController constructor(
     private val apiRequestContextHolder: ApiRequestContextHolder,
     private val moneyOperService: MoneyOperService,
     @Qualifier("conversionService") private val conversionService: ConversionService
@@ -29,31 +30,13 @@ class RecurrenceOperResource constructor(
             val list = moneyOperService.getRecurrenceOpers(apiRequestContextHolder.getBalanceSheet(), search)
                     .stream()
                     .sorted(Comparator.comparing(RecurrenceOper::nextDate))
-                    .map { recurrenceOper: RecurrenceOper -> recurrenceOperToDto(recurrenceOper) }
+                    .map { conversionService.convert(it, RecurrenceOperDto::class.java) }
                     .collect(Collectors.toList())
             HmResponse.getOk(list)
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
         }
     }
-
-    private fun recurrenceOperToDto(recurrenceOper: RecurrenceOper): RecurrenceOperDto {
-        val oper = recurrenceOper.template
-        val type = if (oper.type == MoneyOperType.transfer && oper.items.any { it.balance is Reserve }) {
-            val operItem = oper.items.first { it.balance is Reserve }
-            if (operItem.value.signum() > 0) MoneyOperType.income.name else MoneyOperType.expense.name
-        } else
-            oper.type.name
-        val dto = RecurrenceOperDto(recurrenceOper.id, oper.id, oper.id,
-                recurrenceOper.nextDate, oper.period!!, oper.comment, getStringsByTags(oper.tags), type)
-        val items = oper.items
-                .map { conversionService.convert(it, MoneyOperItemDto::class.java)!! }
-                .sortedBy { it.value.multiply(it.sgn.toBigDecimal()) }
-        dto.items = items
-        return dto
-    }
-
-    private fun getStringsByTags(tags: Collection<Tag>): List<String> = tags.map(Tag::name)
 
     @RequestMapping("/create")
     fun create(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {

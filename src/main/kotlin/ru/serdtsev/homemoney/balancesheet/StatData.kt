@@ -2,11 +2,14 @@ package ru.serdtsev.homemoney.balancesheet
 
 import mu.KotlinLogging
 import org.springframework.scheduling.annotation.Async
-import org.springframework.stereotype.Component
+import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.account.model.AccountType
-import ru.serdtsev.homemoney.moneyoper.MoneyOperItemRepo
-import ru.serdtsev.homemoney.moneyoper.RecurrenceOperRepo
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.balancesheet.model.Turnover
+import ru.serdtsev.homemoney.balancesheet.model.TurnoverType
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
+import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperRepo
 import ru.serdtsev.homemoney.moneyoper.model.CategoryType
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperType
@@ -15,19 +18,19 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
-import java.util.*
 import java.util.concurrent.CompletableFuture
 
-@Component
+@Service
 @Transactional(readOnly = true)
 class StatData(
-        private val moneyOperItemRepo: MoneyOperItemRepo,
-        private val recurrenceOperRepo: RecurrenceOperRepo) {
+    private val moneyOperItemRepo: MoneyOperItemRepo,
+    private val recurrenceOperRepo: RecurrenceOperRepo
+) {
     private val log = KotlinLogging.logger {  }
 
     @Async
     fun getRealTurnoversFuture(balanceSheet: BalanceSheet, status: MoneyOperStatus, fromDate: LocalDate,
-            toDate: LocalDate) = CompletableFuture.completedFuture(getRealTurnovers(balanceSheet, status, fromDate, toDate))!!
+                               toDate: LocalDate) = CompletableFuture.completedFuture(getRealTurnovers(balanceSheet, status, fromDate, toDate))!!
 
     private fun getRealTurnovers(balanceSheet: BalanceSheet, status: MoneyOperStatus, fromDate: LocalDate, toDate: LocalDate): Collection<Turnover> {
         log.info { "getRealTurnovers start by $status, ${fromDate.format(DateTimeFormatter.ISO_DATE)} - ${toDate.format(DateTimeFormatter.ISO_DATE)}" }

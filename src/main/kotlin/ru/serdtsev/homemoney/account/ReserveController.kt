@@ -1,50 +1,45 @@
 package ru.serdtsev.homemoney.account
 
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.core.convert.ConversionService
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import ru.serdtsev.homemoney.account.model.AccountType
+import ru.serdtsev.homemoney.account.dto.ReserveDto
 import ru.serdtsev.homemoney.account.model.Reserve
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetRepository
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.common.HmResponse.Companion.getFail
 import ru.serdtsev.homemoney.common.HmResponse.Companion.getOk
 import ru.serdtsev.homemoney.moneyoper.MoneyOperService
-import java.sql.Date
-import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/reserves")
-class ReservesController(
+class ReserveController(
         private val apiRequestContextHolder: ApiRequestContextHolder,
         private val reserveRepo: ReserveRepository,
-        private val balanceSheetRepo: BalanceSheetRepository,
         private val moneyOperService: MoneyOperService,
-        private val balanceService: BalanceService
+        private val balanceService: BalanceService,
+        @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
     @RequestMapping
     fun getReserveList(): HmResponse {
         val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-        val reserves = reserveRepo.findByBalanceSheet(balanceSheet).sortedBy { it.createdDate }
+        val reserves = reserveRepo.findByBalanceSheet(balanceSheet)
+            .sortedBy { it.createdDate }
+            .map { conversionService.convert(it, ReserveDto::class.java) }
         return getOk(reserves)
     }
 
     @RequestMapping("/create")
     @Transactional
-    fun createReserve(@RequestBody reserve: Reserve): HmResponse {
+    fun createReserve(@RequestBody reserveDto: ReserveDto): HmResponse {
         return try {
-            val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-            with (reserve) {
-                this.balanceSheet = balanceSheet
-                this.type = AccountType.reserve
-                this.currencyCode = balanceSheet.currencyCode
-                this.createdDate = Date.valueOf(LocalDate.now())
-                reserveRepo.save(reserve)
-            }
+            val reserve = conversionService.convert(reserveDto, Reserve::class.java) as Reserve
+            reserveRepo.save(reserve)
             getOk()
         } catch (e: HmException) {
             getFail(e.code.name)
@@ -53,11 +48,12 @@ class ReservesController(
 
     @RequestMapping("/update")
     @Transactional
-    fun updateReserve(@RequestBody reserve: Reserve): HmResponse {
+    fun updateReserve(@RequestBody reserveDto: ReserveDto): HmResponse {
         return try {
-            val currReserve = reserveRepo.findByIdOrNull(reserve.id)!!
-            currReserve.merge(reserve, reserveRepo, moneyOperService)
-            reserveRepo.save(currReserve)
+            val origReserve = reserveRepo.findByIdOrNull(reserveDto.id)!!
+            val reserve = conversionService.convert(reserveDto, Reserve::class.java)!!
+            origReserve.merge(reserve, reserveRepo, moneyOperService)
+            reserveRepo.save(origReserve)
             getOk()
         } catch (e: HmException) {
             getFail(e.code.name)
@@ -66,9 +62,9 @@ class ReservesController(
 
     @RequestMapping("/delete")
     @Transactional
-    fun deleteOrArchiveReserve(@RequestBody reserve: Reserve): HmResponse {
+    fun deleteOrArchiveReserve(@RequestBody reserveDto: ReserveDto): HmResponse {
         return try {
-            balanceService.deleteOrArchiveBalance(reserve.id)
+            balanceService.deleteOrArchiveBalance(reserveDto.id)
             getOk()
         } catch (e: HmException) {
             getFail(e.code.name)

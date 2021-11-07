@@ -5,24 +5,31 @@ import org.springframework.context.ApplicationContextAware
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.support.ConversionServiceFactoryBean
-import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItemToDtoConverter
-import ru.serdtsev.homemoney.moneyoper.model.TagToTagDtoConverter
-import java.util.*
+import ru.serdtsev.homemoney.account.converter.*
+import ru.serdtsev.homemoney.moneyoper.converter.MoneyOperItemToDto
+import ru.serdtsev.homemoney.moneyoper.converter.MoneyOperToDto
+import ru.serdtsev.homemoney.moneyoper.converter.RecurrenceOperToDto
+import ru.serdtsev.homemoney.moneyoper.converter.TagToTagDto
 
 @Configuration
 class ConverterConfiguration : ApplicationContextAware {
     private lateinit var ctx: ApplicationContext
 
-    @get:Bean(name = ["conversionService"])
-    val conversionService: ConversionServiceFactoryBean
-        get() {
-            val bean = ConversionServiceFactoryBean()
-            val converters = HashSet<Any>()
-            converters.add(MoneyOperItemToDtoConverter(ctx))
-            converters.add(TagToTagDtoConverter())
-            bean.setConverters(converters)
-            return bean
-        }
+    @Bean("conversionService")
+    fun getConversionService(): ConversionServiceFactoryBean = ConversionServiceFactoryBean().apply {
+        val converters = setOf(
+            AccountToDto(),
+            BalanceToDto(),
+            BalanceDtoToModel(ctx),
+            ReserveToDto(),
+            ReserveDtoToModel(ctx),
+            MoneyOperToDto(ctx),
+            MoneyOperItemToDto(ctx),
+            RecurrenceOperToDto(ctx),
+            TagToTagDto()
+        )
+        setConverters(converters)
+    }
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {
         ctx = applicationContext
