@@ -7,18 +7,19 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.core.convert.ConversionService;
-import ru.serdtsev.homemoney.account.AccountRepository;
-import ru.serdtsev.homemoney.account.BalanceRepository;
+import ru.serdtsev.homemoney.account.AccountRepo;
+import ru.serdtsev.homemoney.account.BalanceRepo;
 import ru.serdtsev.homemoney.account.model.Account;
 import ru.serdtsev.homemoney.account.model.AccountType;
 import ru.serdtsev.homemoney.account.model.Balance;
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet;
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository;
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo;
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo;
 import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperRepo;
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepository;
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepo;
 import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto;
 import ru.serdtsev.homemoney.moneyoper.model.*;
+import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -31,24 +32,24 @@ import static org.mockito.Mockito.*;
 
 class MoneyOperServiceTest {
   private MoneyOperService service;
-  private BalanceSheetRepository balanceSheetRepo;
+  private BalanceSheetRepo balanceSheetRepo;
   private MoneyOperRepo moneyOperRepo;
   private BalanceSheet balanceSheet;
-  private AccountRepository accountRepo;
-  private BalanceRepository balanceRepo;
+  private AccountRepo accountRepo;
+  private BalanceRepo balanceRepo;
   private ConversionService conversionService;
 
   @BeforeEach
   void setUp() {
-    balanceSheetRepo = mock(BalanceSheetRepository.class);
+    balanceSheetRepo = mock(BalanceSheetRepo.class);
     balanceSheet = BalanceSheet.Companion.newInstance();
     doReturn(Optional.of(balanceSheet)).when(balanceSheetRepo).findById(any());
 
     moneyOperRepo = mock(MoneyOperRepo.class);
-    accountRepo = mock(AccountRepository.class);
+    accountRepo = mock(AccountRepo.class);
     val conversionService = mock(ConversionService.class);
     service = new MoneyOperService(balanceSheetRepo, moneyOperRepo, mock(RecurrenceOperRepo.class),
-        accountRepo, balanceRepo, mock(TagRepository.class));
+        accountRepo, balanceRepo, mock(TagRepo.class));
   }
 
   @Test

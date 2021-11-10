@@ -5,35 +5,32 @@ import org.springframework.core.convert.ConversionService
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmResponse
+import ru.serdtsev.homemoney.moneyoper.dto.TagDto
 import ru.serdtsev.homemoney.moneyoper.model.CategoryType
 import ru.serdtsev.homemoney.moneyoper.model.Tag
-import ru.serdtsev.homemoney.moneyoper.dto.TagDto
+import ru.serdtsev.homemoney.moneyoper.service.TagService
 import java.util.*
 
 @RestController
 @RequestMapping("/api/tags")
 class TagController(
-    private val apiRequestContextHolder: ApiRequestContextHolder,
     private val tagService: TagService,
     @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
-    @RequestMapping
+    @GetMapping
     fun getTags(search: String?, category: Boolean?, categoryType: CategoryType?): HmResponse {
-        val bsId = apiRequestContextHolder.getBsId()
-        val tags = tagService.getTags(bsId, search?.lowercase(Locale.getDefault()), category, categoryType).map {
-            conversionService.convert(it, TagDto::class.java)
-        }
+        val tags = tagService.getTags(search?.lowercase(), category, categoryType)
+            .map { conversionService.convert(it, TagDto::class.java) }
         return HmResponse.getOk(tags)
     }
 
-    @RequestMapping(method = [RequestMethod.PUT])
+    @PutMapping
     fun updateTag(@RequestBody tagDto: TagDto) {
-        val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-        val tag = Tag(tagDto.id, balanceSheet, tagDto.name, null, tagDto.isCategory, tagDto.categoryType, tagDto.isArc)
-        tagService.updateTag(tag)
+        val tag = conversionService.convert(tagDto, Tag::class.java)!!
+        tagService.update(tag)
     }
 
-    @RequestMapping("/{tagId}", method = [RequestMethod.DELETE])
+    @DeleteMapping("/{tagId}")
     fun deleteTag(@PathVariable tagId: UUID) {
 
     }

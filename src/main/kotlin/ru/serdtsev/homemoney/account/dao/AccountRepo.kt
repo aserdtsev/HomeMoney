@@ -7,12 +7,12 @@ import ru.serdtsev.homemoney.account.model.Reserve
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.util.*
 
-interface AccountRepository : CrudRepository<Account, UUID>
+interface AccountRepo : CrudRepository<Account, UUID>
 
-interface BalanceRepository : CrudRepository<Balance, UUID> {
+interface BalanceRepo : CrudRepository<Balance, UUID> {
     fun findByBalanceSheet(balanceSheet: BalanceSheet): List<Balance>
 }
 
-interface ReserveRepository : CrudRepository<Reserve, UUID> {
+interface ReserveRepo : CrudRepository<Reserve, UUID> {
     fun findByBalanceSheet(balanceSheet: BalanceSheet): List<Reserve>
 }

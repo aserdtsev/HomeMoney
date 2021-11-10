@@ -1,15 +1,14 @@
-package ru.serdtsev.homemoney.common.dao
+package ru.serdtsev.homemoney.reference.dao
 
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.stereotype.Component
-import ru.serdtsev.homemoney.common.dto.HmCurrency
+import org.springframework.stereotype.Repository
+import ru.serdtsev.homemoney.reference.model.HmCurrency
 import java.util.*
 import java.util.stream.Collectors
 import javax.sql.DataSource
 
-@Suppress("JoinDeclarationAndAssignment")
-@Component
-class ReferencesDao (dataSource: DataSource) {
+@Repository
+class ReferenceDao (dataSource: DataSource) {
     private val jdbcTemplate: JdbcTemplate
 
     fun getCurrencies(bsId: UUID): List<HmCurrency> {

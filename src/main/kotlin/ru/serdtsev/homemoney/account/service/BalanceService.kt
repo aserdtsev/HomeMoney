@@ -1,45 +1,50 @@
-package ru.serdtsev.homemoney.account
+package ru.serdtsev.homemoney.account.service
 
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import ru.serdtsev.homemoney.account.BalanceRepo
+import ru.serdtsev.homemoney.account.ReserveRepo
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
-import ru.serdtsev.homemoney.moneyoper.MoneyOperService
+import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
 import java.util.*
 
 @Service
 class BalanceService(
     private val apiRequestContextHolder: ApiRequestContextHolder,
-    private val balanceRepo: BalanceRepository,
+    private val balanceRepo: BalanceRepo,
     private val moneyOperItemRepo: MoneyOperItemRepo,
-    private val reserveRepo: ReserveRepository,
+    private val reserveRepo: ReserveRepo,
     private val moneyOperService: MoneyOperService
 ) {
+    @Transactional(readOnly = true)
     fun getBalances(): List<Balance> {
         val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-        return balanceRepo.findByBalanceSheet(balanceSheet)
-            .filter { it.type != AccountType.reserve }
-            .sortedBy { it.num }
+        return balanceRepo.findByBalanceSheet(balanceSheet).filter { it.type != AccountType.reserve }
     }
 
+    @Transactional
     fun createBalance(balance: Balance) {
         balance.init(reserveRepo)
         balanceRepo.save(balance)
     }
 
+    @Transactional
     fun updateBalance(balance: Balance) {
-        val storedBalance = balanceRepo.findByIdOrNull(balance.id)!!
-        storedBalance.merge(balance, reserveRepo, moneyOperService)
-        balanceRepo.save(storedBalance)
+        val origBalance = balanceRepo.findByIdOrNull(balance.id)!!
+        origBalance.merge(balance, reserveRepo, moneyOperService)
+        balanceRepo.save(origBalance)
     }
 
+    @Transactional
     fun deleteOrArchiveBalance(balanceId: UUID) {
         val balance = balanceRepo.findByIdOrNull(balanceId)!!
-        val operFound = moneyOperItemRepo.findByBalance(balance).take(1).count() > 0
-        if (operFound) {
+        val isOperExist = moneyOperItemRepo.findByBalance(balance).take(1).isNotEmpty()
+        if (isOperExist) {
             balance.isArc = true
             balanceRepo.save(balance)
             log.info { "$balance moved to archive." }
@@ -49,6 +54,7 @@ class BalanceService(
         }
     }
 
+    @Transactional
     fun upBalance(balanceId: UUID) {
         // todo работает неправильно, исправить
         val balanceSheet = apiRequestContextHolder.getBalanceSheet()

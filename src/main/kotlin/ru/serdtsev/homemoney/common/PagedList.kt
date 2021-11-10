@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.common.dto
+package ru.serdtsev.homemoney.common
 
 class PagedList<T>(val items: List<T>, limit: Int, offset: Int, hasNext: Boolean) {
     @Suppress("unused")

@@ -3,15 +3,15 @@ package ru.serdtsev.homemoney.common
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
 import java.util.*
 import kotlin.concurrent.getOrSet
 
 @Service
-class ApiRequestContextHolder(private val balanceSheetRepo: BalanceSheetRepository) {
+class ApiRequestContextHolder(private val balanceSheetRepo: BalanceSheetRepo) {
     companion object {
         private val requestContextTls = ThreadLocal<ApiRequestContext>()
-        private var apiRequestContext: ApiRequestContext
+        var apiRequestContext: ApiRequestContext
             get() = requestContextTls.getOrSet { ApiRequestContext() }
             set(value) = requestContextTls.set(value)
 

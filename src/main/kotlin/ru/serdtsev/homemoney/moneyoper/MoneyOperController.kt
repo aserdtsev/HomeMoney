@@ -13,12 +13,13 @@ import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
-import ru.serdtsev.homemoney.common.dto.PagedList
+import ru.serdtsev.homemoney.common.PagedList
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepo
 import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
 import ru.serdtsev.homemoney.moneyoper.model.*
+import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
@@ -35,7 +36,7 @@ class MoneyOperController(
     private val moneyOperService: MoneyOperService,
     private val moneyOperRepo: MoneyOperRepo,
     private val moneyOperItemRepo: MoneyOperItemRepo,
-    private val tagRepository: TagRepository,
+    private val tagRepo: TagRepo,
     @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
     @RequestMapping
@@ -149,7 +150,7 @@ class MoneyOperController(
 
     fun tagContains(tag: Tag, search: String): Boolean {
         return tag.name.lowercase(Locale.getDefault()).contains(search)
-                || tag.isCategory!! && tag.rootId != null && tagContains(tagRepository.findByIdOrNull(tag.rootId)!!, search)
+                || tag.isCategory!! && tag.rootId != null && tagContains(tagRepo.findByIdOrNull(tag.rootId)!!, search)
     }
 
     @RequestMapping("/item")

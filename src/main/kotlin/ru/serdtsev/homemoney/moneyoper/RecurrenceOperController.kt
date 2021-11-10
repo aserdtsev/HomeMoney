@@ -13,6 +13,7 @@ import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
 import ru.serdtsev.homemoney.moneyoper.dto.RecurrenceOperDto
 import ru.serdtsev.homemoney.moneyoper.model.RecurrenceOper
+import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.util.stream.Collectors
 
 @RestController

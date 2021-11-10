@@ -1,11 +1,10 @@
 package ru.serdtsev.homemoney.account.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
-import ru.serdtsev.homemoney.account.ReserveRepository
+import ru.serdtsev.homemoney.account.ReserveRepo
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.moneyoper.MoneyOperService
+import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.Period
@@ -33,7 +32,6 @@ open class Balance(
     open var minValue: BigDecimal? = null
         get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, RoundingMode.UP)
 
-    @get:JsonIgnore
     @OneToOne
     @JoinColumn(name = "reserve_id")
     open var reserve: Reserve? = null
@@ -49,7 +47,7 @@ open class Balance(
     open var reserveId: UUID? = null
         get() = reserve?.id
 
-    fun init(reserveRepo: ReserveRepository?) {
+    fun init(reserveRepo: ReserveRepo?) {
         value = value
         creditLimit = creditLimit ?: BigDecimal.ZERO
         minValue = minValue ?: BigDecimal.ZERO
@@ -57,7 +55,7 @@ open class Balance(
         reserve = reserveId?.let { reserveRepo!!.findByIdOrNull(it) }
     }
 
-    fun merge(balance: Balance, reserveRepo: ReserveRepository, moneyOperService: MoneyOperService) {
+    fun merge(balance: Balance, reserveRepo: ReserveRepo, moneyOperService: MoneyOperService) {
         super.merge(balance)
         creditLimit = balance.creditLimit
         minValue = balance.minValue

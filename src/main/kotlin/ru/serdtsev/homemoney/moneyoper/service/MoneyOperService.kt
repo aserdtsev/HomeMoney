@@ -1,16 +1,16 @@
-package ru.serdtsev.homemoney.moneyoper
+package ru.serdtsev.homemoney.moneyoper.service
 
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import ru.serdtsev.homemoney.account.AccountRepository
-import ru.serdtsev.homemoney.account.BalanceRepository
+import ru.serdtsev.homemoney.account.AccountRepo
+import ru.serdtsev.homemoney.account.BalanceRepo
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
 import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepo
 import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
 import ru.serdtsev.homemoney.moneyoper.dto.RecurrenceOperDto
 import ru.serdtsev.homemoney.moneyoper.model.*
@@ -23,12 +23,12 @@ import java.util.*
  */
 @Service
 class MoneyOperService @Autowired constructor(
-    private val balanceSheetRepo: BalanceSheetRepository,
+    private val balanceSheetRepo: BalanceSheetRepo,
     private val moneyOperRepo: MoneyOperRepo,
     private val recurrenceOperRepo: RecurrenceOperRepo,
-    private val accountRepo: AccountRepository,
-    private val balanceRepo: BalanceRepository,
-    private val tagRepo: TagRepository
+    private val accountRepo: AccountRepo,
+    private val balanceRepo: BalanceRepo,
+    private val tagRepo: TagRepo
 ) {
     fun save(moneyOper: MoneyOper) {
         moneyOperRepo.save(moneyOper)

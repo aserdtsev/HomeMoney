@@ -2,13 +2,13 @@ package ru.serdtsev.homemoney.moneyoper.converter
 
 import org.springframework.context.ApplicationContext
 import org.springframework.core.convert.converter.Converter
-import ru.serdtsev.homemoney.account.BalanceRepository
+import ru.serdtsev.homemoney.account.BalanceRepo
 import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperItemDto
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem
 
 class MoneyOperItemToDto(private val appCtx: ApplicationContext) : Converter<MoneyOperItem, MoneyOperItemDto> {
-    private val balanceRepo: BalanceRepository
-        get() = appCtx.getBean(BalanceRepository::class.java)
+    private val balanceRepo: BalanceRepo
+        get() = appCtx.getBean(BalanceRepo::class.java)
 
     override fun convert(item: MoneyOperItem): MoneyOperItemDto {
         val balance = balanceRepo.findById(item.getBalanceId()).get()

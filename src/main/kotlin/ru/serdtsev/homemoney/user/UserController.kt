@@ -5,7 +5,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet.Companion.newInstance
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import java.util.*
@@ -13,8 +13,8 @@ import java.util.*
 @RestController
 @RequestMapping("/api/user")
 class UserController(
-    private val userRepo: UserRepository,
-    private val balanceSheetRepo: BalanceSheetRepository
+    private val userRepo: UserRepo,
+    private val balanceSheetRepo: BalanceSheetRepo
 ) {
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])
     @Transactional

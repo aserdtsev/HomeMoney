@@ -4,9 +4,9 @@ import java.math.BigDecimal
 import java.util.*
 
 data class CategoryStat(
-    var id: UUID,
-    var rootId: UUID?,
-    var name: String,
+    val id: UUID,
+    val isReserve: Boolean,
+    val name: String,
     var amount: BigDecimal
 ) {
     override fun equals(other: Any?): Boolean {

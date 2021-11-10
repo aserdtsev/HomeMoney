@@ -5,4 +5,4 @@ import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 
 import java.util.UUID
 
-interface BalanceSheetRepository : CrudRepository<BalanceSheet, UUID>
+interface BalanceSheetRepo : CrudRepository<BalanceSheet, UUID>

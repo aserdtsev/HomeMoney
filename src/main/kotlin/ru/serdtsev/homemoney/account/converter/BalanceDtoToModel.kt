@@ -11,9 +11,13 @@ class BalanceDtoToModel(private val appCtx: ApplicationContext) : Converter<Bala
         get() = appCtx.getBean(ApiRequestContextHolder::class.java)
 
     override fun convert(source: BalanceDto): Balance {
-        return with(source) {
+        return with (source) {
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-            Balance(id, balanceSheet, type, name, createdDate, isArc, value, currencyCode)
+            Balance(id, balanceSheet, type, name, createdDate, isArc, value, currencyCode).also {
+                it.minValue = minValue
+                it.creditLimit = creditLimit
+                it.num = num
+            }
         }
     }
 }

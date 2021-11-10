@@ -7,17 +7,18 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.core.convert.ConversionService
-import ru.serdtsev.homemoney.account.AccountRepository
-import ru.serdtsev.homemoney.account.BalanceRepository
+import ru.serdtsev.homemoney.account.AccountRepo
+import ru.serdtsev.homemoney.account.BalanceRepo
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepository
+import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepository
+import ru.serdtsev.homemoney.moneyoper.dao.TagRepo
 import ru.serdtsev.homemoney.moneyoper.model.*
+import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.math.BigDecimal
 import java.sql.Date
 import java.time.LocalDate
@@ -30,15 +31,15 @@ internal class MoneyOperControllerTest {
             BigDecimal.valueOf(10000L, 2), "RUB")
     private val account = Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account",
         now, false, BigDecimal.valueOf(10000L, 2), "RUB")
-    private val accountRepo: AccountRepository = mock {
+    private val accountRepo: AccountRepo = mock {
         whenever(it.findById(balance.id)).thenReturn(Optional.of(balance))
         whenever(it.findById(account.id)).thenReturn(Optional.of(account))
     }
     private val moneyOperService: MoneyOperService = mock {  }
-    private val balanceSheetRepo: BalanceSheetRepository = mock {  }
-    private val balanceRepo: BalanceRepository = mock {  }
+    private val balanceSheetRepo: BalanceSheetRepo = mock {  }
+    private val balanceRepo: BalanceRepo = mock {  }
     private val moneyOperRepo: MoneyOperRepo = mock {  }
-    private val tagRepo: TagRepository = mock {  }
+    private val tagRepo: TagRepo = mock {  }
     private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
     private val conversionService: ConversionService = mock {  }
     private val apiRequestContextHolder: ApiRequestContextHolder = mock {  }
