@@ -8,5 +8,7 @@ services:
             - ./config:/opt/homemoney/config
             - ./log:/opt/homemoney/log
             - ./work:/opt/homemoney/work
+        environment:
+            - PROFILE=cdek
         ports:
             - 8001:8080
