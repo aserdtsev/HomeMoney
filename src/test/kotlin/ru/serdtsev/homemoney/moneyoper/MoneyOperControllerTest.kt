@@ -7,44 +7,41 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.core.convert.ConversionService
-import ru.serdtsev.homemoney.account.AccountRepo
-import ru.serdtsev.homemoney.account.BalanceRepo
+import ru.serdtsev.homemoney.account.dao.AccountDao
+import ru.serdtsev.homemoney.account.dao.BalanceDao
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
-import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
-import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepo
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperDao
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemDao
+import ru.serdtsev.homemoney.moneyoper.dao.TagDao
 import ru.serdtsev.homemoney.moneyoper.model.*
 import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.math.BigDecimal
-import java.sql.Date
 import java.time.LocalDate
 import java.util.*
 
 internal class MoneyOperControllerTest {
-    private val now = Date.valueOf(LocalDate.now())
-    private val balanceSheet = BalanceSheet.newInstance()
+    private val now = LocalDate.now()
+    private val balanceSheet = BalanceSheet()
     private val balance = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", now, false,
-            BigDecimal.valueOf(10000L, 2), "RUB")
+        "RUB", BigDecimal.valueOf(10000L, 2))
     private val account = Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account",
-        now, false, BigDecimal.valueOf(10000L, 2), "RUB")
-    private val accountRepo: AccountRepo = mock {
-        whenever(it.findById(balance.id)).thenReturn(Optional.of(balance))
-        whenever(it.findById(account.id)).thenReturn(Optional.of(account))
+        now, false, "RUB", BigDecimal.valueOf(10000L, 2))
+    private val accountDao: AccountDao = mock {
+        whenever(it.findNameById(balance.id)).thenReturn(balance.name)
+        whenever(it.findNameById(account.id)).thenReturn(account.name) // todo Актуально?
     }
     private val moneyOperService: MoneyOperService = mock {  }
-    private val balanceSheetRepo: BalanceSheetRepo = mock {  }
-    private val balanceRepo: BalanceRepo = mock {  }
-    private val moneyOperRepo: MoneyOperRepo = mock {  }
-    private val tagRepo: TagRepo = mock {  }
-    private val moneyOperItemRepo: MoneyOperItemRepo = mock {  }
+    private val moneyOperDao: MoneyOperDao = mock {  }
+    private val tagDao: TagDao = mock {  }
+    private val balanceDao: BalanceDao = mock {  }
+    private val moneyOperItemDao: MoneyOperItemDao = mock {  }
     private val conversionService: ConversionService = mock {  }
     private val apiRequestContextHolder: ApiRequestContextHolder = mock {  }
-    private val moneyOperController = MoneyOperController(apiRequestContextHolder, moneyOperService, moneyOperRepo,
-        moneyOperItemRepo, tagRepo, conversionService)
+    private val moneyOperController = MoneyOperController(apiRequestContextHolder, moneyOperService, moneyOperDao,
+        moneyOperItemDao, tagDao, balanceDao, conversionService)
 
     @BeforeEach
     fun setUp() {
@@ -54,7 +51,7 @@ internal class MoneyOperControllerTest {
     @Disabled
     fun newMoneyOper_simpleExpense() {
         val tags: MutableList<Tag> = ArrayList()
-        tags.add(Tag(UUID.randomUUID(), balanceSheet, "tag"))
+        tags.add(Tag(UUID.randomUUID(), balanceSheet,"tag"))
         val performed = LocalDate.now()
         val comment = "my comment"
         val oper = MoneyOper(balanceSheet, MoneyOperStatus.done, period = Period.month)
@@ -63,7 +60,7 @@ internal class MoneyOperControllerTest {
         val items = oper.items
         assertEquals(1, items.size)
         val item = items[0]
-        assertEquals(oper, item.moneyOper)
+//        assertEquals(oper, item.moneyOper)
         assertEquals(balance, item.balance)
         assertEquals(BigDecimal.ONE.negate(), item.value)
         assertEquals(0, item.index)

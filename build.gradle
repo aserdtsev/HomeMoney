@@ -4,7 +4,7 @@ import com.bmuschko.gradle.docker.tasks.image.*
 buildscript {
     ext {
         javaVersion = '11'
-        kotlinVersion = '1.6.0'
+        kotlinVersion = '1.7.0'
         springBootVersion = '2.6.0'
         flywayVersion = '7.5.0'
     }
@@ -82,11 +82,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
     implementation('org.jetbrains.kotlin:kotlin-reflect')
-    implementation('org.jetbrains.kotlin:kotlin-stdlib-jdk8')
     implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2')
     implementation('io.github.microutils:kotlin-logging:1.8.0.1')
 
-    implementation('net.sf.ehcache:ehcache:2.10.2')
+    implementation "javax.cache:cache-api:1.1.1"
+    implementation 'org.ehcache:ehcache:3.8.1'
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
     implementation('com.google.guava:guava:22.0')
@@ -101,6 +101,7 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('com.nhaarman:mockito-kotlin:1.6.0')
     testImplementation('org.mockito:mockito-core:3.4.6')
+    testImplementation 'com.opentable.components:otj-pg-embedded:0.13.4'
 }
 
 compileKotlin {

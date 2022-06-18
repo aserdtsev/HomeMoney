@@ -8,7 +8,7 @@ class BalanceToDto : Converter<Balance, BalanceDto> {
     override fun convert(source: Balance) =
         with(source) {
             BalanceDto(
-                id, type, name, createdDate!!, isArc!!, value, currencyCode, currencySymbol, minValue!!,
+                id, type, name, createdDate, isArc, value, currencyCode, currencySymbol, minValue!!,
                 creditLimit!!, freeFunds, num!!
             )
         }

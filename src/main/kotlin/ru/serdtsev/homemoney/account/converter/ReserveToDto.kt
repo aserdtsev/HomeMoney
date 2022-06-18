@@ -7,7 +7,7 @@ import ru.serdtsev.homemoney.account.model.Reserve
 class ReserveToDto : Converter<Reserve, ReserveDto> {
     override fun convert(source: Reserve): ReserveDto {
         return with (source) {
-            ReserveDto(id, type, name, createdDate!!, isArc!!, currencyCode, value, target)
+            ReserveDto(id, type, name, createdDate, isArc, currencyCode, value, target)
         }
     }
 }

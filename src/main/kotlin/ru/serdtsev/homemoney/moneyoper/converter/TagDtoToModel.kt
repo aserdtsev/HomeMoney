@@ -13,7 +13,7 @@ class TagDtoToModel(private val apiCtx: ApplicationContext) : Converter<TagDto, 
     override fun convert(source: TagDto): Tag {
         val balanceSheet = apiRequestContextHolder.getBalanceSheet()
         return with (source) {
-            Tag(id, balanceSheet, name, rootId, isCategory, categoryType, isArc)
+            Tag(id, balanceSheet, name, rootId, isCategory ?: false, categoryType, isArc ?: false)
         }
     }
 }

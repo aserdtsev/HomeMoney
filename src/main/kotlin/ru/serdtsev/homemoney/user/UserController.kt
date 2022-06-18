@@ -4,8 +4,8 @@ import mu.KotlinLogging
 import org.springframework.http.HttpHeaders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet.Companion.newInstance
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import java.util.*
@@ -14,7 +14,7 @@ import java.util.*
 @RequestMapping("/api/user")
 class UserController(
     private val userRepo: UserRepo,
-    private val balanceSheetRepo: BalanceSheetRepo
+    private val balanceSheetDao: BalanceSheetDao
 ) {
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])
     @Transactional
@@ -33,12 +33,12 @@ class UserController(
     @RequestMapping(method = [RequestMethod.DELETE])
     @Transactional
     fun deleteBalanceSheet(@RequestParam id: UUID) {
-        balanceSheetRepo.deleteById(id)
+        balanceSheetDao.deleteById(id)
     }
 
     fun createUserWithBalanceSheet(email: String, pwdHash: String): User {
-        val bs = newInstance()
-        balanceSheetRepo.save(bs)
+        val bs = BalanceSheet()
+        balanceSheetDao.save(bs)
         val user = User(UUID.randomUUID(), bs.id, email, pwdHash)
         userRepo.save(user)
         return user

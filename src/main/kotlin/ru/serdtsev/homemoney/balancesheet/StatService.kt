@@ -1,17 +1,19 @@
-package ru.serdtsev.homemoney.balancesheet.service
+package ru.serdtsev.homemoney.balancesheet
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.springframework.data.repository.findByIdOrNull
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.account.model.AccountType
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
 import ru.serdtsev.homemoney.balancesheet.model.*
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
-import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
-import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepo
+import ru.serdtsev.homemoney.config.CoroutineApiRequestContext
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperDao
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemDao
+import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperDao
+import ru.serdtsev.homemoney.moneyoper.dao.TagDao
 import ru.serdtsev.homemoney.moneyoper.model.CategoryType
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperType
@@ -25,66 +27,59 @@ import java.util.*
 @Service
 @Transactional(readOnly = true)
 class StatService(
-    private val balanceSheetRepo: BalanceSheetRepo,
-    private val tagRepo: TagRepo,
-    private val moneyOperItemRepo: MoneyOperItemRepo,
-    private val recurrenceOperRepo: RecurrenceOperRepo,
-    private val jdbcTemplate: NamedParameterJdbcTemplate,
+    private val balanceSheetDao: BalanceSheetDao,
+    private val tagDao: TagDao,
+    private val moneyOperDao: MoneyOperDao,
+    private val moneyOperItemDao: MoneyOperItemDao,
+    private val recurrenceOperDao: RecurrenceOperDao,
     private val apiRequestContextHolder: ApiRequestContextHolder
 ) {
     private val log = KotlinLogging.logger {  }
 
-    fun getBsStat(bsId: UUID, interval: Long): BsStat {
-        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
+    fun getBsStat(interval: Long): BsStat {
+        return runBlocking(Dispatchers.Default + CoroutineApiRequestContext()) {
+            val balanceSheet = apiRequestContextHolder.getBalanceSheet()
 
-        val today = LocalDate.now()
-        val fromDate = today.minusDays(interval)
+            val trendTurnovers = async {
+                getTrendTurnovers(balanceSheet, interval)
+            }
 
-        val bsStat = BsStat(fromDate, today)
-        calcCurrentSaldo(bsStat)
+            val today = LocalDate.now()
+            val fromDate = today.minusDays(interval)
 
-        val trendMap = TreeMap<LocalDate, BsDayStat>()
+            val bsStat = BsStat(fromDate, today)
+            calcCurrentSaldo(bsStat)
 
-        val realTurnovers = getRealTurnovers(balanceSheet, MoneyOperStatus.done, fromDate, today)
-        val pendingTurnovers = getRealTurnovers(balanceSheet, MoneyOperStatus.pending,
-                LocalDate.of(1970, 1, 1), today.plusDays(interval))
-        val trendTurnovers = getTrendTurnovers(balanceSheet, interval)
-        val recurrenceTurnovers = getRecurrenceTurnovers(balanceSheet, today.plusDays(interval))
+            val trendMap = TreeMap<LocalDate, BsDayStat>()
 
-        val map = TreeMap<LocalDate, BsDayStat>()
-        fillBsDayStatMap(map, realTurnovers)
-        calcPastSaldoAndTurnovers(bsStat, map)
+            val realTurnovers = getRealTurnovers(balanceSheet, MoneyOperStatus.done, fromDate, today)
+            val pendingTurnovers = getRealTurnovers(balanceSheet, MoneyOperStatus.pending,
+                    LocalDate.ofEpochDay(0), today.plusDays(interval))
+            val recurrenceTurnovers = getRecurrenceTurnovers(balanceSheet, today.plusDays(interval))
 
-        fillBsDayStatMap(trendMap, trendTurnovers)
-        fillBsDayStatMap(trendMap, pendingTurnovers)
-        fillBsDayStatMap(trendMap, recurrenceTurnovers)
-        calcTrendSaldoAndTurnovers(bsStat, trendMap)
+            val map = TreeMap<LocalDate, BsDayStat>()
+            fillBsDayStatMap(map, realTurnovers)
+            calcPastSaldoAndTurnovers(bsStat, map)
 
-        map.putAll(trendMap)
-        bsStat.dayStats = ArrayList(map.values)
-        bsStat.categories = getCategories(balanceSheet, fromDate, today)
+            fillBsDayStatMap(trendMap, pendingTurnovers)
+            fillBsDayStatMap(trendMap, recurrenceTurnovers)
+            fillBsDayStatMap(trendMap, trendTurnovers.await())
+            calcTrendSaldoAndTurnovers(bsStat, trendMap)
 
-        return bsStat
+            map.putAll(trendMap)
+            bsStat.dayStats = ArrayList(map.values)
+            bsStat.categories = getCategories(balanceSheet, fromDate, today)
+
+            bsStat
+        }
     }
 
     /**
      * Вычисляет текущие балансы счетов и резервов.
      */
     private fun calcCurrentSaldo(bsStat: BsStat) {
-        val sql = """
-            select type, sum(saldo) as saldo 
-            from v_crnt_saldo_by_base_cry 
-            where balance_sheet_id = :bsId 
-            group by type
-        """.trimIndent()
-        val paramMap = mapOf("bsId" to apiRequestContextHolder.getBsId())
-        data class AggrAccountSaldo(val type: AccountType, val saldo: BigDecimal)
-        val aggrAccSaldoList = jdbcTemplate.query(sql, paramMap) { rs, _ ->
-            val type = AccountType.valueOf(rs.getString("type"))
-            val saldo = rs.getBigDecimal("saldo")
-            AggrAccountSaldo(type, saldo)
-        }
-        aggrAccSaldoList.forEach { bsStat.saldoMap[it.type] = it.saldo }
+        val bsId = apiRequestContextHolder.getBsId()
+        balanceSheetDao.getAggregateAccountSaldoList(bsId).forEach { bsStat.saldoMap[it.first] = it.second }
     }
 
     private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>) {
@@ -137,35 +132,39 @@ class StatService(
 
     private fun getCategories(balanceSheet: BalanceSheet, fromDate: LocalDate, toDate: LocalDate): List<CategoryStat> {
         val absentCatId = UUID.randomUUID()
-        val map = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
-                fromDate, toDate, MoneyOperStatus.done)
-                .filter { item -> item.moneyOper.type == MoneyOperType.expense || item.balance.type == AccountType.reserve }
-                .map { item ->
-                    val oper = item.moneyOper
-                    val category = oper.tags.firstOrNull { it.isCategory!! }
-                        ?.let {
-                            it.rootId?.let { rootId -> tagRepo.findByIdOrNull(rootId) } ?: it
-                        }
+        val map = moneyOperItemDao.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet, fromDate,
+            toDate, MoneyOperStatus.done)
+            .map {
+                val moneyOper = moneyOperDao.findById(it.moneyOperId)
+                Pair(it, moneyOper) }
+            .filter {
+                val item = it.first
+                val moneyOper = it.second
+                moneyOper.type == MoneyOperType.expense || item.balance.type == AccountType.reserve
+            }
+            .map {
+                val item = it.first
+                val moneyOper = it.second
+                val category = moneyOper.tags.firstOrNull { tag -> tag.isCategory!! }
+                    ?.let { tag -> tag.rootId?.let { rootId -> tagDao.findByIdOrNull(rootId) } ?: tag }
 
-                    val isReserve = item.balance.type == AccountType.reserve
+                val isReserve = item.balance.type == AccountType.reserve
 
-                    val id = when {
-                        category != null -> category.id
-                        isReserve -> item.balance.id
-                        else -> absentCatId
-                    }
-
-                    val name = category?.name ?: if (isReserve) item.balance.name else "<Без категории>"
-                    CategoryStat(id!!, isReserve, name, item.value)
+                val id = when {
+                    category != null -> category.id
+                    isReserve -> item.balance.id
+                    else -> absentCatId
                 }
-                .groupBy { it }
 
+                val name = category?.name ?: if (isReserve) item.balance.name else "<Без категории>"
+                CategoryStat(id!!, isReserve, name, item.value)
+            }
+            .groupBy { it }
         map.forEach { (categoryStat, list) ->
             categoryStat.amount = list
                 .sumOf { it.amount }
                 .let { if (categoryStat.isReserve) it else it.abs() }
         }
-
         return map.keys.sortedByDescending { it.amount }
     }
 
@@ -173,27 +172,35 @@ class StatService(
         log.info { "getRealTurnovers start by $status, ${fromDate.format(DateTimeFormatter.ISO_DATE)} - ${toDate.format(
             DateTimeFormatter.ISO_DATE)}" }
 
-        val turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
+        val turnovers = moneyOperItemDao.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
             fromDate, toDate, status)
-            .filter { it.moneyOper.status == status && it.balance.type.isBalance}
-            .flatMap { item ->
+            .map {
+                val moneyOper = moneyOperDao.findById(it.moneyOperId)
+                Pair(it, moneyOper)
+            }
+            .filter {
+                val item = it.first
+                val moneyOper = it.second
+                moneyOper.status == status && item.balance.type.isBalance
+            }
+            .flatMap {
+                val item = it.first
+                val moneyOper = it.second
                 val itemTurnovers = ArrayList<Turnover>()
                 val balance = item.balance
-                val value = if (item.balance.currencyCode != balanceSheet.currencyCode && item.moneyOper.isForeignCurrencyTransaction)
-                    item.moneyOper.valueInNationalCurrency.negate()
+                val value = if (item.balance.currencyCode != balanceSheet.currencyCode && moneyOper.isForeignCurrencyTransaction)
+                    moneyOper.valueInNationalCurrency.negate()
                 else item.value
                 val turnoverType = TurnoverType.valueOf(balance.type)
-                val turnover = Turnover(item.performed!!, turnoverType, value)
+                val turnover = Turnover(item.performed, turnoverType, value)
                 itemTurnovers.add(turnover)
-
-                item.moneyOper.tags
+                moneyOper.tags
                     .firstOrNull()?.let {
                         if (balance.type == AccountType.debit) {
                             val categoryType = if (item.value.signum() < 0) CategoryType.expense else CategoryType.income
-                            itemTurnovers.add(Turnover(item.performed!!, TurnoverType.valueOf(categoryType), item.value.abs()))
+                            itemTurnovers.add(Turnover(item.performed, TurnoverType.valueOf(categoryType), item.value.abs()))
                         }
                     }
-
                 itemTurnovers
             }
             .groupBy { Turnover(it.operDate, it.turnoverType) }
@@ -208,16 +215,27 @@ class StatService(
         log.info { "getTrendTurnovers start" }
         val today = LocalDate.now()
         val fromDate = today.minusDays(interval)
-        val turnovers = moneyOperItemRepo.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
+        val turnovers = moneyOperItemDao.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet,
             fromDate, today, MoneyOperStatus.done)
-            .filter { it.moneyOper.period == Period.month && it.moneyOper.recurrenceId == null }
-            .filter { it.moneyOper.type != MoneyOperType.transfer }
-            .filter { it.balance.type.isBalance && it.balance.type != AccountType.reserve }
-            .sortedBy { it.performed }
-            .flatMap { item ->
-                val trendDate = today.plusDays(ChronoUnit.DAYS.between(item.performed!!, today))
+            .map {
+                val moneyOper = moneyOperDao.findById(it.moneyOperId)
+                Pair(it, moneyOper)
+            }
+            .filter {
+                val item = it.first
+                val moneyOper = it.second
+                moneyOper.period == Period.month && moneyOper.recurrenceId == null &&
+                        moneyOper.type != MoneyOperType.transfer &&
+                        item.balance.type.isBalance && item.balance.type != AccountType.reserve
+
+            }
+            .sortedBy { it.first.performed }
+            .flatMap {
+                val item = it.first
+                val moneyOper = it.second
+                val trendDate = today.plusDays(ChronoUnit.DAYS.between(item.performed, today))
                 val turnover1 = Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value)
-                val turnover2 = Turnover(trendDate, TurnoverType.valueOf(item.moneyOper.type.name), item.value.abs())
+                val turnover2 = Turnover(trendDate, TurnoverType.valueOf(moneyOper.type.name), item.value.abs())
                 listOf(turnover1, turnover2)
             }
             .groupBy { Turnover(it.operDate, it.turnoverType) }
@@ -234,11 +252,10 @@ class StatService(
     fun getRecurrenceTurnovers(balanceSheet: BalanceSheet, toDate: LocalDate): Collection<Turnover> {
         log.info { "getRecurrenceTurnovers start" }
 
-        val recurrenceOpers = recurrenceOperRepo.findByBalanceSheet(balanceSheet)
+        val recurrenceOpers = recurrenceOperDao.findByBalanceSheetAndArc(balanceSheet, false)
         val turnovers = HashSet<Turnover>()
         val today = LocalDate.now()
         recurrenceOpers
-            .filter { !it.arc }
             .forEach {
                 val template = it.template
                 var roNextDate = it.nextDate
