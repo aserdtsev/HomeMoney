@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service
 @Service
 class CustomUserDetailsService: UserDetailsService {
     @Autowired
-    lateinit var repository: UserRepo
+    lateinit var repository: UserDao
 
     override fun loadUserByUsername(email: String): UserDetails {
         val user = repository.findByEmail(email) ?: throw UsernameNotFoundException("User not found")

@@ -13,7 +13,7 @@ import java.util.*
 @RestController
 @RequestMapping("/api/user")
 class UserController(
-    private val userRepo: UserRepo,
+    private val userDao: UserDao,
     private val balanceSheetDao: BalanceSheetDao
 ) {
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])
@@ -22,7 +22,7 @@ class UserController(
         return try {
             val email = decodeAuthorization(authorization).first
             log.info { "User login; email:$email" }
-            val user = userRepo.findByEmail(email)!!
+            val user = userDao.findByEmail(email)!!
             val auth = LoginResponse(user.bsId)
             HmResponse.getOk(auth)
         } catch (e: HmException) {
@@ -40,7 +40,7 @@ class UserController(
         val bs = BalanceSheet()
         balanceSheetDao.save(bs)
         val user = User(UUID.randomUUID(), bs.id, email, pwdHash)
-        userRepo.save(user)
+        userDao.save(user)
         return user
     }
 

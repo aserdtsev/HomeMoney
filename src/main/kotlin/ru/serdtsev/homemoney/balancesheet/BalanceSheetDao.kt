@@ -2,14 +2,14 @@ package ru.serdtsev.homemoney.balancesheet
 
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.math.BigDecimal
 import java.sql.Timestamp
 import java.util.*
 
-@Service
+@Repository
 class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) {
     fun save(balanceSheet: BalanceSheet) {
         val sql = """

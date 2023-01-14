@@ -2,7 +2,7 @@ package ru.serdtsev.homemoney.account.dao
 
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
@@ -10,7 +10,7 @@ import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import java.sql.ResultSet
 import java.util.*
 
-@Service
+@Repository
 class BalanceDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
     private val balanceSheetDao: BalanceSheetDao,

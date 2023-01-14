@@ -5,7 +5,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
@@ -15,7 +15,7 @@ import java.sql.ResultSet
 import java.time.LocalDate
 import java.util.*
 
-@Service
+@Repository
 class MoneyOperDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
     private val balanceSheetDao: BalanceSheetDao,

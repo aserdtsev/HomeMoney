@@ -1,10 +1,10 @@
 package ru.serdtsev.homemoney.account.dao
 
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Repository
 import java.util.*
 
-@Service
+@Repository
 class AccountDao(private val jdbcTemplate: NamedParameterJdbcTemplate) {
     fun findNameById(id: UUID): String = findNameByIdOrNull(id)!!
 
