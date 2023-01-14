@@ -3,10 +3,10 @@ import com.bmuschko.gradle.docker.tasks.image.*
 
 buildscript {
     ext {
-        javaVersion = '11'
-        kotlinVersion = '1.6.21'
-        springBootVersion = '2.7.7'
-        flywayVersion = '9.11.0'
+        javaVersion = '17'
+        kotlinVersion = '1.8.0'
+        springBootVersion = '3.0.1'
+        flywayVersion = '9.5.1'
     }
 }
 
@@ -23,7 +23,6 @@ apply plugin: 'idea'
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-spring'
-apply plugin: 'kotlin-jpa'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'war'
 
@@ -47,8 +46,8 @@ flyway {
 
 group = 'ru.serdtsev'
 version = '1.2.0-SNAPSHOT'
-java.sourceCompatibility(JavaVersion.VERSION_11)
-java.targetCompatibility(JavaVersion.VERSION_11)
+java.sourceCompatibility(JavaVersion.VERSION_17)
+java.targetCompatibility(JavaVersion.VERSION_17)
 
 configurations {
     developmentOnly
@@ -82,15 +81,11 @@ dependencies {
 
     implementation('org.jetbrains.kotlin:kotlin-reflect')
     implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4')
-    implementation('io.github.microutils:kotlin-logging:2.1.23')
+    implementation('io.github.microutils:kotlin-logging:3.0.4')
 
-    implementation "javax.cache:cache-api:1.1.1"
-    implementation 'org.ehcache:ehcache:3.10.6'
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
     implementation("org.flywaydb:flyway-core:$flywayVersion")
-    implementation('jakarta.xml.bind:jakarta.xml.bind-api:2.3.3')
-    implementation('org.glassfish.jaxb:jaxb-runtime:2.3.6')
 
 
     compileOnly('org.springframework.boot:spring-boot-devtools')

@@ -4,9 +4,9 @@ import org.slf4j.MDC
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import java.util.*
-import javax.servlet.*
-import javax.servlet.annotation.WebFilter
-import javax.servlet.http.HttpServletRequestWrapper
+import jakarta.servlet.*
+import jakarta.servlet.annotation.WebFilter
+import jakarta.servlet.http.HttpServletRequestWrapper
 
 @WebFilter("/api/*")
 class ApiRequestContextFilter : Filter {
