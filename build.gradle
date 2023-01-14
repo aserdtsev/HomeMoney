@@ -5,8 +5,8 @@ buildscript {
     ext {
         javaVersion = '11'
         kotlinVersion = '1.6.21'
-        springBootVersion = '2.6.0'
-        flywayVersion = '7.5.0'
+        springBootVersion = '2.7.7'
+        flywayVersion = '9.11.0'
     }
 }
 
@@ -81,17 +81,13 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
     implementation('org.jetbrains.kotlin:kotlin-reflect')
-    implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2')
-    implementation('io.github.microutils:kotlin-logging:1.8.0.1')
+    implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4')
+    implementation('io.github.microutils:kotlin-logging:2.1.23')
 
     implementation "javax.cache:cache-api:1.1.1"
-    implementation 'org.ehcache:ehcache:3.8.1'
+    implementation 'org.ehcache:ehcache:3.10.6'
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
-    implementation('com.google.guava:guava:22.0')
-    implementation('com.google.code.findbugs:jsr305:3.0.2')
-    implementation('org.apache.commons:commons-lang3:3.5')
-    implementation('org.projectlombok:lombok:1.18.12')
     implementation("org.flywaydb:flyway-core:$flywayVersion")
     implementation('jakarta.xml.bind:jakarta.xml.bind-api:2.3.3')
     implementation('org.glassfish.jaxb:jaxb-runtime:2.3.6')
@@ -101,8 +97,8 @@ dependencies {
 
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('com.nhaarman:mockito-kotlin:1.6.0')
-    testImplementation('org.mockito:mockito-core:3.4.6')
-    testImplementation 'com.opentable.components:otj-pg-embedded:0.13.4'
+    testImplementation('org.mockito:mockito-core:4.11.0')
+    testImplementation 'com.opentable.components:otj-pg-embedded:1.0.1'
 }
 
 compileKotlin {

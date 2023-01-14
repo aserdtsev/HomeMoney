@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.moneyoper;
 
-import lombok.val;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -21,7 +20,6 @@ import ru.serdtsev.homemoney.moneyoper.model.*;
 import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService;
 
 import java.math.BigDecimal;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,22 +32,21 @@ import static org.mockito.Mockito.*;
 
 class MoneyOperServiceTest {
   private MoneyOperService service;
-  private BalanceSheetDao balanceSheetDao;
   private MoneyOperDao moneyOperDao;
   private BalanceSheet balanceSheet;
   private AccountDao accountDao;
-  private BalanceDao balanceDao;
   private ConversionService conversionService;
 
   @BeforeEach
   void setUp() {
-    balanceSheetDao = mock(BalanceSheetDao.class);
+    var balanceSheetDao = mock(BalanceSheetDao.class);
     balanceSheet = new BalanceSheet();
     doReturn(balanceSheet).when(balanceSheetDao).findByIdOrNull(any());
 
     moneyOperDao = mock(MoneyOperDao.class);
     accountDao = mock(AccountDao.class);
-    val conversionService = mock(ConversionService.class);
+    var balanceDao = mock(BalanceDao.class);
+    conversionService = mock(ConversionService.class);
     service = new MoneyOperService(balanceSheetDao, moneyOperDao, mock(RecurrenceOperDao.class),
         accountDao, balanceDao, mock(TagDao.class));
   }
