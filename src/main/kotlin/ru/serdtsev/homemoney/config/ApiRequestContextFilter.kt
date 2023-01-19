@@ -10,9 +10,6 @@ import jakarta.servlet.http.HttpServletRequestWrapper
 
 @WebFilter("/api/*")
 class ApiRequestContextFilter : Filter {
-    override fun init(filterConfig: FilterConfig) {
-    }
-
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
         ApiRequestContextHolder.requestId = (request as HttpServletRequestWrapper)
             .getHeader("X-Request-Id") ?: UUID.randomUUID().toString().substring(0, 8)
@@ -23,6 +20,4 @@ class ApiRequestContextFilter : Filter {
         }
         chain.doFilter(request, response)
     }
-
-    override fun destroy() {}
 }

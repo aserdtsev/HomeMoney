@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.user
 
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import java.sql.ResultSet
@@ -21,6 +22,7 @@ class UserDao(private val jdbcTemplate: NamedParameterJdbcTemplate) {
         jdbcTemplate.update(sql, paramMap)
     }
 
+    @Cacheable("UserDao.findByEmail", unless = "#result == null")
     fun findByEmail(email: String): User? {
         val sql = """
             select id, balance_sheet_id, email, pwd_hash 

@@ -20,6 +20,7 @@ class WebSecurityConfig {
     fun filterChain(http: HttpSecurity): SecurityFilterChain? {
         http.csrf().disable()
             .authorizeHttpRequests().requestMatchers("/api/**").hasRole("USER")
+            .anyRequest().permitAll()
             .and().httpBasic().authenticationEntryPoint(NoPopupBasicAuthenticationEntryPoint())
             .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         return http.build()

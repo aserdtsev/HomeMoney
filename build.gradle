@@ -68,7 +68,10 @@ repositories {
 }
 
 dependencies {
-    implementation platform("org.springframework.boot:spring-boot-dependencies:$springBootVersion")
+    implementation platform("org.springframework.boot:spring-boot-dependencies:$springBootVersion") {
+        // Ehcache 3.10 не поднимается.
+        exclude group: 'org.ehcache'
+    }
     implementation('org.springframework.boot:spring-boot-starter')
     implementation('org.springframework.boot:spring-boot-starter-web')
     implementation('org.springframework.boot:spring-boot-starter-security')
@@ -86,7 +89,7 @@ dependencies {
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
     implementation("org.flywaydb:flyway-core:$flywayVersion")
-
+    implementation 'org.ehcache:ehcache:3.8.2.1'
 
     compileOnly('org.springframework.boot:spring-boot-devtools')
 
