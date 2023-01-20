@@ -1,13 +1,23 @@
-<ehcache>
-    <diskStore path="java.io.tmpdir"/>
-    <defaultCache
-            maxEntriesLocalHeap="10000"
-            eternal="false"
-            timeToIdleSeconds="120"
-            timeToLiveSeconds="120"
-            overflowToDisk="false"
-            memoryStoreEvictionPolicy="LRU">
-        <persistence strategy="localTempSwap"/>
-    </defaultCache>
-    <cache name="authTokens" maxEntriesLocalHeap="1000"/>
-</ehcache>
+<!--suppress ALL -->
+<config
+        xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+        xmlns='http://www.ehcache.org/v3'
+        xsi:schemaLocation="
+            http://www.ehcache.org/v3
+            http://www.ehcache.org/schema/ehcache-core-3.8.xsd">
+    <cache-template name="default">
+        <expiry>
+            <ttl unit="seconds">5</ttl>
+        </expiry>
+        <resources>
+            <heap>1000</heap>
+        </resources>
+    </cache-template>
+
+    <cache alias="BalanceSheetDao.findById" uses-template="default"/>
+    <cache alias="MoneyOperDao.findById" uses-template="default"/>
+    <cache alias="MoneyOperItemDao.findByMoneyOperId" uses-template="default"/>
+    <cache alias="TagDao.findByObjId" uses-template="default"/>
+    <cache alias="BalanceDao.findById" uses-template="default"/>
+    <cache alias="UserDao.findByEmail" uses-template="default"/>
+</config>

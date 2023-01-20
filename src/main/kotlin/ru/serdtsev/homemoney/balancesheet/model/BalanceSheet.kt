@@ -1,36 +1,15 @@
 package ru.serdtsev.homemoney.balancesheet.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import ru.serdtsev.homemoney.account.model.Account
-import ru.serdtsev.homemoney.account.model.Balance
 import java.io.Serializable
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
-import javax.persistence.*
 
-@Entity
-@Table(name = "balance_sheet")
 data class BalanceSheet(
-    @Id
-    val id: UUID,
-
-    val createdTs: Instant,
-
-    @Column(name = "currency_code")
-    val currencyCode: String,
-
-    @OneToMany
-    @JoinColumn(name = "balance_sheet_id")
-    val accounts: List<Account>
+    val id: UUID = UUID.randomUUID(),
+    val createdTs: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS),
+    val currencyCode: String = "RUB"
 ) : Serializable {
-    val balances: List<Balance>
-        get() = this.accounts.filterIsInstance<Balance>()
-
-    override fun toString() = "BalanceSheet{id=$id, created=$createdTs, currencyCode=$currencyCode}"
-
-    companion object {
-        fun newInstance(): BalanceSheet {
-            return BalanceSheet(UUID.randomUUID(), Instant.now(), "RUB", emptyList())
-        }
-    }
+    fun getCurrency(): Currency = Currency.getInstance(currencyCode)
+    fun getCurrencyFractionDigits(): Int = getCurrency().defaultFractionDigits
 }

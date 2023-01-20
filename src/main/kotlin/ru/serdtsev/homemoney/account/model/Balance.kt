@@ -1,65 +1,61 @@
 package ru.serdtsev.homemoney.account.model
 
 import mu.KotlinLogging
-import org.springframework.data.repository.findByIdOrNull
-import ru.serdtsev.homemoney.account.ReserveRepo
+import ru.serdtsev.homemoney.account.dao.ReserveDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.Period
+import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.sql.Date
 import java.time.LocalDate
 import java.util.*
-import javax.persistence.*
 
-@Entity
-@Table(name = "balance")
-@DiscriminatorValue("balance")
 open class Balance(
     id: UUID,
-    balanceSheet: BalanceSheet?,
+    balanceSheet: BalanceSheet,
     type: AccountType,
     name: String,
-    createdDate: Date,
-    isArc: Boolean? = null,
-    open var value: BigDecimal,
-    open var currencyCode: String
+    createdDate: LocalDate = LocalDate.now(),
+    isArc: Boolean = false,
+    open var currencyCode: String = balanceSheet.currencyCode,
+    value: BigDecimal = BigDecimal.ZERO,
+    minValue: BigDecimal = BigDecimal.ZERO,
+    creditLimit: BigDecimal = BigDecimal.ZERO
 ) : Account(id, balanceSheet, type, name, createdDate, isArc) {
-    @Column(name = "min_value")
-    open var minValue: BigDecimal? = null
-        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, RoundingMode.UP)
+    open var value: BigDecimal = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
+        set(value) {
+            field = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
+        }
 
-    @OneToOne
-    @JoinColumn(name = "reserve_id")
+    open var minValue: BigDecimal = minValue.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
+        set(value) {
+            field = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
+        }
+
+    open var creditLimit: BigDecimal = creditLimit.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
+        set(value) {
+            field = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
+        }
+
     open var reserve: Reserve? = null
-
-    @Column(name = "credit_limit")
-    open var creditLimit: BigDecimal? = null
-        get() = field ?: BigDecimal.ZERO.setScale(currency.defaultFractionDigits, RoundingMode.UP)
-
     open var num: Long? = null
         get() = field ?: 0L
 
-    @Transient
     open var reserveId: UUID? = null
         get() = reserve?.id
+    
+    internal constructor(balanceSheet: BalanceSheet, type: AccountType, name: String, value: BigDecimal = BigDecimal.ZERO) :
+            this(UUID.randomUUID(), balanceSheet, type, name, value = value)
 
-    fun init(reserveRepo: ReserveRepo?) {
-        value = value
-        creditLimit = creditLimit ?: BigDecimal.ZERO
-        minValue = minValue ?: BigDecimal.ZERO
-        num = num ?: 0L
-        reserve = reserveId?.let { reserveRepo!!.findByIdOrNull(it) }
-    }
+    fun getCurrencyFractionDigits() = balanceSheet.getCurrencyFractionDigits()
 
-    fun merge(balance: Balance, reserveRepo: ReserveRepo, moneyOperService: MoneyOperService) {
+    fun merge(balance: Balance, reserveDao: ReserveDao, moneyOperService: MoneyOperService) {
         super.merge(balance)
         creditLimit = balance.creditLimit
         minValue = balance.minValue
-        reserve = balance.reserveId?.let { reserveRepo.findByIdOrNull(it) }
+        reserve = balance.reserveId?.let { reserveDao.findById(it) }
         if (balance.value.compareTo(value) != 0) {
             val balanceSheet = balanceSheet!!
             val amount = balance.value.subtract(value).abs()
@@ -106,6 +102,39 @@ open class Balance(
 
     open val freeFunds: BigDecimal
         get() = value.add(creditLimit!!.subtract(minValue))
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Balance) return false
+        if (!super.equals(other)) return false
+
+        if (currencyCode != other.currencyCode) return false
+        if (value != other.value) return false
+        if (minValue != other.minValue) return false
+        if (reserve != other.reserve) return false
+        if (creditLimit != other.creditLimit) return false
+        if (num != other.num) return false
+        if (reserveId != other.reserveId) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + currencyCode.hashCode()
+        result = 31 * result + value.hashCode()
+        result = 31 * result + (minValue?.hashCode() ?: 0)
+        result = 31 * result + (creditLimit?.hashCode() ?: 0)
+        result = 31 * result + (num?.hashCode() ?: 0)
+        result = 31 * result + (reserveId?.hashCode() ?: 0)
+        return result
+    }
+
+    override fun toString(): String {
+        return "Balance(id=$id, balanceSheetId=${balanceSheet.id}, type=$type, name='$name', createdDate=$createdDate, " +
+                "isArc=$isArc, currencyCode='$currencyCode', value=$value, minValue=$minValue, creditLimit=$creditLimit, " +
+                "num=$num, reserveId=$reserveId)"
+    }
 
     companion object {
         private val log = KotlinLogging.logger {  }

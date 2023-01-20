@@ -12,7 +12,7 @@ import ru.serdtsev.homemoney.common.HmException
 @ControllerAdvice
 class HmExceptionHandler : ResponseEntityExceptionHandler() {
     @ExceptionHandler(HmException::class)
-    fun handleBadRequest(e: HmException, request: WebRequest): ResponseEntity<Any> {
+    fun handleBadRequest(e: HmException, request: WebRequest): ResponseEntity<Any>? {
         return handleExceptionInternal(e, "", HttpHeaders(), HttpStatus.UNAUTHORIZED, request)
     }
 }

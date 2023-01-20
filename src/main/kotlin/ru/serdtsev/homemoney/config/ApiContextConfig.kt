@@ -1,9 +1,6 @@
 package ru.serdtsev.homemoney.config
 
 import kotlinx.coroutines.ThreadContextElement
-import org.hibernate.SessionFactory
-import org.hibernate.context.internal.ManagedSessionContext
-import org.hibernate.context.spi.CurrentSessionContext
 import org.slf4j.MDC
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -13,10 +10,6 @@ import org.springframework.web.context.request.RequestAttributes
 import org.springframework.web.context.request.RequestContextHolder
 import ru.serdtsev.homemoney.common.ApiRequestContext
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
-import javax.persistence.EntityManager
-import javax.persistence.EntityManagerFactory
-import javax.persistence.PersistenceContext
-import javax.persistence.PersistenceContexts
 import kotlin.coroutines.CoroutineContext
 
 

@@ -2,23 +2,23 @@ package ru.serdtsev.homemoney.moneyoper
 
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.convert.ConversionService
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
-import org.springframework.data.repository.findByIdOrNull
+import org.springframework.data.domain.*
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import ru.serdtsev.homemoney.account.dao.BalanceDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import ru.serdtsev.homemoney.common.PagedList
-import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemRepo
-import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepo
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperDao
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperItemDao
+import ru.serdtsev.homemoney.moneyoper.dao.TagDao
 import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
-import ru.serdtsev.homemoney.moneyoper.model.*
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperItem
+import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
+import ru.serdtsev.homemoney.moneyoper.model.Tag
 import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.math.BigDecimal
 import java.sql.SQLException
@@ -34,9 +34,10 @@ import java.util.stream.IntStream
 class MoneyOperController(
     private val apiRequestContextHolder: ApiRequestContextHolder,
     private val moneyOperService: MoneyOperService,
-    private val moneyOperRepo: MoneyOperRepo,
-    private val moneyOperItemRepo: MoneyOperItemRepo,
-    private val tagRepo: TagRepo,
+    private val moneyOperDao: MoneyOperDao,
+    private val moneyOperItemDao: MoneyOperItemDao,
+    private val tagDao: TagDao,
+    private val balanceDao: BalanceDao,
     @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
     @RequestMapping
@@ -71,9 +72,9 @@ class MoneyOperController(
 
     private fun getMoneyOpers(balanceSheet: BalanceSheet, status: MoneyOperStatus, search: String,
                               limit: Int, offset: Int): List<MoneyOper> {
-        val sort = Sort.by(Sort.Direction.DESC, "performed")
-                .and(Sort.by("dateNum"))
-                .and(Sort.by(Sort.Direction.DESC, "created"))
+        val sort = Sort.by(Sort.Direction.DESC, "trn_date")
+                .and(Sort.by("date_num"))
+                .and(Sort.by(Sort.Direction.DESC, "created_ts"))
         return if (search.isBlank())
             getMoneyOpers(balanceSheet, status, sort, limit, offset)
         else
@@ -83,8 +84,8 @@ class MoneyOperController(
     private fun getMoneyOpers(balanceSheet: BalanceSheet, status: MoneyOperStatus, sort: Sort, limit: Int,
                               offset: Int): List<MoneyOper> {
         val pageRequest: Pageable = PageRequest.of(offset / (limit - 1), limit - 1, sort)
-        return moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest).content.plus(
-                moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest.next()).content.take(1)
+        return moneyOperDao.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest).content.plus(
+                moneyOperDao.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest.next()).content.take(1)
         )
     }
 
@@ -100,14 +101,19 @@ class MoneyOperController(
             search.matches(SearchDateRegex) -> {
                 // по дате в формате ISO
                 pager = Function { pageable: Pageable ->
-                    moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(balanceSheet, status, LocalDate.parse(search), pageable)
+                    moneyOperDao.findByBalanceSheetAndStatusAndPerformed(balanceSheet, status, LocalDate.parse(search), pageable)
                 }
                 adder = Consumer { p: Page<*> -> opers.addAll((p as Page<MoneyOper>).content) }
             }
             search.matches(SearchUuidRegex) -> {
                 // по идентификатору операции
                 pager = Function { pageable: Pageable ->
-                    moneyOperRepo.findByBalanceSheetAndStatusAndId(balanceSheet, status, UUID.fromString(search), pageable)
+                    val list = (moneyOperDao.findByIdOrNull(UUID.fromString(search))
+                        ?.let { listOf(it) }
+                        ?.filter { it.status == status }
+                        ?: listOf())
+                        .toMutableList()
+                    PageImpl(list, pageable, list.size.toLong())
                 }
                 adder = Consumer { p: Page<*> -> opers.addAll((p as Page<MoneyOper>).content) }
             }
@@ -116,18 +122,18 @@ class MoneyOperController(
                 pageRequest = PageRequest.of(pageRequest.pageNumber, pageRequest.pageSize)
                 pager = Function { pageable: Pageable ->
                     val value = BigDecimal(search).abs()
-                    moneyOperItemRepo.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, pageable)
+                    moneyOperItemDao.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, pageable)
                 }
                 adder = Consumer { p: Page<*> ->
                     (p as Page<MoneyOperItem>).content
-                            .map { it.moneyOper }
+                            .map { moneyOperDao.findById(it.moneyOperId) }
                             .filter { it.status !== status }
                             .distinct()
                             .forEach { e: MoneyOper -> opers.add(e) }
                 }
             }
             else -> {
-                pager = Function { pageable: Pageable? -> moneyOperRepo.findByBalanceSheetAndStatus(balanceSheet, status, pageable!!) }
+                pager = Function { pageable: Pageable? -> moneyOperDao.findByBalanceSheetAndStatus(balanceSheet, status, pageable!!) }
                 adder = Consumer { p: Page<*> ->
                     val opersChunk = (p as Page<MoneyOper>).content
                             .filter { oper: MoneyOper ->
@@ -149,15 +155,16 @@ class MoneyOperController(
     }
 
     fun tagContains(tag: Tag, search: String): Boolean {
-        return tag.name.lowercase(Locale.getDefault()).contains(search)
-                || tag.isCategory!! && tag.rootId != null && tagContains(tagRepo.findByIdOrNull(tag.rootId)!!, search)
+        return tag.name.lowercase().contains(search) ||
+                tag.isCategory && tag.rootId?.let { tagDao.findByIdOrNull(it) }
+            ?.let { tagContains(it, search) } ?: false
     }
 
     @RequestMapping("/item")
     @Transactional(readOnly = true)
     fun getMoneyOpers(@RequestParam id: UUID): HmResponse {
         return try {
-            val oper = moneyOperRepo.findByIdOrNull(id)!!
+            val oper = moneyOperDao.findById(id)
             moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, apiRequestContextHolder.getBsId())
             HmResponse.getOk(conversionService.convert(oper, MoneyOperDto::class.java)!!)
         } catch (e: HmException) {
@@ -176,24 +183,26 @@ class MoneyOperController(
     fun updateMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-            val origOper = moneyOperRepo.findByIdOrNull(moneyOperDto.id)
+            val origOper = moneyOperDao.findByIdOrNull(moneyOperDto.id)
             if (origOper == null) {
                 createMoneyOperInternal(moneyOperDto)
                 return HmResponse.getOk()
             }
             moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, balanceSheet.id)
             val oper = moneyOperService.moneyOperDtoToMoneyOper(balanceSheet, moneyOperDto)
-            val essentialEquals = origOper.essentialEquals(oper)
+            val mostlyEquals = origOper.mostlyEquals(oper)
             val origPrevStatus = origOper.status
-            if (!essentialEquals && origOper.status == MoneyOperStatus.done) {
+            if (!mostlyEquals && origOper.status == MoneyOperStatus.done) {
                 origOper.cancel()
             }
             moneyOperService.updateMoneyOper(origOper, oper)
-            if (!essentialEquals && origPrevStatus == MoneyOperStatus.done || origOper.status == MoneyOperStatus.pending
+            if (!mostlyEquals && origPrevStatus == MoneyOperStatus.done || origOper.status == MoneyOperStatus.pending
                     && moneyOperDto.status == MoneyOperStatus.done) {
                 origOper.complete()
             }
-            moneyOperRepo.save(origOper)
+            moneyOperDao.save(origOper)
+            origOper.getBalances().forEach { balance -> balanceDao.save(balance) }
+
             HmResponse.getOk()
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
@@ -203,10 +212,11 @@ class MoneyOperController(
     @RequestMapping("/delete")
     fun deleteMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
-            val oper = moneyOperRepo.findByIdOrNull(moneyOperDto.id)!!
+            val oper = moneyOperDao.findById(moneyOperDto.id)
             moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, apiRequestContextHolder.getBsId())
             oper.cancel()
-            moneyOperRepo.save(oper)
+            moneyOperDao.save(oper)
+            oper.getBalances().forEach { balance -> balanceDao.save(balance) }
             HmResponse.getOk()
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
@@ -230,11 +240,11 @@ class MoneyOperController(
     }
 
     private fun skipPendingMoneyOper(bsId: UUID, moneyOperDto: MoneyOperDto) {
-        val oper = moneyOperRepo.findByIdOrNull(moneyOperDto.id)!!
+        val oper = moneyOperDao.findById(moneyOperDto.id)
         moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, bsId)
         oper.cancel()
         oper.recurrenceId = null
-        moneyOperRepo.save(oper)
+        moneyOperDao.save(oper)
     }
 
     private fun skipRecurrenceMoneyOper(moneyOperDto: MoneyOperDto) {
@@ -247,8 +257,8 @@ class MoneyOperController(
     @RequestMapping("/up")
     fun upMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
-            val oper = moneyOperRepo.findByIdOrNull(moneyOperDto.id)!!
-            val opers = moneyOperRepo.findByBalanceSheetAndStatusAndPerformed(oper.balanceSheet, MoneyOperStatus.done, oper.performed)
+            val oper = moneyOperDao.findById(moneyOperDto.id)
+            val opers = moneyOperDao.findByBalanceSheetAndStatusAndPerformed(oper.balanceSheet, MoneyOperStatus.done, oper.performed)
                     .sortedBy { it.dateNum }
                     .toMutableList()
             val index = opers.indexOf(oper)
@@ -259,7 +269,7 @@ class MoneyOperController(
                 IntStream.range(0, opers.size).forEach { i: Int ->
                     val o = opers[i]
                     o.dateNum = i
-                    moneyOperRepo.save(o)
+                    moneyOperDao.save(o)
                 }
             }
             HmResponse.getOk()
@@ -272,7 +282,7 @@ class MoneyOperController(
         val balanceSheet = apiRequestContextHolder.getBalanceSheet()
         val moneyOpers: MutableList<MoneyOper> = mutableListOf()
         val mainOper = newMainMoneyOper(balanceSheet, moneyOperDto)
-        moneyOperRepo.save(mainOper)
+        moneyOperService.save(mainOper)
         moneyOpers.add(mainOper)
         newReserveMoneyOper(balanceSheet, mainOper)?.let { moneyOpers.add(it) }
         mainOper.recurrenceId?.also { moneyOperService.skipRecurrenceOper(balanceSheet, it) }
@@ -280,7 +290,10 @@ class MoneyOperController(
                 && !mainOper.performed.isAfter(LocalDate.now())) {
             moneyOpers.forEach { it.complete() }
         }
-        moneyOpers.forEach { moneyOperService.save(it) }
+        moneyOpers.forEach { moneyOper ->
+            moneyOperService.save(moneyOper)
+            moneyOper.getBalances().forEach { balance -> balanceDao.save(balance) }
+        }
         return moneyOpers
     }
 

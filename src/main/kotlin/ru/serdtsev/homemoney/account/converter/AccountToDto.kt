@@ -6,5 +6,5 @@ import ru.serdtsev.homemoney.account.model.Account
 
 class AccountToDto : Converter<Account, AccountDto> {
     override fun convert(source: Account) =
-        with(source) { AccountDto(id, type, name, createdDate!!, isArc!!) }
+        with(source) { AccountDto(id, type, name, createdDate, isArc) }
 }

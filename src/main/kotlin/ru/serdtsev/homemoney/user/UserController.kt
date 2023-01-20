@@ -4,8 +4,8 @@ import mu.KotlinLogging
 import org.springframework.http.HttpHeaders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet.Companion.newInstance
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
+import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.HmException
 import ru.serdtsev.homemoney.common.HmResponse
 import java.util.*
@@ -13,8 +13,8 @@ import java.util.*
 @RestController
 @RequestMapping("/api/user")
 class UserController(
-    private val userRepo: UserRepo,
-    private val balanceSheetRepo: BalanceSheetRepo
+    private val userDao: UserDao,
+    private val balanceSheetDao: BalanceSheetDao
 ) {
     @RequestMapping(value = ["/login"], method = [RequestMethod.POST])
     @Transactional
@@ -22,7 +22,7 @@ class UserController(
         return try {
             val email = decodeAuthorization(authorization).first
             log.info { "User login; email:$email" }
-            val user = userRepo.findByEmail(email)!!
+            val user = userDao.findByEmail(email)!!
             val auth = LoginResponse(user.bsId)
             HmResponse.getOk(auth)
         } catch (e: HmException) {
@@ -33,14 +33,14 @@ class UserController(
     @RequestMapping(method = [RequestMethod.DELETE])
     @Transactional
     fun deleteBalanceSheet(@RequestParam id: UUID) {
-        balanceSheetRepo.deleteById(id)
+        balanceSheetDao.deleteById(id)
     }
 
     fun createUserWithBalanceSheet(email: String, pwdHash: String): User {
-        val bs = newInstance()
-        balanceSheetRepo.save(bs)
+        val bs = BalanceSheet()
+        balanceSheetDao.save(bs)
         val user = User(UUID.randomUUID(), bs.id, email, pwdHash)
-        userRepo.save(user)
+        userDao.save(user)
         return user
     }
 

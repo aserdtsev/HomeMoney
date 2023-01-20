@@ -1,14 +1,13 @@
 package ru.serdtsev.homemoney.common
 
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
 import java.util.*
 import kotlin.concurrent.getOrSet
 
 @Service
-class ApiRequestContextHolder(private val balanceSheetRepo: BalanceSheetRepo) {
+class ApiRequestContextHolder(private val balanceSheetDao: BalanceSheetDao) {
     companion object {
         private val requestContextTls = ThreadLocal<ApiRequestContext>()
         var apiRequestContext: ApiRequestContext
@@ -32,10 +31,12 @@ class ApiRequestContextHolder(private val balanceSheetRepo: BalanceSheetRepo) {
         }
     }
 
+    fun getRequestId(): String = requestId
+
     fun getBsId(): UUID = bsId
 
     fun getBalanceSheet(): BalanceSheet =
-        balanceSheetRepo.findByIdOrNull(bsId) ?: throw HmException(HmException.Code.BalanceSheetNotFound)
+        balanceSheetDao.findByIdOrNull(bsId) ?: throw HmException(HmException.Code.BalanceSheetNotFound)
 }
 
 data class ApiRequestContext(var requestId: String? = null, var bsId: UUID? = null, var balanceSheet: BalanceSheet? = null)

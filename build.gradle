@@ -3,10 +3,10 @@ import com.bmuschko.gradle.docker.tasks.image.*
 
 buildscript {
     ext {
-        javaVersion = '11'
-        kotlinVersion = '1.6.0'
-        springBootVersion = '2.6.0'
-        flywayVersion = '7.5.0'
+        javaVersion = '17'
+        kotlinVersion = '1.8.0'
+        springBootVersion = '3.0.1'
+        flywayVersion = '9.5.1'
     }
 }
 
@@ -23,7 +23,6 @@ apply plugin: 'idea'
 apply plugin: 'java'
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-spring'
-apply plugin: 'kotlin-jpa'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'war'
 
@@ -47,8 +46,8 @@ flyway {
 
 group = 'ru.serdtsev'
 version = '1.2.0-SNAPSHOT'
-java.sourceCompatibility(JavaVersion.VERSION_11)
-java.targetCompatibility(JavaVersion.VERSION_11)
+java.sourceCompatibility(JavaVersion.VERSION_17)
+java.targetCompatibility(JavaVersion.VERSION_17)
 
 configurations {
     developmentOnly
@@ -69,38 +68,35 @@ repositories {
 }
 
 dependencies {
-    implementation platform("org.springframework.boot:spring-boot-dependencies:$springBootVersion")
+    implementation platform("org.springframework.boot:spring-boot-dependencies:$springBootVersion") {
+        // Ehcache 3.10 не поднимается.
+        exclude group: 'org.ehcache'
+    }
     implementation('org.springframework.boot:spring-boot-starter')
     implementation('org.springframework.boot:spring-boot-starter-web')
     implementation('org.springframework.boot:spring-boot-starter-security')
     implementation('org.springframework.boot:spring-boot-starter-actuator')
     implementation('org.springframework.boot:spring-boot-starter-jdbc')
     implementation('org.springframework.boot:spring-boot-starter-data-jdbc')
-    implementation('org.springframework.boot:spring-boot-starter-data-jpa')
     implementation('org.springframework.boot:spring-boot-starter-aop')
     implementation('org.springframework.boot:spring-boot-starter-cache')
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
     implementation('org.jetbrains.kotlin:kotlin-reflect')
-    implementation('org.jetbrains.kotlin:kotlin-stdlib-jdk8')
-    implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2')
-    implementation('io.github.microutils:kotlin-logging:1.8.0.1')
+    implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4')
+    implementation('io.github.microutils:kotlin-logging:3.0.4')
 
-    implementation('net.sf.ehcache:ehcache:2.10.2')
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
-    implementation('com.google.guava:guava:22.0')
-    implementation('com.google.code.findbugs:jsr305:3.0.2')
-    implementation('org.apache.commons:commons-lang3:3.5')
-    implementation('org.projectlombok:lombok:1.18.12')
-    // https://mvnrepository.com/artifact/org.flywaydb/flyway-core
     implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation 'org.ehcache:ehcache:3.8.2.1'
 
     compileOnly('org.springframework.boot:spring-boot-devtools')
 
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('com.nhaarman:mockito-kotlin:1.6.0')
-    testImplementation('org.mockito:mockito-core:3.4.6')
+    testImplementation('org.mockito:mockito-core:4.11.0')
+    testImplementation 'com.opentable.components:otj-pg-embedded:1.0.1'
 }
 
 compileKotlin {

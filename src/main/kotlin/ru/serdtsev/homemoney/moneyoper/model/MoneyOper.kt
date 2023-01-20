@@ -10,71 +10,28 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.*
 import java.util.function.Consumer
-import javax.persistence.*
 
-@Suppress("CanBePrimaryConstructorProperty")
-@Entity
-@Table(name = "money_oper")
-class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
-                performed: LocalDate = LocalDate.now(), dateNum: Int? = 0, tags: Collection<Tag> = mutableListOf(),
-                comment: String? = null, period: Period? = null) : Serializable {
-    @Id
-    val id = id
-
-    @ManyToOne @JoinColumn(name = "balance_sheet_id")
-    val balanceSheet = balanceSheet
-
-    @Enumerated(EnumType.STRING)
-    var status = status
-
-    @OneToMany(cascade = [CascadeType.ALL]) @JoinColumn(name = "oper_id")
-    val items: MutableList<MoneyOperItem> = mutableListOf()
-
-    fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate? = this.performed,
-            index: Int = items.size, id: UUID = UUID.randomUUID()): MoneyOperItem {
-        val item = MoneyOperItem(id, this, balance, value, performed, index)
-        items.add(item)
-        return item
-    }
-
-    @Column(name = "trn_date")
-    var performed = performed
-
-    @Enumerated(EnumType.STRING)
-    var period = period
-
-    @Column(name = "date_num")
-    var dateNum = dateNum
-
-    @ManyToMany
-    @JoinTable(name = "tag2obj",
-            joinColumns = [JoinColumn(name = "obj_id", foreignKey = ForeignKey(value = ConstraintMode.NO_CONSTRAINT))],
-            inverseJoinColumns = [JoinColumn(name = "tag_id")])
-    val tags: MutableSet<Tag> = tags.toMutableSet()
-
-    fun setTags(tags: Collection<Tag>) {
-        this.tags.retainAll(tags)
-        this.tags.addAll(tags)
-    }
-
-    @Column(name = "created_ts")
+class MoneyOper(
+    val id: UUID,
+    val balanceSheet: BalanceSheet,
+    var items: MutableList<MoneyOperItem>,
+    var status: MoneyOperStatus,
+    var performed: LocalDate = LocalDate.now(),
+    var dateNum: Int? = 0,
+    tags: Collection<Tag> = mutableListOf(),
+    comment: String? = null,
+    var period: Period? = null
+) : Serializable {
     var created: Timestamp = Timestamp.from(Instant.now())
-        private set
-
-    @OneToOne
-    @JoinColumn(name = "parent_id")
+    val tags: MutableSet<Tag> = tags.toMutableSet()
     var parentOper: MoneyOper? = null
-
     /**
      * Идентификатор повторяющейся операции. Служит для получения списка операций, которые были созданы по одному шаблону.
      */
-    @Column(name = "recurrence_id")
     var recurrenceId: UUID? = null
 
     var comment: String? = comment
         get() = field.orEmpty()
-
-    fun getParentOperId(): UUID? = parentOper?.id
 
     val type: MoneyOperType
         get() {
@@ -90,6 +47,24 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
             return MoneyOperType.transfer
         }
 
+    constructor(balanceSheet: BalanceSheet, status: MoneyOperStatus, performed: LocalDate? = LocalDate.now(),
+        dateNum: Int? = 0, tags: Collection<Tag>? = mutableListOf(), comment: String? = null, period: Period? = Period.month
+    ) : this(UUID.randomUUID(), balanceSheet, mutableListOf(), status, performed!!, dateNum, tags!!, comment, period)
+
+    fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate = this.performed,
+            index: Int = items.size, id: UUID = UUID.randomUUID()): MoneyOperItem {
+        val item = MoneyOperItem(id, this.id, balance, value, performed, index)
+        items.add(item)
+        return item
+    }
+
+    fun setTags(tags: Collection<Tag>) {
+        this.tags.retainAll(tags.toSet())
+        this.tags.addAll(tags)
+    }
+
+    fun getParentOperId(): UUID? = parentOper?.id
+
     val isForeignCurrencyTransaction: Boolean
         get() = items.any { it.balance.currencyCode != balanceSheet.currencyCode }
 
@@ -98,11 +73,6 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
                 .filter { it.balance.currencyCode == balanceSheet.currencyCode }
                 .map { it.value }
                 .reduce { acc, value -> acc.add(value) }
-
-    constructor(balanceSheet: BalanceSheet, status: MoneyOperStatus,
-                performed: LocalDate = LocalDate.now(), dateNum: Int = 0, tags: Collection<Tag> = mutableListOf(),
-                comment: String? = null, period: Period? = null) : this(UUID.randomUUID(), balanceSheet, status, performed,
-            dateNum, tags, comment, period)
 
     fun complete() {
         assert(status == MoneyOperStatus.pending || status == MoneyOperStatus.cancelled) { status }
@@ -119,28 +89,23 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
         status = MoneyOperStatus.cancelled
     }
 
+    fun getBalances(): List<Balance> {
+        return items.map { it.balance }
+    }
+
     fun changeBalances(revert: Boolean) {
         val factor = if (revert) BigDecimal.ONE.negate() else BigDecimal.ONE
-        items.forEach(Consumer { item: MoneyOperItem -> item.balance.changeValue(item.value.multiply(factor), this) })
+        items.forEach{ item -> item.balance.changeValue(item.value.multiply(factor), this) }
     }
 
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other == null || javaClass != other.javaClass) return false
-        val moneyOper = other as MoneyOper
-        return id == moneyOper.id
-    }
 
-    override fun hashCode(): Int {
-        return Objects.hash(id)
-    }
 
-    fun essentialEquals(other: MoneyOper): Boolean {
+    fun mostlyEquals(other: MoneyOper): Boolean {
         assert(other.id == this.id)
-        return other.type == this.type && itemsEssentialEquals(other)
+        return other.type == this.type && mostlyItemsEquals(other)
     }
 
-    fun itemsEssentialEquals(other: MoneyOper): Boolean {
+    fun mostlyItemsEquals(other: MoneyOper): Boolean {
         return items.all { item -> other.items.any { it == item } }
     }
 
@@ -153,5 +118,41 @@ class MoneyOper(id: UUID, balanceSheet: BalanceSheet, status: MoneyOperStatus,
                 ", items=" + items +
                 ", created=" + created +
                 '}'
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MoneyOper) return false
+
+        if (id != other.id) return false
+        if (balanceSheet != other.balanceSheet) return false
+        if (items != other.items) return false
+        if (status != other.status) return false
+        if (performed != other.performed) return false
+        if (dateNum != other.dateNum) return false
+        if (period != other.period) return false
+        if (created != other.created) return false
+        if (tags != other.tags) return false
+        if (parentOper != other.parentOper) return false
+        if (recurrenceId != other.recurrenceId) return false
+        if (comment != other.comment) return false
+        if (type != other.type) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + balanceSheet.hashCode()
+        result = 31 * result + items.hashCode()
+        result = 31 * result + status.hashCode()
+        result = 31 * result + performed.hashCode()
+        result = 31 * result + (dateNum ?: 0)
+        result = 31 * result + (period?.hashCode() ?: 0)
+        result = 31 * result + created.hashCode()
+        result = 31 * result + tags.hashCode()
+        result = 31 * result + (parentOper?.hashCode() ?: 0)
+        result = 31 * result + (recurrenceId?.hashCode() ?: 0)
+        return result
     }
 }

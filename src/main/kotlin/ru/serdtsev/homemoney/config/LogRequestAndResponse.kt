@@ -30,7 +30,7 @@ class LogRequestAndResponseAspect {
         val request = (RequestContextHolder.currentRequestAttributes() as ServletRequestAttributes).request
         val requestUri = request.requestURI
         val args = proceedingJoinPoint.args
-        val requestBody = if (request.method in listOf(HttpMethod.POST.name, HttpMethod.PUT.name)
+        val requestBody = if (request.method in listOf(HttpMethod.POST.name(), HttpMethod.PUT.name())
                 && args.isNotEmpty() && request.contentLength > 0 && args[args.size - 1] is Serializable) {
             try {
                 val lastArg = args[args.size - 1] as Serializable

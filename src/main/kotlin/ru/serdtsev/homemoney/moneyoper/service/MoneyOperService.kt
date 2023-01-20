@@ -1,16 +1,14 @@
 package ru.serdtsev.homemoney.moneyoper.service
 
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import ru.serdtsev.homemoney.account.AccountRepo
-import ru.serdtsev.homemoney.account.BalanceRepo
+import ru.serdtsev.homemoney.account.dao.AccountDao
+import ru.serdtsev.homemoney.account.dao.BalanceDao
+import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.balancesheet.dao.BalanceSheetRepo
-import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperRepo
-import ru.serdtsev.homemoney.moneyoper.dao.TagRepo
+import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperDao
+import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperDao
+import ru.serdtsev.homemoney.moneyoper.dao.TagDao
 import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
 import ru.serdtsev.homemoney.moneyoper.dto.RecurrenceOperDto
 import ru.serdtsev.homemoney.moneyoper.model.*
@@ -22,24 +20,24 @@ import java.util.*
  * Предоставляет методы работы с денежными операциями
  */
 @Service
-class MoneyOperService @Autowired constructor(
-    private val balanceSheetRepo: BalanceSheetRepo,
-    private val moneyOperRepo: MoneyOperRepo,
-    private val recurrenceOperRepo: RecurrenceOperRepo,
-    private val accountRepo: AccountRepo,
-    private val balanceRepo: BalanceRepo,
-    private val tagRepo: TagRepo
+class MoneyOperService (
+    private val balanceSheetDao: BalanceSheetDao,
+    private val moneyOperDao: MoneyOperDao,
+    private val recurrenceOperDao: RecurrenceOperDao,
+    private val accountDao: AccountDao,
+    private val balanceDao: BalanceDao,
+    private val tagDao: TagDao
 ) {
     fun save(moneyOper: MoneyOper) {
-        moneyOperRepo.save(moneyOper)
+        moneyOperDao.save(moneyOper)
     }
 
     fun findRecurrenceOper(id: UUID): RecurrenceOper? {
-        return recurrenceOperRepo.findByIdOrNull(id)
+        return recurrenceOperDao.findByIdOrNull(id)
     }
 
     fun save(recurrenceOper: RecurrenceOper) {
-        recurrenceOperRepo.save(recurrenceOper)
+        recurrenceOperDao.save(recurrenceOper)
     }
 
     /**
@@ -55,7 +53,7 @@ class MoneyOperService @Autowired constructor(
      * Возвращает повторяющиеся операции.
      */
     fun getRecurrenceOpers(balanceSheet: BalanceSheet, search: String): List<RecurrenceOper> =
-            recurrenceOperRepo.findByBalanceSheet(balanceSheet).filter { !it.arc && isOperMatchSearch(it, search) }
+            recurrenceOperDao.findByBalanceSheetAndArc(balanceSheet, false).filter { isOperMatchSearch(it, search) }
 
     /**
      * @return true, если шаблон операции соответствует строке поиска
@@ -95,48 +93,48 @@ class MoneyOperService @Autowired constructor(
     }
 
     fun createRecurrenceOper(balanceSheet: BalanceSheet, operId: UUID) {
-        val sample = moneyOperRepo.findByIdOrNull(operId)!!
+        val sample = moneyOperDao.findById(operId)
         checkMoneyOperBelongsBalanceSheet(sample, balanceSheet.id)
         val template = MoneyOper(balanceSheet, MoneyOperStatus.template, sample.performed, 0, sample.tags,
                 sample.comment, sample.period)
         sample.items.forEach { template.addItem(it.balance, it.value, it.performed) }
         val recurrenceOper = RecurrenceOper(balanceSheet, template, sample.performed)
         recurrenceOper.skipNextDate()
-        moneyOperRepo.save(template)
-        recurrenceOperRepo.save(recurrenceOper)
+        moneyOperDao.save(template)
+        recurrenceOperDao.save(recurrenceOper)
 
         // todo поправить эту косоту
         template.recurrenceId = recurrenceOper.id
-        moneyOperRepo.save(template)
+        moneyOperDao.save(template)
         sample.recurrenceId = recurrenceOper.id
-        moneyOperRepo.save(sample)
+        moneyOperDao.save(sample)
     }
 
     fun deleteRecurrenceOper(balanceSheet: BalanceSheet, recurrenceId: UUID) {
-        val recurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceId)!!
+        val recurrenceOper = recurrenceOperDao.findByIdOrNull(recurrenceId)!!
         recurrenceOper.arc()
-        recurrenceOperRepo.save(recurrenceOper)
+        recurrenceOperDao.save(recurrenceOper)
         log.info("RecurrenceOper '{}' moved to archive.", recurrenceId)
     }
 
     fun skipRecurrenceOper(balanceSheet: BalanceSheet, recurrenceId: UUID) {
-        val recurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceId)!!
+        val recurrenceOper = recurrenceOperDao.findByIdOrNull(recurrenceId)!!
         recurrenceOper.skipNextDate()
-        recurrenceOperRepo.save(recurrenceOper)
+        recurrenceOperDao.save(recurrenceOper)
     }
 
     fun updateRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOperDto: RecurrenceOperDto) {
-        val origRecurrenceOper = recurrenceOperRepo.findByIdOrNull(recurrenceOperDto.id)!!
+        val origRecurrenceOper = recurrenceOperDao.findByIdOrNull(recurrenceOperDto.id)!!
         origRecurrenceOper.nextDate = recurrenceOperDto.nextDate
         val origTemplate = origRecurrenceOper.template
         recurrenceOperDto.items.forEach { item ->
             val origItem = origTemplate.items.firstOrNull { origItem -> origItem.id == item.id }
             if (origItem != null) with (origItem) {
-                balance = balanceRepo.findByIdOrNull(item.balanceId)!!
+                balance = balanceDao.findById(item.balanceId)
                 value = item.value.multiply(item.sgn.toBigDecimal())
                 index = item.index
             } else {
-                val balance = balanceRepo.findByIdOrNull(item.balanceId)!!
+                val balance = balanceDao.findById(item.balanceId)
                 val value = item.value.multiply(item.sgn.toBigDecimal())
                 origTemplate.addItem(balance, value, index = item.index)
             }
@@ -147,21 +145,24 @@ class MoneyOperService @Autowired constructor(
         origTemplate.comment = recurrenceOperDto.comment
         val tags: Collection<Tag> = getTagsByStrings(balanceSheet, recurrenceOperDto.tags)
         origTemplate.setTags(tags)
-        recurrenceOperRepo.save(origRecurrenceOper)
+        recurrenceOperDao.save(origRecurrenceOper)
     }
 
+    // todo Move to converter
     fun moneyOperDtoToMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper {
         val dateNum = moneyOperDto.dateNum ?: 0
         val tags = getTagsByStrings(balanceSheet, moneyOperDto.tags)
         val period = moneyOperDto.period ?: Period.month
-        val oper = MoneyOper(moneyOperDto.id, balanceSheet, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, tags,
+        val items = moneyOperDto.items
+            .map {
+                val balance = balanceDao.findById(it.balanceId)
+                val value = it.value.multiply(it.sgn.toBigDecimal())
+                MoneyOperItem(it.id, moneyOperDto.id, balance, value, it.performedAt, it.index)
+            }
+            .toMutableList()
+        val oper = MoneyOper(moneyOperDto.id, balanceSheet, items, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, tags,
                 moneyOperDto.comment, period)
         oper.recurrenceId = moneyOperDto.recurrenceId
-        moneyOperDto.items.forEach {
-            val balance = balanceRepo.findByIdOrNull(it.balanceId)!!
-            val value = it.value.multiply(it.sgn.toBigDecimal())
-            oper.addItem(balance, value, it.performedAt, it.index, it.id)
-        }
         return oper
     }
 
@@ -192,22 +193,22 @@ class MoneyOperService @Autowired constructor(
             strTags.map { findOrCreateTag(balanceSheet, it) }.toMutableList()
 
     fun findOrCreateTag(balanceSheet: BalanceSheet, name: String): Tag =
-            tagRepo.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleTag(balanceSheet, name) }
+            tagDao.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleTag(balanceSheet, name) }
 
     private fun createSimpleTag(balanceSheet: BalanceSheet, name: String): Tag =
-            Tag(UUID.randomUUID(), balanceSheet, name).apply { tagRepo.save(this) }
+            Tag(UUID.randomUUID(), balanceSheet, name).apply { tagDao.save(this) }
 
     fun getSuggestTags(bsId: UUID, operType: String, search: String?, tags: List<String>): List<Tag> {
-        val balanceSheet = balanceSheetRepo.findById(bsId).get()
+        val balanceSheet = balanceSheetDao.findById(bsId)
         return if (search.isNullOrEmpty()) {
             if (operType != MoneyOperType.transfer.name && tags.isEmpty()) {
                 // Вернем только тэги-категории в зависимости от типа операции.
-                tagRepo.findByBalanceSheetOrderByName(balanceSheet)
+                tagDao.findByBalanceSheetOrderByName(balanceSheet)
                         .filter { !(it.arc ?: false) && it.isCategory!! && it.categoryType!!.name == operType }
             } else {
                 // Найдем 10 наиболее часто используемых тегов-некатегорий за последние 30 дней.
                 val startDate = LocalDate.now().minusDays(30)
-                moneyOperRepo.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
+                moneyOperDao.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
                         .flatMap { it.tags }
                         .filter { !(it.arc ?: false) && !it.isCategory!! && !tags.contains(it.name) }
                         .groupingBy { it }.eachCount()
@@ -216,19 +217,16 @@ class MoneyOperService @Autowired constructor(
                         .map { it.key }
             }
         } else {
-            tagRepo.findByBalanceSheetOrderByName(balanceSheet)
+            tagDao.findByBalanceSheetOrderByName(balanceSheet)
                     .filter { !(it.arc ?: false) && it.name.startsWith(search, true) }
         }
     }
 
-    fun getAccountName(accountId: UUID): String {
-        val account = accountRepo.findByIdOrNull(accountId)!!
-        return account.name
-    }
+    fun getAccountName(accountId: UUID): String = accountDao.findNameById(accountId)
 
     fun getTags(bsId: UUID): List<Tag> {
-        val balanceSheet = balanceSheetRepo.findByIdOrNull(bsId)!!
-        return tagRepo.findByBalanceSheetOrderByName(balanceSheet)
+        val balanceSheet = balanceSheetDao.findById(bsId)
+        return tagDao.findByBalanceSheetOrderByName(balanceSheet)
     }
 
     companion object {

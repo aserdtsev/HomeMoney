@@ -1,32 +1,29 @@
 package ru.serdtsev.homemoney.config
 
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.AuthenticationException
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.web.AuthenticationEntryPoint
-import ru.serdtsev.homemoney.user.CustomUserDetailsService
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import org.springframework.security.web.SecurityFilterChain
 
 
 @Configuration
 @EnableWebSecurity
-class WebSecurityConfig(val userDetailsService: CustomUserDetailsService) : WebSecurityConfigurerAdapter() {
-    override fun configure(http: HttpSecurity) {
+class WebSecurityConfig {
+    @Bean
+    fun filterChain(http: HttpSecurity): SecurityFilterChain? {
         http.csrf().disable()
-            .authorizeRequests().antMatchers("/api/**").hasRole("USER")
+            .authorizeHttpRequests().requestMatchers("/api/**").hasRole("USER")
+            .anyRequest().permitAll()
             .and().httpBasic().authenticationEntryPoint(NoPopupBasicAuthenticationEntryPoint())
             .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-    }
-
-    override fun configure(builder: AuthenticationManagerBuilder) {
-        builder.userDetailsService(userDetailsService)
+        return http.build()
     }
 
     @Bean
