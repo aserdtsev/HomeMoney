@@ -16,3 +16,6 @@ HomeMoney.iml
 /log/
 /build/
 /out/
+/gradle/
+/gradlew
+/gradlew.bat
