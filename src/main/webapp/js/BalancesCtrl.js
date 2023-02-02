@@ -86,7 +86,6 @@ function BalancesCtrl($scope, $rootScope, BalancesSvc, ReservesSvc) {
     } else {
       $scope.updateBalance(balance);
     }
-
   };
 
   $scope.cancelEditBalance = function() {
@@ -104,6 +103,7 @@ function BalancesCtrl($scope, $rootScope, BalancesSvc, ReservesSvc) {
   $scope.updateBalance = function(balance) {
     BalancesSvc.update(balance, function() {
       $rootScope.$broadcast('refreshAccounts');
+      $rootScope.$broadcast('refreshMoneyOpers');
     });
   };
 

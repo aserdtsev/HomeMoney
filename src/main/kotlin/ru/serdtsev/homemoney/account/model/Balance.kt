@@ -43,27 +43,28 @@ open class Balance(
     open var num: Long? = null
         get() = field ?: 0L
 
-    open var reserveId: UUID? = null
+    open val reserveId: UUID?
         get() = reserve?.id
     
     internal constructor(balanceSheet: BalanceSheet, type: AccountType, name: String, value: BigDecimal = BigDecimal.ZERO) :
             this(UUID.randomUUID(), balanceSheet, type, name, value = value)
 
-    fun getCurrencyFractionDigits() = balanceSheet.getCurrencyFractionDigits()
+    private fun getCurrencyFractionDigits() = balanceSheet.getCurrencyFractionDigits()
 
+    @Suppress("DuplicatedCode")
     fun merge(balance: Balance, reserveDao: ReserveDao, moneyOperService: MoneyOperService) {
         super.merge(balance)
         creditLimit = balance.creditLimit
         minValue = balance.minValue
         reserve = balance.reserveId?.let { reserveDao.findById(it) }
         if (balance.value.compareTo(value) != 0) {
-            val balanceSheet = balanceSheet!!
-            val amount = balance.value.subtract(value).abs()
+            val balanceSheet = balanceSheet
             if (balance.type == AccountType.reserve) {
                 value = balance.value
             } else {
                 val moneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, LocalDate.now(), 0, emptyList(),
                         "корректировка остатка", Period.single)
+                val amount = balance.value - value
                 moneyOper.addItem(this, amount, moneyOper.performed)
                 moneyOper.complete()
                 moneyOperService.save(moneyOper)
@@ -101,8 +102,9 @@ open class Balance(
     }
 
     open val freeFunds: BigDecimal
-        get() = value.add(creditLimit!!.subtract(minValue))
+        get() = value + creditLimit - minValue
 
+    @Suppress("DuplicatedCode")
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Balance) return false
@@ -123,8 +125,8 @@ open class Balance(
         var result = super.hashCode()
         result = 31 * result + currencyCode.hashCode()
         result = 31 * result + value.hashCode()
-        result = 31 * result + (minValue?.hashCode() ?: 0)
-        result = 31 * result + (creditLimit?.hashCode() ?: 0)
+        result = 31 * result + minValue.hashCode()
+        result = 31 * result + creditLimit.hashCode()
         result = 31 * result + (num?.hashCode() ?: 0)
         result = 31 * result + (reserveId?.hashCode() ?: 0)
         return result

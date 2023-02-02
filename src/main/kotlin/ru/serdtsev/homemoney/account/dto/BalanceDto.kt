@@ -2,7 +2,6 @@ package ru.serdtsev.homemoney.account.dto
 
 import ru.serdtsev.homemoney.account.model.AccountType
 import java.math.BigDecimal
-import java.sql.Date
 import java.time.LocalDate
 import java.util.*
 

@@ -35,6 +35,10 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     $scope.loadBalances();
   });
 
+  $scope.$on('refreshMoneyOpers', function() {
+    $scope.refresh();
+  });
+
   $scope.isLogged = function() {
     return $rootScope.isLogged;
   }
