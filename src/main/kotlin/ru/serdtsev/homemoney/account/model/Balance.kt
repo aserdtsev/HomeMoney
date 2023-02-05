@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.account.model
 
 import mu.KotlinLogging
+import org.springframework.cache.annotation.CacheEvict
 import ru.serdtsev.homemoney.account.dao.ReserveDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
@@ -22,7 +23,7 @@ open class Balance(
     open var currencyCode: String = balanceSheet.currencyCode,
     value: BigDecimal = BigDecimal.ZERO,
     minValue: BigDecimal = BigDecimal.ZERO,
-    creditLimit: BigDecimal = BigDecimal.ZERO
+    var credit: Credit = Credit(BigDecimal.ZERO)
 ) : Account(id, balanceSheet, type, name, createdDate, isArc) {
     open var value: BigDecimal = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
         set(value) {
@@ -30,11 +31,6 @@ open class Balance(
         }
 
     open var minValue: BigDecimal = minValue.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
-        set(value) {
-            field = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
-        }
-
-    open var creditLimit: BigDecimal = creditLimit.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
         set(value) {
             field = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
         }
@@ -54,7 +50,7 @@ open class Balance(
     @Suppress("DuplicatedCode")
     fun merge(balance: Balance, reserveDao: ReserveDao, moneyOperService: MoneyOperService) {
         super.merge(balance)
-        creditLimit = balance.creditLimit
+        credit = balance.credit
         minValue = balance.minValue
         reserve = balance.reserveId?.let { reserveDao.findById(it) }
         if (balance.value.compareTo(value) != 0) {
@@ -78,31 +74,16 @@ open class Balance(
     open val currency: Currency
         get() = Currency.getInstance(currencyCode)
 
-    @Deprecated("")
-    fun changeValue(amount: BigDecimal?, trnId: UUID, status: MoneyOperStatus) {
+    @CacheEvict("BalanceDao.findById", key = "#id")
+    open fun changeValue(amount: BigDecimal, oper: MoneyOper) {
         val beforeValue = value.plus()
-        value = value.add(amount)
-        log.info("Balance value changed; " +
-                "id: " + id + ", " +
-                "trnId: " + trnId + ", " +
-                "status: " + status.name + ", " +
-                "before: " + beforeValue + ", " +
-                "after: " + value + ".")
-    }
-
-    fun changeValue(amount: BigDecimal?, oper: MoneyOper) {
-        val beforeValue = value.plus()
-        value = value.add(amount)
-        log.info("Balance value changed; " +
-                "id: " + id + ", " +
-                "operId: " + oper.id + ", " +
-                "status: " + oper.status.name + ", " +
-                "before: " + beforeValue + ", " +
-                "after: " + value + ".")
+        value += amount
+        log.info("Balance value changed; id: $id, operId: ${oper.id}, beforeStatus: ${oper.status.name}, " +
+                "before: $beforeValue, amount: $amount, after: $value")
     }
 
     open val freeFunds: BigDecimal
-        get() = value + creditLimit - minValue
+        get() = value + credit.creditLimit - minValue
 
     @Suppress("DuplicatedCode")
     override fun equals(other: Any?): Boolean {
@@ -114,7 +95,7 @@ open class Balance(
         if (value != other.value) return false
         if (minValue != other.minValue) return false
         if (reserve != other.reserve) return false
-        if (creditLimit != other.creditLimit) return false
+        if (credit != other.credit) return false
         if (num != other.num) return false
         if (reserveId != other.reserveId) return false
 
@@ -126,7 +107,7 @@ open class Balance(
         result = 31 * result + currencyCode.hashCode()
         result = 31 * result + value.hashCode()
         result = 31 * result + minValue.hashCode()
-        result = 31 * result + creditLimit.hashCode()
+        result = 31 * result + credit.hashCode()
         result = 31 * result + (num?.hashCode() ?: 0)
         result = 31 * result + (reserveId?.hashCode() ?: 0)
         return result
@@ -134,7 +115,7 @@ open class Balance(
 
     override fun toString(): String {
         return "Balance(id=$id, balanceSheetId=${balanceSheet.id}, type=$type, name='$name', createdDate=$createdDate, " +
-                "isArc=$isArc, currencyCode='$currencyCode', value=$value, minValue=$minValue, creditLimit=$creditLimit, " +
+                "isArc=$isArc, currencyCode='$currencyCode', value=$value, minValue=$minValue, credit=$credit, " +
                 "num=$num, reserveId=$reserveId)"
     }
 
@@ -142,3 +123,5 @@ open class Balance(
         private val log = KotlinLogging.logger {  }
     }
 }
+
+data class Credit(var creditLimit: BigDecimal)

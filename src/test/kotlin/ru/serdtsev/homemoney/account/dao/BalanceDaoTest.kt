@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.account.dao
 
-import ru.serdtsev.homemoney.utils.TestHelper
 import com.opentable.db.postgres.junit5.PreparedDbExtension
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -12,6 +11,7 @@ import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
+import ru.serdtsev.homemoney.utils.TestHelper
 import java.math.BigDecimal
 
 internal class BalanceDaoTest {
@@ -54,14 +54,14 @@ internal class BalanceDaoTest {
 
         balance.value = BigDecimal.ONE
         balance.minValue = balance.minValue.plus(BigDecimal.ONE)
-        balance.creditLimit = balance.creditLimit.plus(BigDecimal.ONE)
+        balance.credit.creditLimit = balance.credit.creditLimit + BigDecimal.ONE
         balance.num = 1
         balance.isArc = true
 
         balanceDao.save(balance)
         balanceDao.findByIdOrNull(balance.id).also { actual ->
             assertNotNull(actual)
-            assertEquals(balance, actual)
+            assertEquals(actual, balance)
         }
 
         balanceDao.delete(balance)

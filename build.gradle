@@ -90,6 +90,8 @@ dependencies {
     implementation('org.postgresql:postgresql')
     implementation("org.flywaydb:flyway-core:$flywayVersion")
     implementation 'org.ehcache:ehcache:3.8.2.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
 
     compileOnly('org.springframework.boot:spring-boot-devtools')
 

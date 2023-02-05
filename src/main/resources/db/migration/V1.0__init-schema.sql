@@ -47,14 +47,14 @@ create table balance
         constraint balance_id_fk
             references account,
     reserve_id uuid,
-    credit_limit numeric(19),
     min_value numeric(19,2),
     num bigint,
     value numeric(19,2) not null,
     currency_code varchar(3) not null,
     balance_sheet_id uuid
         constraint balance_balance_sheet_id_fk
-            references balance_sheet
+            references balance_sheet,
+    credit jsonb
 );
 
 alter table balance owner to postgres;

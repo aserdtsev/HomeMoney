@@ -94,8 +94,8 @@ class MoneyOper(
     }
 
     fun changeBalances(revert: Boolean) {
-        val factor = if (revert) BigDecimal.ONE.negate() else BigDecimal.ONE
-        items.forEach{ item -> item.balance.changeValue(item.value.multiply(factor), this) }
+        val factor = BigDecimal.ONE.let { if (revert) it.negate() else it }
+        items.forEach { item -> item.balance.changeValue(item.value * factor, this) }
     }
 
 
