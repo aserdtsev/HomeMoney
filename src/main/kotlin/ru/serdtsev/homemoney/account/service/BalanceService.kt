@@ -54,29 +54,32 @@ class BalanceService(
 
     @Transactional
     fun upBalance(balanceId: UUID) {
-        // todo работает неправильно, исправить
         val balanceSheet = apiRequestContextHolder.getBalanceSheet()
         val balance = balanceDao.findById(balanceId)
         val balances = balanceDao.findByBalanceSheet(balanceSheet)
-            .plus(reserveDao.findByBalanceSheet(balanceSheet))
             .sortedBy { it.num }.toMutableList()
         assert(balances.isNotEmpty())
-        var prev: Balance?
-        do {
-            val index = balances.indexOf(balance)
-            assert(index > -1)
-            prev = null
-            if (index > 0) {
-                prev = balances[index - 1]
-                balances[index - 1] = balance
-                balances[index] = prev
-                var i: Long = 0
-                for (b in balances) {
-                    b.num = i++
-                }
+        val index = balances.indexOf(balance)
+        assert(index > -1)
+        if (index > 0) {
+            val prev = balances[index - 1]
+            balances[index - 1] = balance
+            balances[index] = prev
+            balance.num.let {
+                balance.num = prev.num
+                prev.num = it
             }
-        } while (prev != null && prev.isArc)
-        balances.forEach { balanceDao.save(it) }
+            if (balance.num == prev.num) {
+                var i: Long = 0
+                balances.forEach {
+                    it.num = i++
+                    balanceDao.save(it)
+                }
+            } else {
+                balanceDao.save(balance)
+                balanceDao.save(prev)
+            }
+        }
     }
 
     companion object {

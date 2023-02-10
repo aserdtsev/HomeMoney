@@ -8,8 +8,8 @@ import java.math.BigDecimal
 import java.sql.Timestamp
 import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.*
-import java.util.function.Consumer
 
 class MoneyOper(
     val id: UUID,
@@ -22,7 +22,7 @@ class MoneyOper(
     comment: String? = null,
     var period: Period? = null
 ) : Serializable {
-    var created: Timestamp = Timestamp.from(Instant.now())
+    var created: Timestamp = Timestamp.from(Instant.now().truncatedTo(ChronoUnit.MILLIS))
     val tags: MutableSet<Tag> = tags.toMutableSet()
     var parentOper: MoneyOper? = null
     /**

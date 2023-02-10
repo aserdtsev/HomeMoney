@@ -28,10 +28,6 @@ open class Account(
 
         if (id != other.id) return false
         if (balanceSheet != other.balanceSheet) return false
-        if (type != other.type) return false
-        if (name != other.name) return false
-        if (createdDate != other.createdDate) return false
-        if (isArc != other.isArc) return false
 
         return true
     }
@@ -39,10 +35,6 @@ open class Account(
     override fun hashCode(): Int {
         var result = id.hashCode()
         result = 31 * result + balanceSheet.hashCode()
-        result = 31 * result + type.hashCode()
-        result = 31 * result + name.hashCode()
-        result = 31 * result + createdDate.hashCode()
-        result = 31 * result + isArc.hashCode()
         return result
     }
 

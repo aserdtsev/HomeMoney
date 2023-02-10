@@ -85,34 +85,6 @@ open class Balance(
     open val freeFunds: BigDecimal
         get() = value + credit.creditLimit - minValue
 
-    @Suppress("DuplicatedCode")
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Balance) return false
-        if (!super.equals(other)) return false
-
-        if (currencyCode != other.currencyCode) return false
-        if (value != other.value) return false
-        if (minValue != other.minValue) return false
-        if (reserve != other.reserve) return false
-        if (credit != other.credit) return false
-        if (num != other.num) return false
-        if (reserveId != other.reserveId) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + currencyCode.hashCode()
-        result = 31 * result + value.hashCode()
-        result = 31 * result + minValue.hashCode()
-        result = 31 * result + credit.hashCode()
-        result = 31 * result + (num?.hashCode() ?: 0)
-        result = 31 * result + (reserveId?.hashCode() ?: 0)
-        return result
-    }
-
     override fun toString(): String {
         return "Balance(id=$id, balanceSheetId=${balanceSheet.id}, type=$type, name='$name', createdDate=$createdDate, " +
                 "isArc=$isArc, currencyCode='$currencyCode', value=$value, minValue=$minValue, credit=$credit, " +
