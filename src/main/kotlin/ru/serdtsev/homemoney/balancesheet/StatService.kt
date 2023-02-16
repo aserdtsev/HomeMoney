@@ -3,6 +3,7 @@ package ru.serdtsev.homemoney.balancesheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -41,7 +42,9 @@ class StatService(
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
 
             val trendTurnovers = async {
-                getTrendTurnovers(balanceSheet, interval)
+                withContext(Dispatchers.IO) {
+                    getTrendTurnovers(balanceSheet, interval)
+                }
             }
 
             val today = LocalDate.now()
@@ -49,13 +52,22 @@ class StatService(
 
             val bsStat = BsStat(fromDate, today)
             calcCurrentSaldo(bsStat)
+            bsStat.actualDebt = balanceSheetDao.getActualDebt(balanceSheet.id)
 
             val trendMap = TreeMap<LocalDate, BsDayStat>()
 
-            val realTurnovers = getRealTurnovers(balanceSheet, MoneyOperStatus.done, fromDate, today)
-            val pendingTurnovers = getRealTurnovers(balanceSheet, MoneyOperStatus.pending,
-                    LocalDate.ofEpochDay(0), today.plusDays(interval))
-            val recurrenceTurnovers = getRecurrenceTurnovers(balanceSheet, today.plusDays(interval))
+            val realTurnovers = withContext(Dispatchers.IO) {
+                getRealTurnovers(balanceSheet, MoneyOperStatus.done, fromDate, today)
+            }
+            val pendingTurnovers = withContext(Dispatchers.IO) {
+                getRealTurnovers(
+                    balanceSheet, MoneyOperStatus.pending,
+                    LocalDate.ofEpochDay(0), today.plusDays(interval)
+                )
+            }
+            val recurrenceTurnovers = withContext(Dispatchers.IO) {
+                getRecurrenceTurnovers(balanceSheet, today.plusDays(interval))
+            }
 
             val map = TreeMap<LocalDate, BsDayStat>()
             fillBsDayStatMap(map, realTurnovers)
@@ -84,6 +96,7 @@ class StatService(
 
     private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>) {
         val cursorSaldoMap =  HashMap<AccountType, BigDecimal>(AccountType.values().size)
+        var cursorActualDebt = bsStat.actualDebt
         bsStat.saldoMap.forEach { (type, value) -> cursorSaldoMap[type] = value }
         val dayStats = ArrayList(bsDayStatMap.values)
         dayStats.sortByDescending { it.localDate }
@@ -91,10 +104,13 @@ class StatService(
             AccountType.values().forEach { type ->
                 val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO)
                 dayStat.setSaldo(type, saldo)
-                cursorSaldoMap[type] = saldo.subtract(dayStat.getDelta(type))
+                cursorSaldoMap[type] = saldo - dayStat.getDelta(type)
             }
             bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
             bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
+
+            dayStat.actualDebt = cursorActualDebt
+            cursorActualDebt = dayStat.actualDebt - dayStat.getDelta(AccountType.credit)
         }
     }
 
@@ -102,12 +118,15 @@ class StatService(
         val dayStats = ArrayList(trendMap.values)
         val saldoMap = HashMap<AccountType, BigDecimal>(AccountType.values().size)
         bsStat.saldoMap.forEach { (type, value) -> saldoMap[type] = value }
+        var cursorActualDebt = bsStat.actualDebt
         dayStats.forEach { dayStat ->
             AccountType.values().forEach { type ->
                 val saldo = (saldoMap as Map<AccountType, BigDecimal>).getOrDefault(type, BigDecimal.ZERO) + dayStat.getDelta(type)
                 saldoMap[type] = saldo
                 dayStat.setSaldo(type, saldo)
             }
+            dayStat.actualDebt = cursorActualDebt
+            cursorActualDebt = dayStat.actualDebt + dayStat.getDelta(AccountType.credit)
         }
     }
 
@@ -116,15 +135,17 @@ class StatService(
      */
     private fun fillBsDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
         turnovers.forEach { (operDate, turnoverType, amount) ->
-            val dayStat = map.computeIfAbsent(operDate) { BsDayStat(operDate) }
+            val dayStat = map.computeIfAbsent(operDate) {
+                BsDayStat(operDate)
+            }
             when (turnoverType) {
                 TurnoverType.income ->
-                    dayStat.incomeAmount = dayStat.incomeAmount.add(amount)
+                    dayStat.incomeAmount = dayStat.incomeAmount + amount
                 TurnoverType.expense ->
-                    dayStat.chargeAmount = dayStat.chargeAmount.add(amount)
+                    dayStat.chargeAmount = dayStat.chargeAmount + amount
                 else -> {
                     val accountType = AccountType.valueOf(turnoverType.name)
-                    dayStat.setDelta(accountType, dayStat.getDelta(accountType).add(amount))
+                    dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
                 }
             }
         }
@@ -145,7 +166,7 @@ class StatService(
             .map {
                 val item = it.first
                 val moneyOper = it.second
-                val category = moneyOper.tags.firstOrNull { tag -> tag.isCategory!! }
+                val category = moneyOper.tags.firstOrNull { tag -> tag.isCategory }
                     ?.let { tag -> tag.rootId?.let { rootId -> tagDao.findByIdOrNull(rootId) } ?: tag }
 
                 val isReserve = item.balance.type == AccountType.reserve

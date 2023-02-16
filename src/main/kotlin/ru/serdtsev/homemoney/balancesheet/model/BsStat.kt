@@ -17,9 +17,11 @@ data class BsStat(
 
     @JsonIgnore
     val saldoMap = HashMap<AccountType, BigDecimal>()
+    @JsonIgnore
+    var actualDebt: BigDecimal = BigDecimal.ZERO;
 
     val freeAmount: BigDecimal
-        get() = debitSaldo.subtract(reserveSaldo).plus(creditSaldo)
+        get() = debitSaldo - reserveSaldo + actualDebt
 
     val reserveSaldo: BigDecimal
         get() = saldoMap.getOrDefault(AccountType.reserve, BigDecimal.ZERO)

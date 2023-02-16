@@ -213,7 +213,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
             if (fromAccount.type === 'reserve' || fromAccount.type === 'service') {
               result = account.type === 'reserve' || account.type === 'service';
             } else {
-              result = account.type === 'debit' || account.type === 'credit';
+              result = account.type === 'debit' || account.type === 'credit' || account.type === 'asset';
             }
           }
         }

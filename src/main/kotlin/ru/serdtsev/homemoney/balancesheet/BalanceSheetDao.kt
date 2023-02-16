@@ -61,4 +61,18 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) {
         }
     }
 
+    fun getActualDebt(id: UUID): BigDecimal {
+        val sql = """
+            select sum(round(coalesce((b.credit -> 'annuityPayment' -> 'value')::numeric * -1, b.value) * coalesce(er.ask, 1), 2)) as value
+            from account a
+                join balance b on b.id = a.id
+                left join exchange_rate er
+                  on substring(er.id from 1 for 3) = b.currency_code
+                     and date = (select max(date) from exchange_rate er1 where substring(er1.id from 1 for 3) = b.currency_code)
+            where a.type = 'credit' and a.balance_sheet_id = :bsId            
+        """.trimIndent()
+        val paramMap = mapOf("bsId" to id)
+        return jdbcTemplate.queryForObject(sql, paramMap, BigDecimal::class.java)!!
+    }
+
 }

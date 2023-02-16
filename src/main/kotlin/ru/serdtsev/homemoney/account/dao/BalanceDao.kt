@@ -81,24 +81,28 @@ class BalanceDao(
 
     private val rowMapper: (rs: ResultSet, rowNum: Int) -> Balance = { rs, _ ->
         val id = UUID.fromString(rs.getString("id"))
-        val balanceSheet = rs.getString("balance_sheet_id")
-            .let { UUID.fromString(it) }
-            .let { balanceSheetDao.findById(it) }
         val type = AccountType.valueOf(rs.getString("type"))
-        val createdDate = rs.getDate("created_date").toLocalDate()
-        val name = rs.getString("name")
-        val isArc = rs.getBoolean("is_arc")
-        val value = rs.getBigDecimal("value")
-        val currencyCode = rs.getString("currency_code")
-        Balance(id, balanceSheet, type, name, createdDate, isArc, currencyCode, value).apply {
-            this.minValue = rs.getBigDecimal("min_value")
-            this.credit = rs.getString("credit")
-                ?.let {gson.fromJson(it, Credit::class.java) }
-                ?: Credit(BigDecimal.ZERO)
-            this.reserve = rs.getString("reserve_id")
-                ?.let { UUID.fromString(it) }
-                ?.let { reserveDao.findByIdOrNull(it) }
-            this.num = rs.getLong("num")
+        if (type == AccountType.reserve) {
+            reserveDao.findById(id)
+        } else {
+            val balanceSheet = rs.getString("balance_sheet_id")
+                .let { UUID.fromString(it) }
+                .let { balanceSheetDao.findById(it) }
+            val createdDate = rs.getDate("created_date").toLocalDate()
+            val name = rs.getString("name")
+            val isArc = rs.getBoolean("is_arc")
+            val value = rs.getBigDecimal("value")
+            val currencyCode = rs.getString("currency_code")
+            Balance(id, balanceSheet, type, name, createdDate, isArc, currencyCode, value).apply {
+                this.minValue = rs.getBigDecimal("min_value")
+                this.credit = rs.getString("credit")
+                    ?.let { gson.fromJson(it, Credit::class.java) }
+                    ?: Credit(BigDecimal.ZERO)
+                this.reserve = rs.getString("reserve_id")
+                    ?.let { UUID.fromString(it) }
+                    ?.let { reserveDao.findByIdOrNull(it) }
+                this.num = rs.getLong("num")
+            }
         }
     }
 
