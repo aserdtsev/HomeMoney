@@ -54,8 +54,6 @@ class StatService(
             calcCurrentSaldo(bsStat)
             bsStat.actualDebt = balanceSheetDao.getActualDebt(balanceSheet.id)
 
-            val trendMap = TreeMap<LocalDate, BsDayStat>()
-
             val realTurnovers = withContext(Dispatchers.IO) {
                 getRealTurnovers(balanceSheet, MoneyOperStatus.done, fromDate, today)
             }
@@ -73,6 +71,7 @@ class StatService(
             fillBsDayStatMap(map, realTurnovers)
             calcPastSaldoAndTurnovers(bsStat, map)
 
+            val trendMap = TreeMap<LocalDate, BsDayStat>()
             fillBsDayStatMap(trendMap, pendingTurnovers)
             fillBsDayStatMap(trendMap, recurrenceTurnovers)
             fillBsDayStatMap(trendMap, trendTurnovers.await())
@@ -94,44 +93,8 @@ class StatService(
         balanceSheetDao.getAggregateAccountSaldoList(bsId).forEach { bsStat.saldoMap[it.first] = it.second }
     }
 
-    private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>) {
-        val cursorSaldoMap =  HashMap<AccountType, BigDecimal>(AccountType.values().size)
-        var cursorActualDebt = bsStat.actualDebt
-        bsStat.saldoMap.forEach { (type, value) -> cursorSaldoMap[type] = value }
-        val dayStats = ArrayList(bsDayStatMap.values)
-        dayStats.sortByDescending { it.localDate }
-        dayStats.forEach { dayStat ->
-            AccountType.values().forEach { type ->
-                val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO)
-                dayStat.setSaldo(type, saldo)
-                cursorSaldoMap[type] = saldo - dayStat.getDelta(type)
-            }
-            bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
-            bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
-
-            dayStat.actualDebt = cursorActualDebt
-            cursorActualDebt = dayStat.actualDebt - dayStat.getDelta(AccountType.credit)
-        }
-    }
-
-    private fun calcTrendSaldoAndTurnovers(bsStat: BsStat, trendMap: Map<LocalDate, BsDayStat>) {
-        val dayStats = ArrayList(trendMap.values)
-        val saldoMap = HashMap<AccountType, BigDecimal>(AccountType.values().size)
-        bsStat.saldoMap.forEach { (type, value) -> saldoMap[type] = value }
-        var cursorActualDebt = bsStat.actualDebt
-        dayStats.forEach { dayStat ->
-            AccountType.values().forEach { type ->
-                val saldo = (saldoMap as Map<AccountType, BigDecimal>).getOrDefault(type, BigDecimal.ZERO) + dayStat.getDelta(type)
-                saldoMap[type] = saldo
-                dayStat.setSaldo(type, saldo)
-            }
-            dayStat.actualDebt = cursorActualDebt
-            cursorActualDebt = dayStat.actualDebt + dayStat.getDelta(AccountType.credit)
-        }
-    }
-
     /**
-     * Заполняет ассоциированный массив экземпляров BsDayStat суммами из оборотов.
+     * Создает ассоциированный массив экземпляров BsDayStat и наполняет их суммами из оборотов.
      */
     private fun fillBsDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
         turnovers.forEach { (operDate, turnoverType, amount) ->
@@ -148,6 +111,41 @@ class StatService(
                     dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
                 }
             }
+        }
+    }
+
+    private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>) {
+        val cursorSaldoMap =  HashMap<AccountType, BigDecimal>(AccountType.values().size)
+        bsStat.saldoMap.forEach { (type, value) -> cursorSaldoMap[type] = value }
+        val dayStats = ArrayList(bsDayStatMap.values)
+        dayStats.sortByDescending { it.localDate }
+        var prev: BsDayStat? = null
+        dayStats.forEach { dayStat ->
+            AccountType.values().forEach { type ->
+                val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO)
+                dayStat.setSaldo(type, saldo)
+                cursorSaldoMap[type] = saldo - (prev?.getDelta(type) ?: BigDecimal.ZERO)
+            }
+            bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
+            bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
+            // todo учесть начало действия кредитного договора
+            dayStat.actualDebt = bsStat.actualDebt.plus()
+            prev = dayStat
+        }
+    }
+
+    private fun calcTrendSaldoAndTurnovers(bsStat: BsStat, trendMap: Map<LocalDate, BsDayStat>) {
+        val dayStats = ArrayList(trendMap.values)
+        val saldoMap = HashMap<AccountType, BigDecimal>(AccountType.values().size)
+        bsStat.saldoMap.forEach { (type, value) -> saldoMap[type] = value }
+        dayStats.forEach { dayStat ->
+            AccountType.values().forEach { type ->
+                val saldo = (saldoMap as Map<AccountType, BigDecimal>).getOrDefault(type, BigDecimal.ZERO) + dayStat.getDelta(type)
+                saldoMap[type] = saldo
+                dayStat.setSaldo(type, saldo)
+            }
+            // todo учесть окончание действия кредитного договора
+            dayStat.actualDebt = bsStat.actualDebt.plus()
         }
     }
 

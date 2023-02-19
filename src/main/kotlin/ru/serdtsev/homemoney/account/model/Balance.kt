@@ -83,7 +83,7 @@ open class Balance(
     }
 
     open val freeFunds: BigDecimal
-        get() = value + credit.creditLimit - minValue
+        get() = value + (credit.creditLimit ?: BigDecimal.ZERO) - minValue
 
     override fun toString(): String {
         return "Balance(id=$id, balanceSheetId=${balanceSheet.id}, type=$type, name='$name', createdDate=$createdDate, " +
@@ -96,4 +96,4 @@ open class Balance(
     }
 }
 
-data class Credit(var creditLimit: BigDecimal)
+data class Credit(var creditLimit: BigDecimal?)

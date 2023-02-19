@@ -54,7 +54,7 @@ internal class BalanceDaoTest {
 
         balance.value = BigDecimal.ONE
         balance.minValue = balance.minValue.plus(BigDecimal.ONE)
-        balance.credit.creditLimit = balance.credit.creditLimit + BigDecimal.ONE
+        balance.credit.creditLimit = (balance.credit.creditLimit ?: BigDecimal.ZERO) + BigDecimal.ONE
         balance.num = 1
         balance.isArc = true
 

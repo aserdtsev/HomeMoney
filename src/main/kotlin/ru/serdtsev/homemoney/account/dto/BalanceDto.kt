@@ -8,6 +8,6 @@ import java.util.*
 data class BalanceDto(
         val id: UUID, val type: AccountType, val name: String, val createdDate: LocalDate, val isArc: Boolean = false,
         val value: BigDecimal = BigDecimal.ZERO, val currencyCode: String = "RUB", val currencySymbol: String = "",
-        val minValue: BigDecimal = BigDecimal.ZERO, val creditLimit: BigDecimal = BigDecimal.ZERO,
+        val minValue: BigDecimal = BigDecimal.ZERO, val creditLimit: BigDecimal?,
         val freeFunds: BigDecimal = BigDecimal.ZERO, val num: Long = 0L
 )
