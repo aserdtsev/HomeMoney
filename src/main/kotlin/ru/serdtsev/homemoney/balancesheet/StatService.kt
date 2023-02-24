@@ -117,7 +117,7 @@ class StatService(
     private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>) {
         val cursorSaldoMap =  HashMap<AccountType, BigDecimal>(AccountType.values().size)
         bsStat.saldoMap.forEach { (type, value) -> cursorSaldoMap[type] = value }
-        val dayStats = ArrayList(bsDayStatMap.values)
+        val dayStats = bsDayStatMap.values.toMutableList()
         dayStats.sortByDescending { it.localDate }
         var prev: BsDayStat? = null
         dayStats.forEach { dayStat ->

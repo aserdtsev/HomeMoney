@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper
 
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.core.convert.ConversionService
 import org.springframework.data.domain.*
 import org.springframework.transaction.annotation.Transactional
@@ -180,6 +181,7 @@ class MoneyOperController(
     }
 
     @RequestMapping("/update")
+    @CacheEvict(cacheNames = ["MoneyOperDao.findById", "TagDao.findByObjId"], key = "#{moneyOperDto.getId()}")
     fun updateMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
@@ -255,6 +257,7 @@ class MoneyOperController(
     }
 
     @RequestMapping("/up")
+    @CacheEvict("MoneyOperDao.findById", key = "#{moneyOperDto.getId()}")
     fun upMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val oper = moneyOperDao.findById(moneyOperDto.id)

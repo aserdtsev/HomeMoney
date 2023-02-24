@@ -122,37 +122,17 @@ class MoneyOper(
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is MoneyOper) return false
+        if (javaClass != other?.javaClass) return false
+
+        other as MoneyOper
 
         if (id != other.id) return false
-        if (balanceSheet != other.balanceSheet) return false
-        if (items != other.items) return false
-        if (status != other.status) return false
-        if (performed != other.performed) return false
-        if (dateNum != other.dateNum) return false
-        if (period != other.period) return false
-        if (created != other.created) return false
-        if (tags != other.tags) return false
-        if (parentOper != other.parentOper) return false
-        if (recurrenceId != other.recurrenceId) return false
-        if (comment != other.comment) return false
-        if (type != other.type) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + balanceSheet.hashCode()
-        result = 31 * result + items.hashCode()
-        result = 31 * result + status.hashCode()
-        result = 31 * result + performed.hashCode()
-        result = 31 * result + (dateNum ?: 0)
-        result = 31 * result + (period?.hashCode() ?: 0)
-        result = 31 * result + created.hashCode()
-        result = 31 * result + tags.hashCode()
-        result = 31 * result + (parentOper?.hashCode() ?: 0)
-        result = 31 * result + (recurrenceId?.hashCode() ?: 0)
-        return result
+        return id.hashCode()
     }
+
 }
