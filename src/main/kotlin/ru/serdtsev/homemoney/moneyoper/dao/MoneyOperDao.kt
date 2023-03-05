@@ -44,10 +44,8 @@ class MoneyOperDao(
         tagDao.updateLinks(moneyOper.tags, moneyOper.id, "operation")
     }
 
-    @Cacheable("MoneyOperDao.findById")
     fun findById(id: UUID): MoneyOper = findByIdOrNull(id)!!
 
-    @Cacheable("MoneyOperDao.findById", unless = "#result == null")
     fun findByIdOrNull(id: UUID): MoneyOper? {
         val sql = "select * from money_oper where id = :id"
         return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()

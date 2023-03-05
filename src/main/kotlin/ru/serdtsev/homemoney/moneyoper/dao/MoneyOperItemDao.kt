@@ -91,7 +91,6 @@ class MoneyOperItemDao(
         return jdbcTemplate.query(sql, mapOf("balanceId" to balance.id), rowMapper)
     }
 
-    @Cacheable("MoneyOperItemDao.findByMoneyOperId")
     fun findByMoneyOperId(moneyOperId: UUID): List<MoneyOperItem> {
         val sql = "select * from money_oper_item where oper_id = :operId order by index"
         return jdbcTemplate.query(sql, mapOf("operId" to moneyOperId), rowMapper)

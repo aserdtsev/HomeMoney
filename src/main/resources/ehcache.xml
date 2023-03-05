@@ -15,9 +15,6 @@
     </cache-template>
 
     <cache alias="BalanceSheetDao.findById" uses-template="default"/>
-    <cache alias="MoneyOperDao.findById" uses-template="default"/>
-    <cache alias="MoneyOperItemDao.findByMoneyOperId" uses-template="default"/>
     <cache alias="TagDao.findByObjId" uses-template="default"/>
-    <cache alias="BalanceDao.findById" uses-template="default"/>
     <cache alias="UserDao.findByEmail" uses-template="default"/>
 </config>

@@ -181,7 +181,7 @@ class MoneyOperController(
     }
 
     @RequestMapping("/update")
-    @CacheEvict(cacheNames = ["MoneyOperDao.findById", "TagDao.findByObjId"], key = "#{moneyOperDto.getId()}")
+    @CacheEvict(cacheNames = ["TagDao.findByObjId"], key = "#moneyOperDto.getId()")
     fun updateMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
@@ -197,6 +197,7 @@ class MoneyOperController(
             if (!mostlyEquals && origOper.status == MoneyOperStatus.done) {
                 origOper.cancel()
             }
+            origOper.getBalances().forEach { balance -> balanceDao.save(balance) }
             moneyOperService.updateMoneyOper(origOper, oper)
             if (!mostlyEquals && origPrevStatus == MoneyOperStatus.done || origOper.status == MoneyOperStatus.pending
                     && moneyOperDto.status == MoneyOperStatus.done) {
@@ -257,7 +258,6 @@ class MoneyOperController(
     }
 
     @RequestMapping("/up")
-    @CacheEvict("MoneyOperDao.findById", key = "#{moneyOperDto.getId()}")
     fun upMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
         return try {
             val oper = moneyOperDao.findById(moneyOperDto.id)

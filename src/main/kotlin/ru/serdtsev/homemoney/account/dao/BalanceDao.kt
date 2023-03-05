@@ -53,10 +53,8 @@ class BalanceDao(
 
     fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
-    @Cacheable("BalanceDao.findById")
     fun findById(id: UUID): Balance = findByIdOrNull(id)!!
 
-    @Cacheable("BalanceDao.findById", unless = "#result == null")
     fun findByIdOrNull(id: UUID): Balance? {
         val sql = """
             select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc, 

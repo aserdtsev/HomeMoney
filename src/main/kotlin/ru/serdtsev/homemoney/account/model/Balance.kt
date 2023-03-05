@@ -74,7 +74,6 @@ open class Balance(
     open val currency: Currency
         get() = Currency.getInstance(currencyCode)
 
-    @CacheEvict("BalanceDao.findById", key = "#id")
     open fun changeValue(amount: BigDecimal, oper: MoneyOper) {
         val beforeValue = value.plus()
         value += amount
