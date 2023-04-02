@@ -21,6 +21,7 @@ class ConverterConfiguration : ApplicationContextAware {
             ReserveToDto(),
             ReserveDtoToModel(ctx),
             MoneyOperToDto(ctx),
+            MoneyOperDtoToModel(ctx),
             MoneyOperItemToDto(ctx),
             RecurrenceOperToDto(ctx),
             TagToTagDto(),

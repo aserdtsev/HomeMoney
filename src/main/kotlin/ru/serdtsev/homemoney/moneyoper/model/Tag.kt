@@ -8,6 +8,7 @@ class Tag(
     val balanceSheet: BalanceSheet,
     var name: String,
     var rootId: UUID? = null,
+    // todo Сделать вычисляемым от categoryType
     var isCategory: Boolean = false,
     var categoryType: CategoryType? = null,
     var arc: Boolean = false

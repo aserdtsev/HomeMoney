@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.moneyoper.dao
 
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
@@ -8,6 +7,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.common.Dao
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.Period
@@ -21,8 +21,8 @@ class MoneyOperDao(
     private val balanceSheetDao: BalanceSheetDao,
     private val moneyOperItemDao: MoneyOperItemDao,
     private val tagDao: TagDao
-) {
-    fun save(moneyOper: MoneyOper) {
+) : Dao<MoneyOper> {
+    override fun save(model: MoneyOper) {
         val sql = """
             insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, status, recurrence_id)
                values(:id, :bsId, :createdTs, :performed, :dateNum, :comment, :period, :status, :recurrenceId)
@@ -31,17 +31,17 @@ class MoneyOperDao(
                 comment = :comment, period = :period, status = :status, recurrence_id = :recurrenceId
             
         """.trimIndent()
-        val paramMap = with(moneyOper) {
+        val paramMap = with(model) {
             mapOf("id" to id, "bsId" to balanceSheet.id, "createdTs" to created, "performed" to performed,
                 "dateNum" to dateNum, "comment" to comment, "period" to period.toString(),
                 "status" to status.toString(), "recurrenceId" to recurrenceId)
         }
-        jdbcTemplate.update(sql,paramMap)
+        jdbcTemplate.update(sql, paramMap)
 
-        moneyOperItemDao.deleteByMoneyOperId(moneyOper.id)
-        moneyOperItemDao.save(moneyOper.items)
+        moneyOperItemDao.deleteByMoneyOperId(model.id)
+        moneyOperItemDao.save(model.items)
 
-        tagDao.updateLinks(moneyOper.tags, moneyOper.id, "operation")
+        tagDao.updateLinks(model.tags, model.id, "operation")
     }
 
     fun findById(id: UUID): MoneyOper = findByIdOrNull(id)!!

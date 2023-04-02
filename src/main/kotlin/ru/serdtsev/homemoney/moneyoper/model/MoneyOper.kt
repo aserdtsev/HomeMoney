@@ -3,6 +3,7 @@ package ru.serdtsev.homemoney.moneyoper.model
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.common.Model
 import java.io.Serializable
 import java.math.BigDecimal
 import java.sql.Timestamp
@@ -11,17 +12,17 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-class MoneyOper(
+class MoneyOper (
     val id: UUID,
     val balanceSheet: BalanceSheet,
-    var items: MutableList<MoneyOperItem>,
+    var items: MutableList<MoneyOperItem> = mutableListOf(),
     var status: MoneyOperStatus,
     var performed: LocalDate = LocalDate.now(),
     var dateNum: Int? = 0,
     tags: Collection<Tag> = mutableListOf(),
     comment: String? = null,
     var period: Period? = null
-) : Serializable {
+) : Model, Serializable {
     var created: Timestamp = Timestamp.from(Instant.now().truncatedTo(ChronoUnit.MILLIS))
     val tags: MutableSet<Tag> = tags.toMutableSet()
     var parentOper: MoneyOper? = null
@@ -98,15 +99,45 @@ class MoneyOper(
         items.forEach { item -> item.balance.changeValue(item.value * factor, this) }
     }
 
+    override fun merge(other: Any): Collection<Model> {
+        other as MoneyOper
+        assert(other.id == id)
+        val changedModels = mutableSetOf<Model>(this)
+        val prevStatus = status
+        val mostlyEquals = mostlyEquals(other)
+        if (!mostlyEquals && status == MoneyOperStatus.done) {
+            cancel()
+        }
+        changedModels.addAll(items.map { it.balance })
 
+        mergeItems(other.items)
+        performed = other.performed
+        setTags(other.tags)
+        dateNum = other.dateNum
+        period = other.period
+        comment = other.comment
+
+        if (!mostlyEquals && prevStatus == MoneyOperStatus.done
+            || status == MoneyOperStatus.pending && other.status == MoneyOperStatus.done
+        ) {
+            complete()
+        }
+
+        changedModels.addAll(items.map { it.balance })
+        return changedModels;
+    }
+
+    private fun mergeItems(otherItems: List<MoneyOperItem>) {
+        items.forEach { item -> otherItems.firstOrNull { it == item }?.let { item.merge(it) } }
+        items.removeIf { item -> otherItems.none { it.id == item.id } }
+        items.addAll(otherItems.filter { item -> this.items.none { it.id == item.id } })
+    }
 
     fun mostlyEquals(other: MoneyOper): Boolean {
         assert(other.id == this.id)
-        return other.type == this.type && mostlyItemsEquals(other)
-    }
-
-    fun mostlyItemsEquals(other: MoneyOper): Boolean {
-        return items.all { item -> other.items.any { it == item } }
+        return other.type == this.type
+                && items.all { item -> other.items.any { it.id == item.id && it.mostlyEquals(item) }
+        }
     }
 
     override fun toString(): String {

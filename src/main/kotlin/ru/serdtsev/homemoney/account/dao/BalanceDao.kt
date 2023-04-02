@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.account.dao
 
 import com.google.gson.Gson
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.account.model.AccountType
@@ -9,8 +8,9 @@ import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.account.model.Credit
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.common.ApiRequestContextHolder
+import ru.serdtsev.homemoney.common.Dao
 import ru.serdtsev.homemoney.common.toJsonb
-import java.math.BigDecimal
 import java.sql.ResultSet
 import java.util.*
 
@@ -19,10 +19,11 @@ class BalanceDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
     private val balanceSheetDao: BalanceSheetDao,
     private val reserveDao: ReserveDao
-) {
+) : Dao<Balance> {
     private val gson = Gson()
+    private val balances = HashMap<Pair<String, UUID>, Balance>()
 
-    fun save(balance: Balance) {
+    override fun save(model: Balance) {
         val sql = """
             insert into account(id, balance_sheet_id, name, created_date, type, is_arc) 
                 values (:id, :bsId, :name, :createdDate, :type, :isArc)
@@ -34,10 +35,10 @@ class BalanceDao(
                     currency_code = :currencyCode, value = :value, min_value = :minValue, reserve_id = :reserveId, 
                     num = :num, credit = :credit;
         """.trimIndent()
-        val paramMap = with(balance) {
-            mapOf("id" to balance.id, "bsId" to balance.balanceSheet.id, "name" to name, "createdDate" to createdDate,
+        val paramMap = with(model) {
+            mapOf("id" to model.id, "bsId" to model.balanceSheet.id, "name" to name, "createdDate" to createdDate,
                 "type" to type.toString(), "isArc" to isArc, "currencyCode" to currencyCode, "value" to value,
-                "minValue" to minValue, "reserveId" to reserveId, "num" to num, "credit" to gson.toJsonb(credit)
+                "minValue" to minValue, "reserveId" to reserveId, "num" to num, "credit" to credit?.let { gson.toJsonb(it) }
             )
         }
         jdbcTemplate.update(sql, paramMap)
@@ -56,13 +57,20 @@ class BalanceDao(
     fun findById(id: UUID): Balance = findByIdOrNull(id)!!
 
     fun findByIdOrNull(id: UUID): Balance? {
-        val sql = """
-            select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc, 
-                b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num
-            from account a, balance b
-            where a.id = :id and b.id = a.id
-        """.trimIndent()
-        return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()
+        val key = ApiRequestContextHolder.requestId to id
+        val model = balances.getOrElse(key) {
+            val sql = """
+                select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc, 
+                    b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num
+                from account a, balance b
+                where a.id = :id and b.id = a.id
+            """.trimIndent()
+            jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()
+        }
+        if (model != null && !balances.containsKey(key)) {
+            balances[key] = model
+        }
+        return model
     }
 
     fun findByBalanceSheet(balanceSheet: BalanceSheet): List<Balance> {
@@ -71,10 +79,15 @@ class BalanceDao(
                 b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num
             from account a, balance b
             where a.balance_sheet_id = :bsId and b.id = a.id and a.type in (:types)
-        """.trimIndent()
+            """.trimIndent()
         val types = AccountType.values().filter { it.isBalance }.map { it.name }
         val paramMap = mapOf("bsId" to balanceSheet.id, "types" to types)
+        val requestId = ApiRequestContextHolder.requestId
         return jdbcTemplate.query(sql, paramMap, rowMapper)
+            .map {
+                val key = requestId to it.id
+                balances.getOrPut(key) { it }
+            }
     }
 
     private val rowMapper: (rs: ResultSet, rowNum: Int) -> Balance = { rs, _ ->
@@ -95,7 +108,6 @@ class BalanceDao(
                 this.minValue = rs.getBigDecimal("min_value")
                 this.credit = rs.getString("credit")
                     ?.let { gson.fromJson(it, Credit::class.java) }
-                    ?: Credit(BigDecimal.ZERO)
                 this.reserve = rs.getString("reserve_id")
                     ?.let { UUID.fromString(it) }
                     ?.let { reserveDao.findByIdOrNull(it) }

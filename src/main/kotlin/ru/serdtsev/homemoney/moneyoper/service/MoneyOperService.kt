@@ -2,16 +2,16 @@ package ru.serdtsev.homemoney.moneyoper.service
 
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import ru.serdtsev.homemoney.account.dao.AccountDao
 import ru.serdtsev.homemoney.account.dao.BalanceDao
+import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.moneyoper.dao.MoneyOperDao
 import ru.serdtsev.homemoney.moneyoper.dao.RecurrenceOperDao
 import ru.serdtsev.homemoney.moneyoper.dao.TagDao
-import ru.serdtsev.homemoney.moneyoper.dto.MoneyOperDto
 import ru.serdtsev.homemoney.moneyoper.dto.RecurrenceOperDto
 import ru.serdtsev.homemoney.moneyoper.model.*
+import java.lang.UnsupportedOperationException
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
@@ -24,10 +24,49 @@ class MoneyOperService (
     private val balanceSheetDao: BalanceSheetDao,
     private val moneyOperDao: MoneyOperDao,
     private val recurrenceOperDao: RecurrenceOperDao,
-    private val accountDao: AccountDao,
     private val balanceDao: BalanceDao,
-    private val tagDao: TagDao
+    private val tagDao: TagDao,
 ) {
+    fun createMoneyOper(moneyOper: MoneyOper, balanceSheet: BalanceSheet): List<MoneyOper> {
+        val moneyOpers: MutableList<MoneyOper> = mutableListOf()
+        save(moneyOper)
+        moneyOpers.add(moneyOper)
+        newReserveMoneyOper(balanceSheet, moneyOper)?.let { moneyOpers.add(it) }
+        moneyOper.recurrenceId?.also { skipRecurrenceOper(balanceSheet, it) }
+        if ((moneyOper.status == MoneyOperStatus.done || moneyOper.status == MoneyOperStatus.doneNew)
+            && !moneyOper.performed.isAfter(LocalDate.now())) {
+            moneyOpers.forEach { it.complete() }
+        } else {
+            moneyOpers.forEach { it.status = MoneyOperStatus.pending }
+        }
+        moneyOpers.forEach { save(it) }
+        return moneyOpers
+    }
+
+    fun updateMoneyOper(newOper: MoneyOper, origOper: MoneyOper) {
+        origOper.merge(newOper).forEach { model ->
+            when (model) {
+                is MoneyOper -> moneyOperDao.save(model)
+                is Balance -> balanceDao.save(model)
+                else -> throw UnsupportedOperationException()
+            }
+        }
+    }
+
+    private fun newReserveMoneyOper(balanceSheet: BalanceSheet, oper: MoneyOper): MoneyOper? {
+        return if (oper.items.any { it.balance.reserve != null }) {
+            val tags = oper.tags
+            val dateNum = oper.dateNum ?: 1
+            val reserveMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, oper.performed, dateNum, tags,
+                oper.comment, oper.period)
+            oper.items
+                .filter { it.balance.reserve != null }
+                .forEach { reserveMoneyOper.addItem(it.balance.reserve!!, it.value, it.performed, it.index + 1) }
+            reserveMoneyOper
+        }
+        else null
+    }
+
     fun save(moneyOper: MoneyOper) {
         moneyOperDao.save(moneyOper)
     }
@@ -148,44 +187,6 @@ class MoneyOperService (
         recurrenceOperDao.save(origRecurrenceOper)
     }
 
-    // todo Move to converter
-    fun moneyOperDtoToMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper {
-        val dateNum = moneyOperDto.dateNum ?: 0
-        val tags = getTagsByStrings(balanceSheet, moneyOperDto.tags)
-        val period = moneyOperDto.period ?: Period.month
-        val items = moneyOperDto.items
-            .map {
-                val balance = balanceDao.findById(it.balanceId)
-                val value = it.value.multiply(it.sgn.toBigDecimal())
-                MoneyOperItem(it.id, moneyOperDto.id, balance, value, it.performedAt, it.index)
-            }
-            .toMutableList()
-        val oper = MoneyOper(moneyOperDto.id, balanceSheet, items, MoneyOperStatus.pending, moneyOperDto.operDate, dateNum, tags,
-                moneyOperDto.comment, period)
-        oper.recurrenceId = moneyOperDto.recurrenceId
-        return oper
-    }
-
-    fun updateMoneyOper(toOper: MoneyOper, fromOper: MoneyOper) {
-        fromOper.items.forEach { item ->
-            val origItem = toOper.items.firstOrNull { origItem -> origItem.id == item.id }
-            if (origItem != null) with (origItem) {
-                performed = item.performed
-                balance = item.balance
-                value = item.value
-                index = item.index
-            } else {
-                toOper.addItem(item.balance, item.value, item.performed, item.index)
-            }
-        }
-        toOper.items.retainAll(fromOper.items)
-        toOper.performed = fromOper.performed
-        toOper.setTags(fromOper.tags)
-        toOper.dateNum = fromOper.dateNum
-        toOper.period = fromOper.period
-        toOper.comment = fromOper.comment
-    }
-
     fun checkMoneyOperBelongsBalanceSheet(oper: MoneyOper, bsId: UUID) =
             assert(oper.balanceSheet.id == bsId) { "MoneyOper id='${oper.id}' belongs the other balance sheet." }
 
@@ -204,13 +205,13 @@ class MoneyOperService (
             if (operType != MoneyOperType.transfer.name && tags.isEmpty()) {
                 // Вернем только тэги-категории в зависимости от типа операции.
                 tagDao.findByBalanceSheetOrderByName(balanceSheet)
-                        .filter { !(it.arc ?: false) && it.isCategory!! && it.categoryType!!.name == operType }
+                        .filter { !(it.arc) && it.isCategory && it.categoryType!!.name == operType }
             } else {
                 // Найдем 10 наиболее часто используемых тегов-некатегорий за последние 30 дней.
                 val startDate = LocalDate.now().minusDays(30)
                 moneyOperDao.findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet, MoneyOperStatus.done, startDate)
                         .flatMap { it.tags }
-                        .filter { !(it.arc ?: false) && !it.isCategory!! && !tags.contains(it.name) }
+                        .filter { !(it.arc) && !it.isCategory && !tags.contains(it.name) }
                         .groupingBy { it }.eachCount()
                         .entries
                         .sortedByDescending { it.value }
@@ -218,11 +219,9 @@ class MoneyOperService (
             }
         } else {
             tagDao.findByBalanceSheetOrderByName(balanceSheet)
-                    .filter { !(it.arc ?: false) && it.name.startsWith(search, true) }
+                    .filter { !(it.arc) && it.name.startsWith(search, true) }
         }
     }
-
-    fun getAccountName(accountId: UUID): String = accountDao.findNameById(accountId)
 
     fun getTags(bsId: UUID): List<Tag> {
         val balanceSheet = balanceSheetDao.findById(bsId)
@@ -231,8 +230,8 @@ class MoneyOperService (
 
     companion object {
         private val log = KotlinLogging.logger {  }
-        private val SearchDateRegex = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}".toRegex()
+        private val SearchDateRegex = "\\d{4}-\\d{2}-\\d{2}".toRegex()
         private val SearchUuidRegex = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}".toRegex()
-        private val SearchMoneyRegex = "\\p{Digit}+\\.*\\p{Digit}*".toRegex()
+        private val SearchMoneyRegex = "\\d+\\.*\\d*".toRegex()
     }
 }

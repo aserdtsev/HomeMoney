@@ -16,7 +16,7 @@ class BalanceDtoToModel(private val appCtx: ApplicationContext) : Converter<Bala
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
             Balance(id, balanceSheet, type, name, createdDate, isArc, currencyCode, value).also {
                 it.minValue = minValue
-                it.credit = Credit(creditLimit)
+                it.credit = creditLimit?.let { Credit(creditLimit, null) }
                 it.num = num
             }
         }

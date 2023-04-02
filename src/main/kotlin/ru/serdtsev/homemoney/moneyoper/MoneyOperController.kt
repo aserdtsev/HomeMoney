@@ -31,6 +31,7 @@ import java.util.stream.IntStream
 
 @RestController
 @RequestMapping("/api/money-opers")
+// todo Перенести в сервисный слой
 @Transactional
 class MoneyOperController(
     private val apiRequestContextHolder: ApiRequestContextHolder,
@@ -175,7 +176,9 @@ class MoneyOperController(
 
     @RequestMapping("/create")
     fun createMoneyOper(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
-        val moneyOperDtoList = createMoneyOperInternal(moneyOperDto)
+        val balanceSheet = apiRequestContextHolder.getBalanceSheet()
+        val moneyOper = conversionService.convert(moneyOperDto, MoneyOper::class.java)!!
+        val moneyOperDtoList = moneyOperService.createMoneyOper(moneyOper, balanceSheet)
                 .map { conversionService.convert(it, MoneyOperDto::class.java) }
         return HmResponse.getOk(moneyOperDtoList)
     }
@@ -187,24 +190,13 @@ class MoneyOperController(
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
             val origOper = moneyOperDao.findByIdOrNull(moneyOperDto.id)
             if (origOper == null) {
-                createMoneyOperInternal(moneyOperDto)
+                val moneyOper = conversionService.convert(moneyOperDto, MoneyOper::class.java)!!
+                moneyOperService.createMoneyOper(moneyOper, balanceSheet)
                 return HmResponse.getOk()
             }
             moneyOperService.checkMoneyOperBelongsBalanceSheet(origOper, balanceSheet.id)
-            val oper = moneyOperService.moneyOperDtoToMoneyOper(balanceSheet, moneyOperDto)
-            val mostlyEquals = origOper.mostlyEquals(oper)
-            val origPrevStatus = origOper.status
-            if (!mostlyEquals && origOper.status == MoneyOperStatus.done) {
-                origOper.cancel()
-            }
-            origOper.getBalances().forEach { balance -> balanceDao.save(balance) }
-            moneyOperService.updateMoneyOper(origOper, oper)
-            if (!mostlyEquals && origPrevStatus == MoneyOperStatus.done || origOper.status == MoneyOperStatus.pending
-                    && moneyOperDto.status == MoneyOperStatus.done) {
-                origOper.complete()
-            }
-            moneyOperDao.save(origOper)
-            origOper.getBalances().forEach { balance -> balanceDao.save(balance) }
+            val oper = conversionService.convert(moneyOperDto, MoneyOper::class.java)!!
+            moneyOperService.updateMoneyOper(oper, origOper)
 
             HmResponse.getOk()
         } catch (e: HmException) {
@@ -281,42 +273,6 @@ class MoneyOperController(
         }
     }
 
-    private fun createMoneyOperInternal(moneyOperDto: MoneyOperDto): List<MoneyOper> {
-        val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-        val moneyOpers: MutableList<MoneyOper> = mutableListOf()
-        val mainOper = newMainMoneyOper(balanceSheet, moneyOperDto)
-        moneyOperService.save(mainOper)
-        moneyOpers.add(mainOper)
-        newReserveMoneyOper(balanceSheet, mainOper)?.let { moneyOpers.add(it) }
-        mainOper.recurrenceId?.also { moneyOperService.skipRecurrenceOper(balanceSheet, it) }
-        if ((moneyOperDto.status == MoneyOperStatus.done || moneyOperDto.status == MoneyOperStatus.doneNew)
-                && !mainOper.performed.isAfter(LocalDate.now())) {
-            moneyOpers.forEach { it.complete() }
-        }
-        moneyOpers.forEach { moneyOper ->
-            moneyOperService.save(moneyOper)
-            moneyOper.getBalances().forEach { balance -> balanceDao.save(balance) }
-        }
-        return moneyOpers
-    }
-
-    private fun newMainMoneyOper(balanceSheet: BalanceSheet, moneyOperDto: MoneyOperDto): MoneyOper =
-            moneyOperService.moneyOperDtoToMoneyOper(balanceSheet, moneyOperDto)
-
-    private fun newReserveMoneyOper(balanceSheet: BalanceSheet, oper: MoneyOper): MoneyOper? {
-        return if (oper.items.any { it.balance.reserve != null }) {
-            val tags = oper.tags
-            val dateNum = oper.dateNum ?: 1
-            val reserveMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, oper.performed, dateNum, tags,
-                    oper.comment, oper.period)
-            oper.items
-                    .filter { it.balance.reserve != null }
-                    .forEach { reserveMoneyOper.addItem(it.balance.reserve!!, it.value, it.performed, it.index + 1) }
-            reserveMoneyOper
-        }
-        else null
-    }
-
     @RequestMapping(value = ["/suggest-tags"], method = [RequestMethod.GET])
     @Transactional(readOnly = true)
     fun suggestTags(
@@ -338,9 +294,9 @@ class MoneyOperController(
     }
 
     companion object {
-        private val SearchDateRegex = "\\p{Digit}{4}-\\p{Digit}{2}-\\p{Digit}{2}".toRegex()
+        private val SearchDateRegex = "\\d{4}-\\d{2}-\\d{2}".toRegex()
         private val SearchUuidRegex = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}".toRegex()
-        private val SearchMoneyRegex = "\\p{Digit}+\\.*\\p{Digit}*".toRegex()
+        private val SearchMoneyRegex = "\\d+\\.*\\d*".toRegex()
     }
 
 }

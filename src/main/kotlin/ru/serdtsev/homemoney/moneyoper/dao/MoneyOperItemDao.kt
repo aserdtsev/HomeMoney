@@ -26,6 +26,7 @@ class MoneyOperItemDao(
     }
 
     fun save(moneyOperItem: MoneyOperItem) {
+        balanceDao.save(moneyOperItem.balance)
         val sql = """
             insert into money_oper_item(id, oper_id, balance_id, value, performed, index, bs_id)
                 values(:id, :operId, :balanceId, :value, :performed, :index, :bsId)

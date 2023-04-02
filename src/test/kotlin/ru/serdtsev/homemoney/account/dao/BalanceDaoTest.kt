@@ -8,11 +8,13 @@ import org.junit.jupiter.api.extension.RegisterExtension
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
+import ru.serdtsev.homemoney.account.model.Credit
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.utils.TestHelper
 import java.math.BigDecimal
+import java.util.*
 
 internal class BalanceDaoTest {
     companion object {
@@ -28,6 +30,7 @@ internal class BalanceDaoTest {
     internal fun setUp() {
         val jdbcTemplate = NamedParameterJdbcTemplate(db.testDatabase)
         balanceSheetDao = BalanceSheetDao(jdbcTemplate)
+        ApiRequestContextHolder.requestId = UUID.randomUUID().toString()
         reserveDao = ReserveDao(jdbcTemplate, balanceSheetDao)
         balanceDao = BalanceDao(jdbcTemplate, balanceSheetDao, reserveDao)
     }
@@ -54,7 +57,7 @@ internal class BalanceDaoTest {
 
         balance.value = BigDecimal.ONE
         balance.minValue = balance.minValue.plus(BigDecimal.ONE)
-        balance.credit.creditLimit = (balance.credit.creditLimit ?: BigDecimal.ZERO) + BigDecimal.ONE
+        balance.credit = Credit(BigDecimal.ONE)
         balance.num = 1
         balance.isArc = true
 

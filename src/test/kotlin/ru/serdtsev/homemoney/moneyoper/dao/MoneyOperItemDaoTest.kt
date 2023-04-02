@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.moneyoper.dao
 
 import ru.serdtsev.homemoney.utils.TestHelper
 import com.opentable.db.postgres.junit5.PreparedDbExtension
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -57,24 +58,28 @@ internal class MoneyOperItemDaoTest {
 
     @Test
     internal fun crud() {
-        val value = BigDecimal.ONE.setScale(2)
-        val item1 = moneyOper.addItem(balanceA, value.negate()).apply { moneyOperItemDao.save(this) }
-        val item2 =moneyOper.addItem(balanceB, value).apply { moneyOperItemDao.save(this) }
+        val value = BigDecimal("1.00")
+        val item1 = moneyOper.addItem(balanceA, value.negate())
+            .apply { moneyOperItemDao.save(this) }
+        val item2 = moneyOper.addItem(balanceB, value)
+            .apply { moneyOperItemDao.save(this) }
 
         assertTrue(moneyOperItemDao.exists(item1.id))
         assertEquals(item1, moneyOperItemDao.findById(item1.id))
         assertEquals(listOf(item1, item2), moneyOperItemDao.findByMoneyOperId(moneyOper.id))
         assertEquals(listOf(item1), moneyOperItemDao.findByBalance(balanceA))
 
-        with(item1) {
+        with (item1) {
             this.index = 1
-            this.value = value + BigDecimal.TEN
+            this.value += BigDecimal("10.00")
             this.balance = balanceB
         }
+        balanceB.value += BigDecimal("1.00")
         moneyOperItemDao.save(item1)
 
         val actual = moneyOperItemDao.findById(item1.id)
-        assertEquals(item1, actual)
+        assertThat(actual).isEqualTo(item1)
+        assertThat(actual.balance).isEqualTo(balanceB);
 
         moneyOperItemDao.deleteByMoneyOperId(moneyOper.id);
         assertTrue(moneyOperItemDao.findByMoneyOperId(moneyOper.id).isEmpty())

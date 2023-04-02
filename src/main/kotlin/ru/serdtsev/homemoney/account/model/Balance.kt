@@ -1,9 +1,9 @@
 package ru.serdtsev.homemoney.account.model
 
 import mu.KotlinLogging
-import org.springframework.cache.annotation.CacheEvict
 import ru.serdtsev.homemoney.account.dao.ReserveDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.common.Model
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.Period
@@ -23,8 +23,8 @@ open class Balance(
     open var currencyCode: String = balanceSheet.currencyCode,
     value: BigDecimal = BigDecimal.ZERO,
     minValue: BigDecimal = BigDecimal.ZERO,
-    var credit: Credit = Credit(BigDecimal.ZERO)
-) : Account(id, balanceSheet, type, name, createdDate, isArc) {
+    var credit: Credit? = null
+) : Account(id, balanceSheet, type, name, createdDate, isArc), Model {
     open var value: BigDecimal = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
         set(value) {
             field = value.setScale(getCurrencyFractionDigits(), RoundingMode.HALF_UP)
@@ -68,6 +68,11 @@ open class Balance(
         }
     }
 
+
+    override fun merge(other: Any): Collection<Model> {
+        return listOf()
+    }
+
     open val currencySymbol: String
         get() = currency.symbol
 
@@ -82,7 +87,7 @@ open class Balance(
     }
 
     open val freeFunds: BigDecimal
-        get() = value + (credit.creditLimit ?: BigDecimal.ZERO) - minValue
+        get() = value + (credit?.creditLimit ?: BigDecimal.ZERO) - minValue
 
     override fun toString(): String {
         return "Balance(id=$id, balanceSheetId=${balanceSheet.id}, type=$type, name='$name', createdDate=$createdDate, " +
@@ -95,4 +100,6 @@ open class Balance(
     }
 }
 
-data class Credit(var creditLimit: BigDecimal?)
+data class Credit(var creditLimit: BigDecimal? = null, var annuityPayment: AnnuityPayment? = null)
+
+data class AnnuityPayment(var value: BigDecimal)

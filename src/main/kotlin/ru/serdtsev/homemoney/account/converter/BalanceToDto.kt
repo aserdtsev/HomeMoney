@@ -9,7 +9,7 @@ class BalanceToDto : Converter<Balance, BalanceDto> {
         with(source) {
             BalanceDto(
                 id, type, name, createdDate, isArc, value, currencyCode, currencySymbol, minValue,
-                credit.creditLimit, freeFunds, num!!
+                credit?.creditLimit, freeFunds, num!!
             )
         }
 }
