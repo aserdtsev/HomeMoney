@@ -1,6 +1,10 @@
 package ru.serdtsev.homemoney.account.dao
 
 import com.google.gson.Gson
+import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.cache.CacheManager
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.account.model.AccountType
@@ -8,7 +12,6 @@ import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.account.model.Credit
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
-import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import ru.serdtsev.homemoney.common.Dao
 import ru.serdtsev.homemoney.common.toJsonb
 import java.sql.ResultSet
@@ -18,10 +21,10 @@ import java.util.*
 class BalanceDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
     private val balanceSheetDao: BalanceSheetDao,
-    private val reserveDao: ReserveDao
+    private val reserveDao: ReserveDao,
+    @Qualifier("firstLevelCacheManager") private val cacheManager: CacheManager
 ) : Dao<Balance> {
     private val gson = Gson()
-    private val balances = HashMap<Pair<String, UUID>, Balance>()
 
     override fun save(model: Balance) {
         val sql = """
@@ -44,6 +47,7 @@ class BalanceDao(
         jdbcTemplate.update(sql, paramMap)
     }
 
+    @CacheEvict("Balance", key = "#balance.id")
     fun delete(balance: Balance) {
         val sql = """
             delete from balance where id = :id;
@@ -54,23 +58,18 @@ class BalanceDao(
 
     fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
+    @Cacheable("Balance", cacheManager = "firstLevelCacheManager")
     fun findById(id: UUID): Balance = findByIdOrNull(id)!!
 
+    @Cacheable("Balance", cacheManager = "firstLevelCacheManager")
     fun findByIdOrNull(id: UUID): Balance? {
-        val key = ApiRequestContextHolder.requestId to id
-        val model = balances.getOrElse(key) {
-            val sql = """
-                select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc, 
-                    b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num
-                from account a, balance b
-                where a.id = :id and b.id = a.id
-            """.trimIndent()
-            jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()
-        }
-        if (model != null && !balances.containsKey(key)) {
-            balances[key] = model
-        }
-        return model
+        val sql = """
+            select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc, 
+                b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num
+            from account a, balance b
+            where a.id = :id and b.id = a.id
+        """.trimIndent()
+        return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()
     }
 
     fun findByBalanceSheet(balanceSheet: BalanceSheet): List<Balance> {
@@ -82,36 +81,33 @@ class BalanceDao(
             """.trimIndent()
         val types = AccountType.values().filter { it.isBalance }.map { it.name }
         val paramMap = mapOf("bsId" to balanceSheet.id, "types" to types)
-        val requestId = ApiRequestContextHolder.requestId
         return jdbcTemplate.query(sql, paramMap, rowMapper)
-            .map {
-                val key = requestId to it.id
-                balances.getOrPut(key) { it }
-            }
     }
 
     private val rowMapper: (rs: ResultSet, rowNum: Int) -> Balance = { rs, _ ->
         val id = UUID.fromString(rs.getString("id"))
-        val type = AccountType.valueOf(rs.getString("type"))
-        if (type == AccountType.reserve) {
-            reserveDao.findById(id)
-        } else {
-            val balanceSheet = rs.getString("balance_sheet_id")
-                .let { UUID.fromString(it) }
-                .let { balanceSheetDao.findById(it) }
-            val createdDate = rs.getDate("created_date").toLocalDate()
-            val name = rs.getString("name")
-            val isArc = rs.getBoolean("is_arc")
-            val value = rs.getBigDecimal("value")
-            val currencyCode = rs.getString("currency_code")
-            Balance(id, balanceSheet, type, name, createdDate, isArc, currencyCode, value).apply {
-                this.minValue = rs.getBigDecimal("min_value")
-                this.credit = rs.getString("credit")
-                    ?.let { gson.fromJson(it, Credit::class.java) }
-                this.reserve = rs.getString("reserve_id")
-                    ?.let { UUID.fromString(it) }
-                    ?.let { reserveDao.findByIdOrNull(it) }
-                this.num = rs.getLong("num")
+        cacheManager.getCache("Balance")?.get(id, Balance::class.java) ?: run {
+            val type = AccountType.valueOf(rs.getString("type"))
+            if (type == AccountType.reserve) {
+                reserveDao.findById(id)
+            } else {
+                val balanceSheet = rs.getString("balance_sheet_id")
+                    .let { UUID.fromString(it) }
+                    .let { balanceSheetDao.findById(it) }
+                val createdDate = rs.getDate("created_date").toLocalDate()
+                val name = rs.getString("name")
+                val isArc = rs.getBoolean("is_arc")
+                val value = rs.getBigDecimal("value")
+                val currencyCode = rs.getString("currency_code")
+                Balance(id, balanceSheet, type, name, createdDate, isArc, currencyCode, value).apply {
+                    this.minValue = rs.getBigDecimal("min_value")
+                    this.credit = rs.getString("credit")
+                        ?.let { gson.fromJson(it, Credit::class.java) }
+                    this.reserve = rs.getString("reserve_id")
+                        ?.let { UUID.fromString(it) }
+                        ?.let { reserveDao.findByIdOrNull(it) }
+                    this.num = rs.getLong("num")
+                }
             }
         }
     }

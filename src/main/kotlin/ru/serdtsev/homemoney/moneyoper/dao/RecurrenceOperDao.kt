@@ -25,6 +25,7 @@ class RecurrenceOperDao(
             mapOf("id" to id, "templateId" to template.id, "nextDate" to nextDate, "bsId" to balanceSheet.id, "isArc" to arc)
         }
         jdbcTemplate.update(sql, paramMap)
+        moneyOperDao.save(recurrenceOper.template)
     }
 
     fun findById(id: UUID): RecurrenceOper = findByIdOrNull(id)!!

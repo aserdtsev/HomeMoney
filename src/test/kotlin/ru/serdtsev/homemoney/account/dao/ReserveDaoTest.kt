@@ -1,33 +1,17 @@
 package ru.serdtsev.homemoney.account.dao
 
-import ru.serdtsev.homemoney.utils.TestHelper
-import com.opentable.db.postgres.junit5.PreparedDbExtension
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.beans.factory.annotation.Autowired
+import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.account.model.Reserve
-import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import java.math.BigDecimal
 
-internal class ReserveDaoTest {
-    companion object {
-        @JvmField @RegisterExtension
-        val db: PreparedDbExtension = TestHelper.db
-    }
-
-    private lateinit var balanceSheetDao: BalanceSheetDao
+internal class ReserveDaoTest: SpringBootBaseTest() {
+    @Autowired
     private lateinit var reserveDao: ReserveDao
-
-    @BeforeEach
-    internal fun setUp() {
-        val jdbcTemplate = NamedParameterJdbcTemplate(db.testDatabase)
-        balanceSheetDao = BalanceSheetDao(jdbcTemplate)
-        reserveDao = ReserveDao(jdbcTemplate, balanceSheetDao)
-    }
 
     @Test
     internal fun crud() {

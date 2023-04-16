@@ -1,7 +1,7 @@
 package ru.serdtsev.homemoney.moneyoper
 
+import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
@@ -30,8 +30,8 @@ internal class MoneyOperControllerTest {
     private val account = Balance(UUID.randomUUID(), balanceSheet, AccountType.credit, "Current account",
         now, false, "RUB", BigDecimal.valueOf(10000L, 2))
     private val accountDao: AccountDao = mock {
-        whenever(it.findNameById(balance.id)).thenReturn(balance.name)
-        whenever(it.findNameById(account.id)).thenReturn(account.name) // todo Актуально?
+        on { it.findNameById(balance.id) } doReturn balance.name
+        on { it.findNameById(account.id) } doReturn account.name // todo Актуально?
     }
     private val moneyOperService: MoneyOperService = mock {  }
     private val moneyOperDao: MoneyOperDao = mock {  }

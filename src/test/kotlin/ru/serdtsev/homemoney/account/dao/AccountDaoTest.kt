@@ -1,12 +1,10 @@
 package ru.serdtsev.homemoney.account.dao
 
-import ru.serdtsev.homemoney.utils.TestHelper
-import com.opentable.db.postgres.junit5.PreparedDbExtension
-import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.extension.RegisterExtension
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
+import org.springframework.beans.factory.annotation.Autowired
+import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.account.model.AccountType
 import ru.serdtsev.homemoney.account.model.Balance
 import ru.serdtsev.homemoney.balancesheet.BalanceSheetDao
@@ -14,25 +12,11 @@ import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.ApiRequestContextHolder
 import java.util.*
 
-internal class AccountDaoTest {
-    companion object {
-        @JvmField @RegisterExtension
-        val db: PreparedDbExtension = TestHelper.db
-    }
-
-    lateinit var balanceSheetDao: BalanceSheetDao
-    lateinit var reserveDao: ReserveDao
+internal class AccountDaoTest: SpringBootBaseTest() {
+    @Autowired
     lateinit var balanceDao: BalanceDao
+    @Autowired
     lateinit var accountDao: AccountDao
-
-    @BeforeEach
-    internal fun setUp() {
-        val jdbcTemplate = NamedParameterJdbcTemplate(db.testDatabase)
-        balanceSheetDao = BalanceSheetDao(jdbcTemplate)
-        reserveDao = ReserveDao(jdbcTemplate, balanceSheetDao)
-        balanceDao = BalanceDao(jdbcTemplate, balanceSheetDao, reserveDao)
-        accountDao = AccountDao(jdbcTemplate)
-    }
 
     @Test
     internal fun findNameByIdOrNull() {

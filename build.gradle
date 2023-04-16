@@ -5,8 +5,9 @@ buildscript {
     ext {
         javaVersion = '17'
         kotlinVersion = '1.8.0'
-        springBootVersion = '3.0.1'
-        flywayVersion = '9.5.1'
+        springBootVersion = '3.0.5'
+        flywayVersion = '9.16.0'
+        testcontainersVersion = '1.18.0'
     }
 }
 
@@ -38,7 +39,7 @@ noArg {
 }
 
 flyway {
-    url = 'jdbc:postgresql://192.168.1.41:5432/homemoney'
+    url = 'jdbc:postgresql://192.168.3.41:5432/homemoney'
     user = 'serdtsev'
     password = 'serdtsev'
     baselineVersion = 1.0
@@ -84,21 +85,22 @@ dependencies {
 
     implementation('org.jetbrains.kotlin:kotlin-reflect')
     implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4')
-    implementation('io.github.microutils:kotlin-logging:3.0.4')
+    implementation('io.github.microutils:kotlin-logging:3.0.5')
 
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
     implementation("org.flywaydb:flyway-core:$flywayVersion")
     implementation 'org.ehcache:ehcache:3.8.2.1'
     implementation 'com.google.code.gson:gson:2.10.1'
-
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
 
     compileOnly('org.springframework.boot:spring-boot-devtools')
 
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     testImplementation('com.nhaarman:mockito-kotlin:1.6.0')
-    testImplementation('org.mockito:mockito-core:4.11.0')
-    testImplementation 'com.opentable.components:otj-pg-embedded:1.0.1'
+    testImplementation('org.mockito:mockito-core:5.2.0')
+    testImplementation("org.testcontainers:junit-jupiter:$testcontainersVersion")
+    testImplementation("org.testcontainers:postgresql:$testcontainersVersion")
 }
 
 compileKotlin {

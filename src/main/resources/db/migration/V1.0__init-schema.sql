@@ -11,8 +11,6 @@ create table balance_sheet
 
 comment on column balance_sheet.currency_code is 'Код базовой валюты';
 
-alter table balance_sheet owner to postgres;
-
 create table account
 (
     id uuid not null
@@ -27,8 +25,6 @@ create table account
     is_arc boolean default false not null,
     dtype varchar(31)
 );
-
-alter table account owner to postgres;
 
 create index account_balance_sheet_id_fki
     on account (balance_sheet_id);
@@ -57,8 +53,6 @@ create table balance
     credit jsonb
 );
 
-alter table balance owner to postgres;
-
 create index balance_id_fki
     on balance (id);
 
@@ -82,8 +76,6 @@ comment on column exchange_rate.ask is 'Курс спроса';
 
 comment on column exchange_rate.bid is 'Курс предложения';
 
-alter table exchange_rate owner to postgres;
-
 create index exchange_rate_first_cry_date_idx
     on exchange_rate ("substring"(id::text, 1, 3), date);
 
@@ -106,8 +98,6 @@ create table tag
         unique (balance_sheet_id, name)
 );
 
-alter table tag owner to postgres;
-
 create index tag_root_id_fki
     on tag (root_id);
 
@@ -123,8 +113,6 @@ create table tag2obj
 );
 
 comment on column tag2obj.obj_type is 'Тип объекта, заданного obj_id';
-
-alter table tag2obj owner to postgres;
 
 create table money_oper
 (
@@ -149,8 +137,6 @@ create table money_oper
 comment on column money_oper.status is 'Статус операции: pending - в ожидании, done - выполнен, cancelled - отменен.';
 
 comment on column money_oper.recurrence_id is 'Идентификатор повторяющейся операции';
-
-alter table money_oper owner to postgres;
 
 create index money_oper_bs_id_trn_date_status_idx
     on money_oper (balance_sheet_id, trn_date, status);
@@ -185,8 +171,6 @@ comment on column money_oper_item.performed is 'Дата изменения';
 
 comment on column money_oper_item.index is 'Порядковый номер';
 
-alter table money_oper_item owner to postgres;
-
 create index money_oper_item_bs_id_fki
     on money_oper_item (bs_id);
 
@@ -211,8 +195,6 @@ create table recurrence_oper
     is_arc boolean
 );
 
-alter table recurrence_oper owner to postgres;
-
 create index recurrence_oper_balance_sheet_id_fki
     on recurrence_oper (balance_sheet_id);
 
@@ -228,8 +210,6 @@ create table reserve
             references balance,
     target numeric(19,2) not null
 );
-
-alter table reserve owner to postgres;
 
 alter table balance
     add constraint balance_reserve_id_fk
@@ -252,8 +232,6 @@ create table app_user
             references balance_sheet
 );
 
-alter table app_user owner to postgres;
-
 create index app_user_balance_sheet_id_fki
     on app_user (balance_sheet_id);
 
@@ -275,5 +253,3 @@ WHERE (a.type::text = ANY
   AND b.id = a.id;
 
 comment on view v_crnt_saldo_by_base_cry is 'Текущие балансы в базовой валюте';
-
-alter table v_crnt_saldo_by_base_cry owner to postgres;

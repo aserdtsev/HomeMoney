@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.balancesheet
 
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
@@ -22,6 +23,7 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) {
         jdbcTemplate.update(sql, paramMap)
     }
 
+    @CacheEvict("BalanceSheetDao.findById")
     fun deleteById(id: UUID) {
         val sql = "delete from balance_sheet where id = :id"
         jdbcTemplate.update(sql, mapOf("id" to id))

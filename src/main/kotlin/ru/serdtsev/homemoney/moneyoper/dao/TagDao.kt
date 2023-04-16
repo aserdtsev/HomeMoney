@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.moneyoper.dao
 
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
@@ -35,6 +36,7 @@ class TagDao(
         jdbcTemplate.update(sql, mapOf("id" to tag.id))
     }
 
+    @CacheEvict("TagDao.findByObjId", key = "#objId")
     fun updateLinks(tags: Collection<Tag>, objId: UUID, objType: String) {
         deleteLinks(objId)
         tags.forEach { tag ->
