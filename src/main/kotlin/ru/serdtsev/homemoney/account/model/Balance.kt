@@ -1,13 +1,11 @@
 package ru.serdtsev.homemoney.account.model
 
 import mu.KotlinLogging
-import ru.serdtsev.homemoney.account.dao.ReserveDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
 import ru.serdtsev.homemoney.common.Model
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOper
 import ru.serdtsev.homemoney.moneyoper.model.MoneyOperStatus
 import ru.serdtsev.homemoney.moneyoper.model.Period
-import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -47,28 +45,6 @@ open class Balance(
 
     private fun getCurrencyFractionDigits() = balanceSheet.getCurrencyFractionDigits()
 
-    @Suppress("DuplicatedCode")
-    fun merge(balance: Balance, reserveDao: ReserveDao, moneyOperService: MoneyOperService) {
-        super.merge(balance)
-        credit = balance.credit
-        minValue = balance.minValue
-        reserve = balance.reserveId?.let { reserveDao.findById(it) }
-        if (balance.value.compareTo(value) != 0) {
-            val balanceSheet = balanceSheet
-            if (balance.type == AccountType.reserve) {
-                value = balance.value
-            } else {
-                val moneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending, LocalDate.now(), 0, emptyList(),
-                        "корректировка остатка", Period.single)
-                val amount = balance.value - value
-                moneyOper.addItem(this, amount, moneyOper.performed)
-                moneyOper.complete()
-                moneyOperService.save(moneyOper)
-            }
-        }
-    }
-
-
     override fun merge(other: Any): Collection<Model> {
         return listOf()
     }
@@ -97,6 +73,26 @@ open class Balance(
 
     companion object {
         private val log = KotlinLogging.logger {  }
+
+        fun merge(from: Balance, to: Balance): Collection<Model> {
+            val changedModels = Account.merge(from, to).plus(to).toMutableList()
+            to.credit = from.credit
+            to.minValue = from.minValue
+            to.reserve = from.reserve
+            if (from.value.compareTo(to.value) != 0) {
+                if (from.type == AccountType.reserve) {
+                    to.value = from.value
+                } else {
+                    val moneyOper = MoneyOper(to.balanceSheet, MoneyOperStatus.pending, LocalDate.now(), 0, emptyList(),
+                        "корректировка остатка", Period.single)
+                    val amount = from.value - to.value
+                    moneyOper.addItem(to, amount, moneyOper.performed)
+                    moneyOper.complete()
+                    changedModels.add(moneyOper)
+                }
+            }
+            return changedModels
+        }
     }
 }
 

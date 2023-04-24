@@ -44,7 +44,7 @@ class MoneyOperService (
     }
 
     fun updateMoneyOper(newOper: MoneyOper, origOper: MoneyOper) {
-        origOper.merge(newOper).forEach { model ->
+        MoneyOper.merge(newOper, origOper).forEach { model ->
             when (model) {
                 is MoneyOper -> moneyOperDao.save(model)
                 is Balance -> balanceDao.save(model)

@@ -18,22 +18,6 @@ class MoneyOperItem(
 ) : Model, Serializable {
     val balanceSheet: BalanceSheet = balance.balanceSheet
 
-    fun mostlyEquals(other: MoneyOperItem): Boolean {
-        assert(other.id == id)
-        return moneyOperId == other.moneyOperId && balance == other.balance && value.compareTo(other.value) == 0
-    }
-
-    override fun merge(other: Any): Collection<Model> {
-        other as MoneyOperItem
-        assert(other.id == id && other.moneyOperId == moneyOperId)
-        this.balance = other.balance
-        this.value = other.value
-        this.index = other.index
-        this.performed = other.performed
-        return listOf(this)
-    }
-
-
     override fun toString(): String {
         return "MoneyOperItem{" +
                 "id=" + id +
@@ -43,6 +27,10 @@ class MoneyOperItem(
                 ", performed=" + performed +
                 ", index=" + index +
                 '}'
+    }
+
+    override fun merge(other: Any): Collection<Model> {
+        TODO("Удалить")
     }
 
     override fun equals(other: Any?): Boolean {
@@ -63,5 +51,21 @@ class MoneyOperItem(
         result = 31 * result + moneyOperId.hashCode()
         result = 31 * result + balanceSheet.hashCode()
         return result
+    }
+
+    companion object {
+        fun balanceEquals(a: MoneyOperItem, b: MoneyOperItem): Boolean {
+            assert(b.id == a.id)
+            return a.moneyOperId == b.moneyOperId && a.balance == b.balance && a.value.compareTo(b.value) == 0
+        }
+
+        fun merge(from: MoneyOperItem, to: MoneyOperItem): Collection<Model> {
+            assert(from.id == to.id && from.moneyOperId == to.moneyOperId)
+            to.balance = from.balance
+            to.value = from.value
+            to.index = from.index
+            to.performed = from.performed
+            return listOf(to)
+        }
     }
 }

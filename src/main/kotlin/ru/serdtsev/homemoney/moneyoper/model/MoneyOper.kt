@@ -99,47 +99,6 @@ class MoneyOper (
         items.forEach { item -> item.balance.changeValue(item.value * factor, this) }
     }
 
-    override fun merge(other: Any): Collection<Model> {
-        other as MoneyOper
-        assert(other.id == id)
-        val changedModels = mutableSetOf<Model>(this)
-        val prevStatus = status
-        val mostlyEquals = mostlyEquals(other)
-        if (!mostlyEquals && status == MoneyOperStatus.done) {
-            cancel()
-        }
-        changedModels.addAll(items.map { it.balance })
-
-        mergeItems(other.items)
-        performed = other.performed
-        setTags(other.tags)
-        dateNum = other.dateNum
-        period = other.period
-        comment = other.comment
-
-        if (!mostlyEquals && prevStatus == MoneyOperStatus.done
-            || status == MoneyOperStatus.pending && other.status == MoneyOperStatus.done
-        ) {
-            complete()
-        }
-
-        changedModels.addAll(items.map { it.balance })
-        return changedModels;
-    }
-
-    private fun mergeItems(otherItems: List<MoneyOperItem>) {
-        items.forEach { item -> otherItems.firstOrNull { it == item }?.let { item.merge(it) } }
-        items.removeIf { item -> otherItems.none { it.id == item.id } }
-        items.addAll(otherItems.filter { item -> this.items.none { it.id == item.id } })
-    }
-
-    fun mostlyEquals(other: MoneyOper): Boolean {
-        assert(other.id == this.id)
-        return other.type == this.type
-                && items.all { item -> other.items.any { it.id == item.id && it.mostlyEquals(item) }
-        }
-    }
-
     override fun toString(): String {
         return "MoneyOper{" +
                 "id=" + id +
@@ -150,6 +109,8 @@ class MoneyOper (
                 ", created=" + created +
                 '}'
     }
+
+    override fun merge(other: Any): Collection<Model> = merge(other as MoneyOper, this)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -164,6 +125,51 @@ class MoneyOper (
 
     override fun hashCode(): Int {
         return id.hashCode()
+    }
+
+    companion object {
+        fun merge(from: MoneyOper, to: MoneyOper): Collection<Model> {
+            assert(from.id == to.id)
+            val changedModels = mutableSetOf<Model>(to)
+            val prevStatus = from.status
+            val mostlyEquals = balanceEquals(from, to)
+            if (!mostlyEquals && to.status == MoneyOperStatus.done) {
+                to.cancel()
+            }
+            changedModels.addAll(to.items.map { it.balance })
+
+            mergeItems(from, to)
+            to.performed = from.performed
+            to.setTags(from.tags)
+            to.dateNum = from.dateNum
+            to.period = from.period
+            to.comment = from.comment
+
+            if (!mostlyEquals && prevStatus == MoneyOperStatus.done
+                || to.status == MoneyOperStatus.pending && from.status == MoneyOperStatus.done
+            ) {
+                to.complete()
+            }
+
+            changedModels.addAll(to.items.map { it.balance })
+            return changedModels;
+        }
+
+        private fun mergeItems(from: MoneyOper, to: MoneyOper) {
+            to.items.forEach { item -> from.items.firstOrNull { it == item }?.let { MoneyOperItem.merge(it, item) } }
+            to.items.removeIf { item -> from.items.none { it.id == item.id } }
+            to.items.addAll(from.items.filter { item -> to.items.none { it.id == item.id } })
+        }
+
+        /**
+         * Возвращает true, если экземпляры одной операции эквивалентны по проводкам
+         */
+        fun balanceEquals(a: MoneyOper, b: MoneyOper): Boolean {
+            assert(b.id == a.id)
+            return b.type == a.type
+                    && a.items.all { item -> b.items.any { it.id == item.id && MoneyOperItem.balanceEquals(it, item) }
+            }
+        }
     }
 
 }

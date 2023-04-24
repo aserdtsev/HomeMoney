@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.account.model
 
 import ru.serdtsev.homemoney.account.dao.ReserveDao
 import ru.serdtsev.homemoney.balancesheet.model.BalanceSheet
+import ru.serdtsev.homemoney.common.Model
 import ru.serdtsev.homemoney.moneyoper.service.MoneyOperService
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -21,8 +22,11 @@ open class Reserve(
             target: BigDecimal = BigDecimal.ZERO) :
             this(UUID.randomUUID(), balanceSheet, name, value = value, target = target)
 
-    fun merge(reserve: Reserve, reserveDao: ReserveDao, moneyOperService: MoneyOperService) {
-        super.merge(reserve, reserveDao, moneyOperService)
-        target = reserve.target
+    companion object {
+        fun merge(from: Reserve, to: Reserve): Collection<Model> {
+            val changedModels = Balance.merge(from, to).plus(to)
+            to.target = from.target
+            return changedModels
+        }
     }
 }
