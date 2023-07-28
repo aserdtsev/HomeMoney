@@ -24,9 +24,9 @@ import java.util.*
 
 internal class MoneyOperControllerTest: SpringBootBaseTest() {
     private val now = LocalDate.now()
-    private val cashBalance = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Наличные", now,
+    private val cashBalance = Balance(UUID.randomUUID(), AccountType.debit, "Наличные", now,
         false, balanceSheet.currencyCode, BigDecimal("100.00"))
-    private val cardBalance = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Карта", now,
+    private val cardBalance = Balance(UUID.randomUUID(), AccountType.debit, "Карта", now,
         false, balanceSheet.currencyCode, BigDecimal("0.00"))
     private val foodstuffsTag = Tag(balanceSheet, "Продукты")
     private val salaryTag = Tag(balanceSheet, "Зарплата")

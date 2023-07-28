@@ -21,7 +21,7 @@ internal class BalanceDaoTest: SpringBootBaseTest() {
         balanceSheetDao.save(balanceSheet)
         ApiRequestContextHolder.bsId = balanceSheet.id
 
-        val balance = Balance(balanceSheet, AccountType.debit, "name")
+        val balance = Balance(AccountType.debit, "name")
         balanceDao.save(balance)
 
         assertTrue(balanceDao.exists(balance.id))
@@ -53,24 +53,13 @@ internal class BalanceDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun findByBalanceSheet() {
-        val balanceSheetA = BalanceSheet()
-        balanceSheetDao.save(balanceSheetA)
-        val balanceA1 = Balance(balanceSheetA, AccountType.debit, "name")
-        balanceDao.save(balanceA1)
-        val balanceA2 = Balance(balanceSheetA, AccountType.debit, "name")
-        balanceDao.save(balanceA2)
+        val balance1 = Balance(AccountType.debit, "name")
+        balanceDao.save(balance1)
+        val balance2 = Balance(AccountType.debit, "name")
+        balanceDao.save(balance2)
 
-        val balanceSheetB = BalanceSheet()
-        balanceSheetDao.save(balanceSheetB)
-        val balanceB1 = Balance(balanceSheetB, AccountType.debit, "name")
-        balanceDao.save(balanceB1)
-
-        balanceDao.findByBalanceSheet(balanceSheetA).also {
-            assertEquals(setOf(balanceA1, balanceA2), it.toSet())
-        }
-
-        balanceDao.findByBalanceSheet(balanceSheetB).also {
-            assertEquals(listOf(balanceB1), it)
+        balanceDao.findByBalanceSheet(balanceSheet).also {
+            assertEquals(setOf(balance1, balance2), it.toSet())
         }
     }
 }

@@ -12,11 +12,11 @@ open class BaseDomainEventPublisherTest {
     private val beforeDomainEventPublisher =
         if (DomainEventPublisher.Companion::instance.isAccessible) DomainEventPublisher.instance else null
     protected val balanceSheet = BalanceSheet().apply {
-        ApiRequestContextHolder.bsId = this.id
+        ApiRequestContextHolder.balanceSheet = this
     }
 
     @BeforeEach
-    internal fun setUp() {
+    open fun setUp() {
         DomainEventPublisher.instance = domainEventPublisher
     }
 

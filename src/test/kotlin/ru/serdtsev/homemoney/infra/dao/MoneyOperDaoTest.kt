@@ -10,11 +10,9 @@ import org.springframework.data.domain.PageRequest
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
-import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -33,8 +31,8 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
     @BeforeEach
     internal fun setUp() {
-        balanceA = Balance(balanceSheet, AccountType.debit, "a").apply { balanceDao.save(this) }
-        balanceB = Balance(balanceSheet, AccountType.debit, "b").apply { balanceDao.save(this) }
+        balanceA = Balance(AccountType.debit, "a").apply { balanceDao.save(this) }
+        balanceB = Balance(AccountType.debit, "b").apply { balanceDao.save(this) }
         tagA = Tag(balanceSheet, "tagA").apply { tagDao.save(this) }
         tagB = Tag(balanceSheet, "tagB").apply { tagDao.save(this) }
     }
@@ -56,7 +54,7 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
         with(moneyOper) {
             comment = "new comment"
         }
-        moneyOperDao.save(moneyOper);
+        moneyOperDao.save(moneyOper)
 
         assertThat(moneyOperDao.findById(moneyOper.id))
             .usingRecursiveAssertion()
@@ -112,10 +110,5 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
         moneyOperDao.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet, LocalDate.now(),
             LocalDate.now(), MoneyOperStatus.done).also { assertEquals(listOf(moneyOper), it) }
-    }
-
-    private fun createBalanceSheet(): BalanceSheet = BalanceSheet().apply {
-        balanceSheetDao.save(this)
-        ApiRequestContextHolder.bsId = id
     }
 }

@@ -24,7 +24,7 @@ internal class SkipMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun run_byPendingMoneyOper() {
-        val balance = Balance(balanceSheet, AccountType.debit, "Cash")
+        val balance = Balance(AccountType.debit, "Cash")
         val moneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending).apply {
             this.addItem(balance, BigDecimal("1.00"))
         }
@@ -43,7 +43,7 @@ internal class SkipMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun run_byRecurrenceOper() {
-        val balance = Balance(balanceSheet, AccountType.debit, "Cash")
+        val balance = Balance(AccountType.debit, "Cash")
         val template =  MoneyOper(balanceSheet, MoneyOperStatus.done).apply {
             this.addItem(balance, BigDecimal("1.00"))
             this.period = Period.month

@@ -21,7 +21,7 @@ internal class DeleteMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun run() {
-        val balance = Balance(balanceSheet, AccountType.debit, "Cash")
+        val balance = Balance(AccountType.debit, "Cash")
 
         val origMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.done).apply {
             this.addItem(balance, BigDecimal("1.00"))

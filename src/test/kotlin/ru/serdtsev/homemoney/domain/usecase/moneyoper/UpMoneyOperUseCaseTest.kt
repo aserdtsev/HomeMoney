@@ -18,7 +18,7 @@ internal class UpMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun `run MoneyOper by last index`() {
-        val balance = Balance(balanceSheet, AccountType.debit, "Card")
+        val balance = Balance(AccountType.debit, "Card")
         val moneyOpers = IntRange(0, 2)
             .map { i -> createMoneyOper(balance, i) }
             .toList()
@@ -35,7 +35,7 @@ internal class UpMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun `run MoneyOper by first index`() {
-        val balance = Balance(balanceSheet, AccountType.debit, "Card")
+        val balance = Balance(AccountType.debit, "Card")
         val moneyOpers = IntRange(0, 2)
             .map { i -> createMoneyOper(balance, i) }
             .toList()

@@ -5,27 +5,24 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import ru.serdtsev.homemoney.domain.event.BaseDomainEventPublisherTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
 
-internal class MoneyOperItemTest {
+internal class MoneyOperItemTest : BaseDomainEventPublisherTest() {
     private lateinit var cash: Balance
     private lateinit var checkingAccount: Balance
     private lateinit var oper: MoneyOper
 
     @BeforeEach
-    fun setUp() {
-        val balanceSheet = BalanceSheet()
-        cash = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Cash", LocalDate.now(), false,
+    override fun setUp() {
+        super.setUp()
+        cash = Balance(UUID.randomUUID(), AccountType.debit, "Cash", LocalDate.now(), false,
             "RUB", BigDecimal.TEN)
-        checkingAccount = Balance(UUID.randomUUID(), balanceSheet, AccountType.debit, "Checking account",
+        checkingAccount = Balance(UUID.randomUUID(), AccountType.debit, "Checking account",
                 LocalDate.now(), false, "RUB", BigDecimal.valueOf(1000L))
         oper = MoneyOper(UUID.randomUUID(), balanceSheet, mutableListOf(), MoneyOperStatus.pending, LocalDate.now(), 0,
                listOf(), "", null)

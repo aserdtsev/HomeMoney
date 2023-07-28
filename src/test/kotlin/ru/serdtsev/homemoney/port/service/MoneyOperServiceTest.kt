@@ -50,7 +50,7 @@ internal class MoneyOperServiceTest {
         whenever(tagRepository.findByBalanceSheetOrderByName(balanceSheet))
             .thenReturn(tagsA)
 
-        val account = Account(UUID.randomUUID(), balanceSheet, AccountType.debit,"Some account name",
+        val account = Account(UUID.randomUUID(), AccountType.debit,"Some account name",
             LocalDate.now(),false)
         whenever(accountDao.findNameById(any())).thenReturn(account.name)
 
@@ -65,8 +65,8 @@ internal class MoneyOperServiceTest {
     private fun newMoneyOperWithTags(tags: List<Tag>): MoneyOper {
         val moneyOper = MoneyOper(UUID.randomUUID(), balanceSheet, mutableListOf(), MoneyOperStatus.doneNew,
             LocalDate.now(), 0, tags, null, Period.month)
-        val balance1 = Balance(balanceSheet, AccountType.debit, "Some account name", BigDecimal.ZERO)
-        val balance2 = Balance(balanceSheet, AccountType.debit, "Some account name", BigDecimal.ZERO)
+        val balance1 = Balance(AccountType.debit, "Some account name", BigDecimal.ZERO)
+        val balance2 = Balance(AccountType.debit, "Some account name", BigDecimal.ZERO)
         moneyOper.addItem(balance1, BigDecimal.valueOf(1).negate(), LocalDate.now(), 0, UUID.randomUUID())
         moneyOper.addItem(balance2, BigDecimal.ONE, LocalDate.now(), 1, UUID.randomUUID())
         return moneyOper

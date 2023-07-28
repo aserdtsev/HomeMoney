@@ -15,10 +15,10 @@ import java.time.LocalDate
 import java.util.*
 
 internal class MoneyOperTest: BaseDomainEventPublisherTest() {
-    private val balance1 = Balance(balanceSheet, AccountType.debit, "Balance 1", BigDecimal("100.00"))
-    private val balance2 = Balance(balanceSheet, AccountType.debit, "Balance 2", BigDecimal("200.00"))
-    private val cash = Balance(balanceSheet, AccountType.debit, "Cash", BigDecimal("10.00"))
-    private val checkingAccount = Balance(balanceSheet, AccountType.debit, "Checking account",  BigDecimal("1000.00"))
+    private val balance1 = Balance(AccountType.debit, "Balance 1", BigDecimal("100.00"))
+    private val balance2 = Balance(AccountType.debit, "Balance 2", BigDecimal("200.00"))
+    private val cash = Balance(AccountType.debit, "Cash", BigDecimal("10.00"))
+    private val checkingAccount = Balance(AccountType.debit, "Checking account",  BigDecimal("1000.00"))
 
     @Test
     fun complete() {

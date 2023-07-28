@@ -17,9 +17,9 @@ class ConverterConfiguration : ApplicationContextAware {
         val converters = setOf(
             AccountToDto(),
             BalanceToDto(),
-            BalanceDtoToModel(ctx),
+            BalanceDtoToModel(),
             ReserveToDto(),
-            ReserveDtoToModel(ctx),
+            ReserveDtoToModel(),
             MoneyOperToDtoConverter(ctx),
             MoneyOperDtoToModelConverter(ctx),
             MoneyOperItemToDtoConverter(ctx),

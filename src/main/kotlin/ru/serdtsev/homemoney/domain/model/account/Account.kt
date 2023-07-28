@@ -1,14 +1,12 @@
 package ru.serdtsev.homemoney.domain.model.account
 
 import ru.serdtsev.homemoney.domain.event.DomainEvent
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import java.io.Serializable
 import java.time.LocalDate
 import java.util.*
 
 open class Account(
     open val id: UUID,
-    open var balanceSheet: BalanceSheet,
     open var type: AccountType,
     open var name: String,
     open var createdDate: LocalDate = LocalDate.now(),
@@ -17,24 +15,23 @@ open class Account(
 
     open fun getSortIndex(): String = name
 
+    override fun toString(): String {
+        return "Account(id=$id, type=$type, name='$name', createdDate=$createdDate, isArc=$isArc)"
+    }
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is Account) return false
+        if (javaClass != other?.javaClass) return false
+
+        other as Account
 
         if (id != other.id) return false
-        if (balanceSheet != other.balanceSheet) return false
 
         return true
     }
 
     override fun hashCode(): Int {
-        var result = id.hashCode()
-        result = 31 * result + balanceSheet.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "Account(id=$id, balanceSheet=$balanceSheet, type=$type, name='$name', createdDate=$createdDate, isArc=$isArc)"
+        return id.hashCode()
     }
 
     companion object {

@@ -11,7 +11,6 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
@@ -26,7 +25,7 @@ internal class MoneyOperStatusChangedHandlerTest: BaseDomainEventPublisherTest()
     @MethodSource("paramsFor_handler_balanceIsChanged")
     fun handler_balanceIsChanged(beforeStatus: MoneyOperStatus, afterStatus: MoneyOperStatus, expected: BigDecimal) {
         val moneyOper = MoneyOper(balanceSheet, afterStatus)
-        val balance = Balance(BalanceSheet(), AccountType.debit, "Cash", value = BigDecimal("100.00"))
+        val balance = Balance(AccountType.debit, "Cash", value = BigDecimal("100.00"))
         moneyOper.addItem(balance, BigDecimal("1.00"))
         val event = MoneyOperStatusChanged(beforeStatus, afterStatus, moneyOper)
 
@@ -44,7 +43,7 @@ internal class MoneyOperStatusChangedHandlerTest: BaseDomainEventPublisherTest()
     @MethodSource("paramsFor_handler_balanceNotChanged")
     fun handler_balanceNotChanged(beforeStatus: MoneyOperStatus, afterStatus: MoneyOperStatus) {
         val moneyOper = MoneyOper(balanceSheet, afterStatus)
-        val balance = Balance(BalanceSheet(), AccountType.debit, "Cash", value = BigDecimal("100.00"))
+        val balance = Balance(AccountType.debit, "Cash", value = BigDecimal("100.00"))
         moneyOper.addItem(balance, BigDecimal("1.00"))
         val event = MoneyOperStatusChanged(beforeStatus, afterStatus, moneyOper)
 

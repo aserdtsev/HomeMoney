@@ -12,7 +12,7 @@ import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
-import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.port.common.toJsonb
 import java.sql.ResultSet
 import java.util.*
@@ -20,7 +20,6 @@ import java.util.*
 @Repository
 class BalanceDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
-    private val balanceSheetRepository: BalanceSheetRepository,
     private val reserveDao: ReserveDao,
     @Qualifier("firstLevelCacheManager") private val cacheManager: CacheManager
 ) : DomainModelDao<Balance>, BalanceRepository {
@@ -39,9 +38,10 @@ class BalanceDao(
                     num = :num, credit = :credit;
         """.trimIndent()
         val paramMap = with(domainAggregate) {
-            mapOf("id" to domainAggregate.id, "bsId" to domainAggregate.balanceSheet.id, "name" to name, "createdDate" to createdDate,
-                "type" to type.toString(), "isArc" to isArc, "currencyCode" to currencyCode, "value" to value,
-                "minValue" to minValue, "reserveId" to reserveId, "num" to num, "credit" to credit?.let { gson.toJsonb(it) }
+            mapOf("id" to domainAggregate.id, "bsId" to ApiRequestContextHolder.balanceSheet.id, "name" to name,
+                "createdDate" to createdDate, "type" to type.toString(), "isArc" to isArc, "currencyCode" to currencyCode,
+                "value" to value, "minValue" to minValue, "reserveId" to reserveId, "num" to num,
+                "credit" to credit?.let { gson.toJsonb(it) }
             )
         }
         jdbcTemplate.update(sql, paramMap)
@@ -91,15 +91,12 @@ class BalanceDao(
             if (type == AccountType.reserve) {
                 reserveDao.findById(id)
             } else {
-                val balanceSheet = rs.getString("balance_sheet_id")
-                    .let { UUID.fromString(it) }
-                    .let { balanceSheetRepository.findById(it) }
                 val createdDate = rs.getDate("created_date").toLocalDate()
                 val name = rs.getString("name")
                 val isArc = rs.getBoolean("is_arc")
                 val value = rs.getBigDecimal("value")
                 val currencyCode = rs.getString("currency_code")
-                Balance(id, balanceSheet, type, name, createdDate, isArc, currencyCode, value).apply {
+                Balance(id, type, name, createdDate, isArc, currencyCode, value).apply {
                     this.minValue = rs.getBigDecimal("min_value")
                     this.credit = rs.getString("credit")
                         ?.let { gson.fromJson(it, Credit::class.java) }

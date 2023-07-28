@@ -23,7 +23,7 @@ internal class AccountDaoTest: SpringBootBaseTest() {
         balanceSheetDao.save(balanceSheet)
         ApiRequestContextHolder.bsId = balanceSheet.id
 
-        val balance = Balance(balanceSheet, AccountType.debit, "name")
+        val balance = Balance(AccountType.debit, "name")
         balanceDao.save(balance)
 
         accountDao.findNameByIdOrNull(balance.id).also { assertEquals(balance.name, it) }

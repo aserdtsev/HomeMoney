@@ -3,6 +3,7 @@ package ru.serdtsev.homemoney.domain.model.moneyoper
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.event.DomainEvent
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -16,7 +17,7 @@ class MoneyOperItem(
     var performed: LocalDate,
     var index: Int
 ) : DomainEvent, Serializable {
-    val balanceSheet: BalanceSheet = balance.balanceSheet
+    val balanceSheet: BalanceSheet = ApiRequestContextHolder.balanceSheet
 
     override fun toString(): String {
         return "MoneyOperItem{" +

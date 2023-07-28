@@ -5,8 +5,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.Reserve
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.math.BigDecimal
 
 internal class ReserveDaoTest: SpringBootBaseTest() {
@@ -15,11 +13,7 @@ internal class ReserveDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun crud() {
-        val balanceSheet = BalanceSheet()
-        balanceSheetDao.save(balanceSheet)
-        ApiRequestContextHolder.bsId = balanceSheet.id
-
-        val reserve = Reserve(balanceSheet, "name")
+        val reserve = Reserve("name")
         reserveDao.save(reserve)
 
         assertTrue(reserveDao.exists(reserve.id))
@@ -49,24 +43,13 @@ internal class ReserveDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun findByBalanceSheet() {
-        val balanceSheetA = BalanceSheet()
-        balanceSheetDao.save(balanceSheetA)
-        val reserveA1 = Reserve(balanceSheetA, "name")
-        reserveDao.save(reserveA1)
-        val reserveA2 = Reserve(balanceSheetA, "name")
-        reserveDao.save(reserveA2)
+        val reserve1 = Reserve("name")
+        reserveDao.save(reserve1)
+        val reserve2 = Reserve("name")
+        reserveDao.save(reserve2)
 
-        val balanceSheetB = BalanceSheet()
-        balanceSheetDao.save(balanceSheetB)
-        val reserveB1 = Reserve(balanceSheetB, "name")
-        reserveDao.save(reserveB1)
-
-        reserveDao.findByBalanceSheet(balanceSheetA).also {
-            assertEquals(setOf(reserveA1, reserveA2), it.toSet())
-        }
-
-        reserveDao.findByBalanceSheet(balanceSheetB).also {
-            assertEquals(listOf(reserveB1), it)
+        reserveDao.findByBalanceSheet(balanceSheet).also {
+            assertEquals(setOf(reserve1, reserve2), it.toSet())
         }
     }
 }

@@ -4,15 +4,14 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.domain.model.account.Reserve
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
 import ru.serdtsev.homemoney.domain.repository.ReserveRepository
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.sql.ResultSet
 import java.util.*
 
 @Repository
 class ReserveDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
-    private val balanceSheetRepository: BalanceSheetRepository
 ) : DomainModelDao<Reserve>, ReserveRepository {
 
     override fun save(domainAggregate: Reserve) {
@@ -29,7 +28,7 @@ class ReserveDao(
         """.trimIndent()
         val paramMap = with(domainAggregate) {
             mapOf(
-                "id" to id, "bsId" to balanceSheet.id, "name" to name, "createdDate" to createdDate,
+                "id" to id, "bsId" to ApiRequestContextHolder.balanceSheet.id, "name" to name, "createdDate" to createdDate,
                 "type" to type.toString(), "isArc" to isArc, "currencyCode" to currencyCode, "value" to value,
                 "target" to target, "num" to num
             )
@@ -75,14 +74,12 @@ class ReserveDao(
 
     private val rowMapper: (rs: ResultSet, rowNum: Int) -> Reserve = { rs, _ ->
         val id1 = UUID.fromString(rs.getString("id"))
-        val balanceSheetId = UUID.fromString(rs.getString("balance_sheet_id"))
-        val balanceSheet = balanceSheetRepository.findById(balanceSheetId)
         val createdDate = rs.getDate("created_date").toLocalDate()
         val name = rs.getString("name")
         val currencyCode = rs.getString("currency_code")
         val value = rs.getBigDecimal("value")
         val target = rs.getBigDecimal("target")
-        Reserve(id1, balanceSheet, name, createdDate, currencyCode, value, target).apply {
+        Reserve(id1, name, createdDate, currencyCode, value, target).apply {
             this.isArc = rs.getBoolean("is_arc")
             this.num = rs.getLong("num")
         }

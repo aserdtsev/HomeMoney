@@ -17,8 +17,8 @@ internal class UpdateMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun run() {
-        val balance1 = Balance(balanceSheet, AccountType.debit, "Balance 1", value = BigDecimal("1.00"))
-        val balance2 = Balance(balanceSheet, AccountType.debit, "Balance 2")
+        val balance1 = Balance(AccountType.debit, "Balance 1", value = BigDecimal("1.00"))
+        val balance2 = Balance(AccountType.debit, "Balance 2")
         val tag1 = Tag(balanceSheet, "Tag 1")
         val tag2 = Tag(balanceSheet, "Tag 2")
 
