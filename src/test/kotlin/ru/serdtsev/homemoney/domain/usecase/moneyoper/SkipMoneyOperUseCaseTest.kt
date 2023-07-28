@@ -14,13 +14,15 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
+import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
 internal class SkipMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
     private val recurrenceOperRepository: RecurrenceOperRepository = mock { }
-    private val useCase = SkipMoneyOperUseCase(recurrenceOperRepository)
+    private val moneyOperRepository: MoneyOperRepository = mock { }
+    private val useCase = SkipMoneyOperUseCase(recurrenceOperRepository, moneyOperRepository)
 
     @Test
     fun run_byPendingMoneyOper() {
@@ -48,13 +50,14 @@ internal class SkipMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
             this.addItem(balance, BigDecimal("1.00"))
             this.period = Period.month
         }
-        val recurrenceOper = RecurrenceOper(balanceSheet, template, LocalDate.now())
+        val recurrenceOper = RecurrenceOper(template.id, LocalDate.now())
         val moneyOper = MoneyOper(MoneyOperStatus.recurrence).apply {
             this.recurrenceId = recurrenceOper.id
             this.addItem(balance, BigDecimal("1.00"))
         }
 
         whenever(recurrenceOperRepository.findById(recurrenceOper.id)).thenReturn(recurrenceOper)
+        whenever(moneyOperRepository.findById(template.id)).thenReturn(template)
 
         doAnswer {
             val publishedRecurrenceOper = it.arguments[0] as RecurrenceOper

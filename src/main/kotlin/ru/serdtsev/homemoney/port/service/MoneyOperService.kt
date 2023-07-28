@@ -44,7 +44,7 @@ class MoneyOperService (
      * @return true, если шаблон операции соответствует строке поиска
      */
     private fun isOperMatchSearch(recurrenceOper: RecurrenceOper, search: String): Boolean {
-        val template = recurrenceOper.template
+        val template = moneyOperRepository.findById(recurrenceOper.templateId)
         return when {
             search.isBlank() -> true
             search.matches(SearchDateRegex) -> {
@@ -68,7 +68,7 @@ class MoneyOperService (
     }
 
     private fun createMoneyOperByRecurrenceOper(recurrenceOper: RecurrenceOper): MoneyOper {
-        val template = recurrenceOper.template
+        val template = moneyOperRepository.findById(recurrenceOper.templateId)
         val performed = recurrenceOper.nextDate
         val oper = MoneyOper(MoneyOperStatus.recurrence, performed, 0, template.tags, template.comment,
             template.period)
@@ -82,8 +82,8 @@ class MoneyOperService (
         val template = MoneyOper(MoneyOperStatus.template, sample.performed, 0, sample.tags, sample.comment,
             sample.period)
         sample.items.forEach { template.addItem(it.balance, it.value, it.performed) }
-        val recurrenceOper = RecurrenceOper(balanceSheet, template, sample.performed)
-        recurrenceOper.skipNextDate()
+        val recurrenceOper = RecurrenceOper(template.id, sample.performed)
+        recurrenceOper.skipNextDate(moneyOperRepository)
         DomainEventPublisher.instance.publish(template)
         DomainEventPublisher.instance.publish(recurrenceOper)
 
@@ -103,14 +103,14 @@ class MoneyOperService (
 
     fun skipRecurrenceOper(balanceSheet: BalanceSheet, recurrenceId: UUID) {
         val recurrenceOper = recurrenceOperRepository.findByIdOrNull(recurrenceId)!!
-        recurrenceOper.skipNextDate()
+        recurrenceOper.skipNextDate(moneyOperRepository)
         DomainEventPublisher.instance.publish(recurrenceOper)
     }
 
     fun updateRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOperDto: RecurrenceOperDto) {
         val origRecurrenceOper = recurrenceOperRepository.findByIdOrNull(recurrenceOperDto.id)!!
         origRecurrenceOper.nextDate = recurrenceOperDto.nextDate
-        val origTemplate = origRecurrenceOper.template
+        val origTemplate = moneyOperRepository.findById(origRecurrenceOper.templateId)
         recurrenceOperDto.items.forEach { item ->
             val origItem = origTemplate.items.firstOrNull { origItem -> origItem.id == item.id }
             if (origItem != null) with (origItem) {

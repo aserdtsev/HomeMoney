@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
@@ -22,7 +21,7 @@ internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
 
     @BeforeEach
     internal fun setUp() {
-        recurrenceOper = createRecurrenceOper(balanceSheet)
+        recurrenceOper = createRecurrenceOper()
         recurrenceOperDao.save(recurrenceOper)
     }
 
@@ -52,9 +51,9 @@ internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
         assertEquals(listOf(recurrenceOper), recurrenceOperDao.findByBalanceSheetAndArc(balanceSheet, true))
     }
 
-    private fun createRecurrenceOper(balanceSheet: BalanceSheet): RecurrenceOper {
+    private fun createRecurrenceOper(): RecurrenceOper {
         val template = MoneyOper(MoneyOperStatus.done)
         moneyOperDao.save(template)
-        return RecurrenceOper(balanceSheet, template, LocalDate.now().plusDays(1))
+        return RecurrenceOper(template.id, LocalDate.now().plusDays(1))
     }
 }

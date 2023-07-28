@@ -3,11 +3,14 @@ package ru.serdtsev.homemoney.domain.usecase.moneyoper
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
+import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 
 @Service
-class SkipMoneyOperUseCase(private val recurrenceOperRepository: RecurrenceOperRepository) {
-
+class SkipMoneyOperUseCase(
+    private val recurrenceOperRepository: RecurrenceOperRepository,
+    private val moneyOperRepository: MoneyOperRepository
+) {
     fun run(moneyOper: MoneyOper) {
         when (moneyOper.status) {
             MoneyOperStatus.pending -> skipPendingMoneyOper(moneyOper)
@@ -21,6 +24,6 @@ class SkipMoneyOperUseCase(private val recurrenceOperRepository: RecurrenceOperR
     }
 
     private fun skipRecurrenceMoneyOper(moneyOper: MoneyOper) {
-        recurrenceOperRepository.findById(moneyOper.recurrenceId!!).skipNextDate()
+        recurrenceOperRepository.findById(moneyOper.recurrenceId!!).skipNextDate(moneyOperRepository)
     }
 }

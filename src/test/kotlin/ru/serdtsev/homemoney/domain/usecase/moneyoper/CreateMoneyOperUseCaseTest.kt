@@ -28,13 +28,14 @@ internal class CreateMoneyOperUseCaseTest : BaseDomainEventPublisherTest() {
             this.addItem(balance, BigDecimal("1.00"))
             this.period = Period.month
         }
-        val recurrenceOper = RecurrenceOper(balanceSheet, template, LocalDate.now())
+        val recurrenceOper = RecurrenceOper(template.id, LocalDate.now())
         val moneyOper = MoneyOper(MoneyOperStatus.doneNew).apply {
             this.recurrenceId = recurrenceOper.id
             this.addItem(balance, BigDecimal("1.00"))
         }
 
         whenever(recurrenceOperRepository.findById(recurrenceOper.id)).thenReturn(recurrenceOper)
+        whenever(moneyOperRepository.findById(template.id)).thenReturn(template)
 
         val moneyOper0 = MoneyOper(done, dateNum = 0)
         val moneyOper1 = MoneyOper(done, dateNum = 1)

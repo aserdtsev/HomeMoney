@@ -267,7 +267,7 @@ class StatService(
         val today = LocalDate.now()
         recurrenceOpers
             .forEach {
-                val template = it.template
+                val template = moneyOperRepository.findById(it.templateId)
                 var roNextDate = it.nextDate
                 while (roNextDate.isBefore(toDate)) {
                     // Если дата повторяющейся операции раньше или равно текущему дню, то считаем, что она будет
@@ -281,7 +281,7 @@ class StatService(
                             putRecurrenceTurnover(turnovers, item.value.abs(), TurnoverType.valueOf(operType.name), nextDate)
                         }
                     }
-                    roNextDate = it.calcNextDate(nextDate)
+                    roNextDate = it.calcNextDate(nextDate, moneyOperRepository)
                 }
             }
 

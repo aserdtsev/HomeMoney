@@ -57,7 +57,7 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
     fun createMoneyOper_simpleExpense() {
         val template = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1), period = Period.month)
         domainEventPublisher.publish(template)
-        val recurrenceOper = RecurrenceOper(balanceSheet, template, LocalDate.now())
+        val recurrenceOper = RecurrenceOper(template.id, LocalDate.now())
         domainEventPublisher.publish(recurrenceOper)
 
         val moneyOper = MoneyOper(MoneyOperStatus.doneNew,
