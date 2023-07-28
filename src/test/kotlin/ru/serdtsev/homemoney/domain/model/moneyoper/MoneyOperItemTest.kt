@@ -24,7 +24,7 @@ internal class MoneyOperItemTest : BaseDomainEventPublisherTest() {
             "RUB", BigDecimal.TEN)
         checkingAccount = Balance(UUID.randomUUID(), AccountType.debit, "Checking account",
                 LocalDate.now(), false, "RUB", BigDecimal.valueOf(1000L))
-        oper = MoneyOper(UUID.randomUUID(), balanceSheet, mutableListOf(), MoneyOperStatus.pending, LocalDate.now(), 0,
+        oper = MoneyOper(UUID.randomUUID(), mutableListOf(), MoneyOperStatus.pending, LocalDate.now(), 0,
                listOf(), "", null)
     }
 

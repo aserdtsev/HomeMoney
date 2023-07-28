@@ -14,7 +14,6 @@ import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.TagRepository
 import ru.serdtsev.homemoney.domain.usecase.moneyoper.*
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
-import ru.serdtsev.homemoney.infra.dao.TagDao
 import ru.serdtsev.homemoney.infra.exception.HmException
 import ru.serdtsev.homemoney.port.common.HmResponse
 import ru.serdtsev.homemoney.port.common.PagedList
@@ -165,7 +164,6 @@ class MoneyOperController(
     fun getMoneyOpers(@RequestParam id: UUID): HmResponse {
         return try {
             val oper = moneyOperRepository.findById(id)
-            moneyOperService.checkMoneyOperBelongsBalanceSheet(oper, apiRequestContextHolder.getBsId())
             HmResponse.getOk(conversionService.convert(oper, MoneyOperDto::class.java)!!)
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)

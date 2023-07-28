@@ -79,8 +79,8 @@ open class Balance(
                 if (from.type == AccountType.reserve) {
                     to.value = from.value
                 } else {
-                    val moneyOper = MoneyOper(ApiRequestContextHolder.balanceSheet, MoneyOperStatus.pending,
-                        LocalDate.now(), 0, emptyList(),"корректировка остатка", Period.single)
+                    val moneyOper = MoneyOper(MoneyOperStatus.pending, LocalDate.now(),
+                        0, emptyList(), "корректировка остатка", Period.single)
                     val amount = from.value - to.value
                     moneyOper.addItem(to, amount, moneyOper.performed)
                     moneyOper.complete()

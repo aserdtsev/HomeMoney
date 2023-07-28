@@ -24,7 +24,7 @@ internal class MoneyOperStatusChangedHandlerTest: BaseDomainEventPublisherTest()
     @ParameterizedTest
     @MethodSource("paramsFor_handler_balanceIsChanged")
     fun handler_balanceIsChanged(beforeStatus: MoneyOperStatus, afterStatus: MoneyOperStatus, expected: BigDecimal) {
-        val moneyOper = MoneyOper(balanceSheet, afterStatus)
+        val moneyOper = MoneyOper(afterStatus)
         val balance = Balance(AccountType.debit, "Cash", value = BigDecimal("100.00"))
         moneyOper.addItem(balance, BigDecimal("1.00"))
         val event = MoneyOperStatusChanged(beforeStatus, afterStatus, moneyOper)
@@ -42,7 +42,7 @@ internal class MoneyOperStatusChangedHandlerTest: BaseDomainEventPublisherTest()
     @ParameterizedTest
     @MethodSource("paramsFor_handler_balanceNotChanged")
     fun handler_balanceNotChanged(beforeStatus: MoneyOperStatus, afterStatus: MoneyOperStatus) {
-        val moneyOper = MoneyOper(balanceSheet, afterStatus)
+        val moneyOper = MoneyOper(afterStatus)
         val balance = Balance(AccountType.debit, "Cash", value = BigDecimal("100.00"))
         moneyOper.addItem(balance, BigDecimal("1.00"))
         val event = MoneyOperStatusChanged(beforeStatus, afterStatus, moneyOper)

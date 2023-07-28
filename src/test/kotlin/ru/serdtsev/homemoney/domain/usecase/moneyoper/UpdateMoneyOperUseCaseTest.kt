@@ -22,13 +22,13 @@ internal class UpdateMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
         val tag1 = Tag(balanceSheet, "Tag 1")
         val tag2 = Tag(balanceSheet, "Tag 2")
 
-        val origMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.done,
-            LocalDate.now().minusDays(1), 0, mutableSetOf(tag1), "Comment 1", Period.month
+        val origMoneyOper = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusDays(1),
+            0, mutableSetOf(tag1), "Comment 1", Period.month
         ).apply {
             this.addItem(balance1, BigDecimal("1.00"))
         }
 
-        val moneyOper = MoneyOper(origMoneyOper.id, balanceSheet, mutableListOf(), MoneyOperStatus.done,
+        val moneyOper = MoneyOper(origMoneyOper.id, mutableListOf(), MoneyOperStatus.done,
             LocalDate.now(), 1, mutableSetOf(tag2), "Comment 2", Period.single
         ).apply {
             this.addItem(balance2, BigDecimal("1.00"))

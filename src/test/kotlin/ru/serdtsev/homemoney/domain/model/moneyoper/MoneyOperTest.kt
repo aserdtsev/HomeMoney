@@ -88,12 +88,11 @@ internal class MoneyOperTest: BaseDomainEventPublisherTest() {
     @Test
     fun merge() {
         val origTags = listOf(Tag(balanceSheet, "tag1"), Tag(balanceSheet, "tag2"))
-        val origOper = MoneyOper(balanceSheet, done, tags = origTags, comment = "orig comment",
-            period = Period.month)
+        val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
         val newTags = listOf(Tag(balanceSheet, "tag2"), Tag(balanceSheet, "tag3"))
-        val newOper = MoneyOper(origOper.id, balanceSheet, status = done, tags = newTags,
+        val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance1, BigDecimal("-30.00"))
 
@@ -116,12 +115,11 @@ internal class MoneyOperTest: BaseDomainEventPublisherTest() {
     @Test
     fun `merge changed balance`() {
         val origTags = listOf(Tag(balanceSheet, "tag1"), Tag(balanceSheet, "tag2"))
-        val origOper = MoneyOper(balanceSheet, done, tags = origTags, comment = "orig comment",
-            period = Period.month)
+        val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
         val newTags = listOf(Tag(balanceSheet, "tag2"), Tag(balanceSheet, "tag3"))
-        val newOper = MoneyOper(origOper.id, balanceSheet, status = done, tags = newTags,
+        val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance2, BigDecimal("-30.00"))
 
@@ -140,10 +138,10 @@ internal class MoneyOperTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun merge_pendingToDone() {
-        val origOper = MoneyOper(balanceSheet, pending)
+        val origOper = MoneyOper(pending)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
-        val newOper = MoneyOper(origOper.id, balanceSheet, status = done)
+        val newOper = MoneyOper(origOper.id, status = done)
         newOper.addItem(balance2, BigDecimal("-20.00"))
 
         MoneyOper.merge(newOper, origOper)
@@ -152,22 +150,20 @@ internal class MoneyOperTest: BaseDomainEventPublisherTest() {
     }
 
     private fun createExpenseFromCash(): MoneyOper {
-        val oper = MoneyOper(
-            UUID.randomUUID(), balanceSheet, mutableListOf(), done, LocalDate.now(), 0,
-            ArrayList(), "", null
-        )
+        val oper = MoneyOper(UUID.randomUUID(), mutableListOf(), done, LocalDate.now(), 0,
+            ArrayList(), "", null)
         oper.addItem(cash, BigDecimal.ONE.negate(), LocalDate.now(), 0, UUID.randomUUID())
         return oper
     }
 
     private fun createIncomeToCash(): MoneyOper {
-        val oper = MoneyOper(balanceSheet, done)
+        val oper = MoneyOper(done)
         oper.addItem(cash, BigDecimal.ONE, LocalDate.now(), 0, UUID.randomUUID())
         return oper
     }
 
     private fun createTransferFromCheckingAccountToCash(status: MoneyOperStatus): MoneyOper {
-        val oper = MoneyOper(balanceSheet, status)
+        val oper = MoneyOper(status)
         val amount = BigDecimal.ONE
         oper.addItem(checkingAccount, amount.negate(), LocalDate.now(), 0, UUID.randomUUID())
         oper.addItem(cash, amount, LocalDate.now(), 1, UUID.randomUUID())

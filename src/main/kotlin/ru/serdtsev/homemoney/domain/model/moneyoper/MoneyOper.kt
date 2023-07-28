@@ -1,11 +1,11 @@
 package ru.serdtsev.homemoney.domain.model.moneyoper
 
-import ru.serdtsev.homemoney.domain.model.account.AccountType
-import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.event.DomainEvent
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
+import ru.serdtsev.homemoney.domain.model.account.AccountType
+import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.io.Serializable
 import java.math.BigDecimal
 import java.sql.Timestamp
@@ -16,7 +16,6 @@ import java.util.*
 
 class MoneyOper (
     val id: UUID,
-    val balanceSheet: BalanceSheet,
     var items: MutableList<MoneyOperItem> = mutableListOf(),
     var status: MoneyOperStatus,
     var performed: LocalDate = LocalDate.now(),
@@ -50,9 +49,9 @@ class MoneyOper (
             return MoneyOperType.transfer
         }
 
-    constructor(balanceSheet: BalanceSheet, status: MoneyOperStatus, performed: LocalDate? = LocalDate.now(),
-                dateNum: Int = 0, tags: Collection<Tag>? = mutableListOf(), comment: String? = null, period: Period? = Period.month
-    ) : this(UUID.randomUUID(), balanceSheet, mutableListOf(), status, performed!!, dateNum, tags!!, comment, period)
+    constructor(status: MoneyOperStatus, performed: LocalDate? = LocalDate.now(), dateNum: Int = 0,
+        tags: Collection<Tag>? = mutableListOf(), comment: String? = null, period: Period? = Period.month
+    ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, dateNum, tags!!, comment, period)
 
     fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate = this.performed,
                 index: Int = items.size, id: UUID = UUID.randomUUID()): MoneyOperItem {
@@ -69,11 +68,11 @@ class MoneyOper (
     fun getParentOperId(): UUID? = parentOper?.id
 
     val isForeignCurrencyTransaction: Boolean
-        get() = items.any { it.balance.currencyCode != balanceSheet.currencyCode }
+        get() = items.any { it.balance.currencyCode != ApiRequestContextHolder.balanceSheet.currencyCode }
 
     val valueInNationalCurrency: BigDecimal
         get() = items
-                .filter { it.balance.currencyCode == balanceSheet.currencyCode }
+                .filter { it.balance.currencyCode == ApiRequestContextHolder.balanceSheet.currencyCode }
                 .map { it.value }
                 .reduce { acc, value -> acc.add(value) }
 
@@ -116,7 +115,6 @@ class MoneyOper (
     override fun toString(): String {
         return "MoneyOper{" +
                 "id=" + id +
-                ", balanceSheet=" + balanceSheet +
                 ", status=" + status +
                 ", performed=" + performed +
                 ", items=" + items +

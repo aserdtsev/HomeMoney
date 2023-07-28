@@ -12,8 +12,8 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
-import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.math.BigDecimal
 import java.sql.ResultSet
 import java.time.LocalDate
@@ -22,7 +22,6 @@ import java.util.*
 @Repository
 class MoneyOperDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
-    private val balanceSheetRepository: BalanceSheetRepository,
     private val tagDao: TagDao,
     private val balanceDao: BalanceDao
 ) : DomainModelDao<MoneyOper>, MoneyOperRepository {
@@ -37,8 +36,8 @@ class MoneyOperDao(
             
         """.trimIndent()
         val paramMap = with(domainAggregate) {
-            mapOf("id" to id, "bsId" to balanceSheet.id, "createdTs" to created, "performed" to performed,
-                "dateNum" to dateNum, "comment" to comment, "period" to period.toString(),
+            mapOf("id" to id, "bsId" to ApiRequestContextHolder.balanceSheet.id, "createdTs" to created,
+                "performed" to performed, "dateNum" to dateNum, "comment" to comment, "period" to period.toString(),
                 "status" to status.toString(), "recurrenceId" to recurrenceId)
         }
         jdbcTemplate.update(sql, paramMap)
@@ -63,7 +62,7 @@ class MoneyOperDao(
         """.trimIndent()
         val paramMap = with(moneyOperItem) {
             mapOf("id" to id, "operId" to moneyOperId, "balanceId" to balance.id, "value" to value,
-                "performed" to performed, "index" to index, "bsId" to  balanceSheet.id)
+                "performed" to performed, "index" to index, "bsId" to  ApiRequestContextHolder.balanceSheet.id)
         }
         jdbcTemplate.update(sql, paramMap)
     }
@@ -198,9 +197,6 @@ class MoneyOperDao(
 
     private val rowMapper: (rs: ResultSet, rowNum: Int) -> MoneyOper = { rs, _ ->
         val id = UUID.fromString(rs.getString("id"))
-        val balanceSheet = rs.getString("balance_sheet_id")
-            .let { UUID.fromString(it) }
-            .let { balanceSheetRepository.findById(it) }
         val items = findItemsByMoneyOperId(id).toMutableList()
         val status = rs.getString("status").let { MoneyOperStatus.valueOf(it) }
         val performed = rs.getDate("trn_date").toLocalDate()
@@ -208,7 +204,7 @@ class MoneyOperDao(
         val tags = tagDao.findByObjId(id)
         val comment = rs.getString("comment")
         val period = rs.getString("period")?.let { Period.valueOf(it) }
-        MoneyOper(id, balanceSheet, items, status, performed, dateNum, tags, comment, period).apply {
+        MoneyOper(id, items, status, performed, dateNum, tags, comment, period).apply {
             this.created = rs.getTimestamp("created_ts")
             this.recurrenceId = rs.getString("recurrence_id")?.let { UUID.fromString(it) }
         }

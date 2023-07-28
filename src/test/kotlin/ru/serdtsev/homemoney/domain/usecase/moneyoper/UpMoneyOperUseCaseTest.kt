@@ -63,7 +63,7 @@ internal class UpMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
     }
 
     private fun createMoneyOper(balance: Balance, index: Int) =
-        MoneyOper(balanceSheet, MoneyOperStatus.done, dateNum = index).apply {
+        MoneyOper(MoneyOperStatus.done, dateNum = index).apply {
             this.addItem(balance, BigDecimal("1.00"))
         }
 }

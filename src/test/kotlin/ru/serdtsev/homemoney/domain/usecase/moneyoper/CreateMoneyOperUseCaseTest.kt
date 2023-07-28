@@ -24,20 +24,20 @@ internal class CreateMoneyOperUseCaseTest : BaseDomainEventPublisherTest() {
     @Test
     fun run_done() {
         val balance = Balance(AccountType.debit, "Cash")
-        val template =  MoneyOper(balanceSheet, done).apply {
+        val template =  MoneyOper(done).apply {
             this.addItem(balance, BigDecimal("1.00"))
             this.period = Period.month
         }
         val recurrenceOper = RecurrenceOper(balanceSheet, template, LocalDate.now())
-        val moneyOper = MoneyOper(balanceSheet, MoneyOperStatus.doneNew).apply {
+        val moneyOper = MoneyOper(MoneyOperStatus.doneNew).apply {
             this.recurrenceId = recurrenceOper.id
             this.addItem(balance, BigDecimal("1.00"))
         }
 
         whenever(recurrenceOperRepository.findById(recurrenceOper.id)).thenReturn(recurrenceOper)
 
-        val moneyOper0 = MoneyOper(balanceSheet, done, dateNum = 0)
-        val moneyOper1 = MoneyOper(balanceSheet, done, dateNum = 1)
+        val moneyOper0 = MoneyOper(done, dateNum = 0)
+        val moneyOper1 = MoneyOper(done, dateNum = 1)
         whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(balanceSheet.id, done, moneyOper.performed))
             .thenReturn(listOf(moneyOper, moneyOper0, moneyOper1))
 

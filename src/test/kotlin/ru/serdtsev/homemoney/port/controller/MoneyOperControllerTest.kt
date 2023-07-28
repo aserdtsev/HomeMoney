@@ -55,14 +55,15 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
 
     @Test
     fun createMoneyOper_simpleExpense() {
-        val template = MoneyOper(balanceSheet, MoneyOperStatus.done, LocalDate.now().minusMonths(1),
-            period = Period.month)
+        val template = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1), period = Period.month)
         domainEventPublisher.publish(template)
         val recurrenceOper = RecurrenceOper(balanceSheet, template, LocalDate.now())
         domainEventPublisher.publish(recurrenceOper)
 
-        val moneyOper = MoneyOper(balanceSheet, MoneyOperStatus.doneNew, period = Period.single, comment = "comment",
-            tags = mutableListOf(foodstuffsTag)).apply { this.recurrenceId = recurrenceOper.id }
+        val moneyOper = MoneyOper(MoneyOperStatus.doneNew,
+            tags = mutableListOf(foodstuffsTag),
+            comment = "comment",
+            period = Period.single).apply { this.recurrenceId = recurrenceOper.id }
         moneyOper.addItem(cashBalance, BigDecimal("-1.00"))
         val moneyOperDto = conversionService.convert(moneyOper, MoneyOperDto::class.java)!!
 
@@ -139,8 +140,8 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
 
     @Test
     internal fun updateMoneyOper() {
-        val origMoneyOper = MoneyOper(balanceSheet, MoneyOperStatus.done, now, 0,
-            mutableSetOf(salaryTag), "Comment 1", Period.month)
+        val origMoneyOper = MoneyOper(MoneyOperStatus.done, now, 0, mutableSetOf(salaryTag),
+            "Comment 1", Period.month)
         origMoneyOper.addItem(cashBalance, BigDecimal("1.00"), now, 0)
         domainEventPublisher.publish(origMoneyOper)
 
@@ -172,7 +173,7 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
 
     @Test
     internal fun deleteMoneyOper() {
-        val moneyOper = MoneyOper(balanceSheet, MoneyOperStatus.done).apply {
+        val moneyOper = MoneyOper(MoneyOperStatus.done).apply {
             this.addItem(cashBalance, BigDecimal("1.00"))
         }
         domainEventPublisher.publish(moneyOper)
@@ -190,7 +191,7 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
 
     @Test
     internal fun skipMoneyOper() {
-        val moneyOper = MoneyOper(balanceSheet, MoneyOperStatus.pending)
+        val moneyOper = MoneyOper(MoneyOperStatus.pending)
         moneyOper.addItem(cashBalance, BigDecimal("1.00"))
         domainEventPublisher.publish(moneyOper)
 
@@ -206,7 +207,7 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
     internal fun upMoneyOper() {
         val moneyOpers = IntRange(0, 2)
             .map { i ->
-                MoneyOper(balanceSheet, MoneyOperStatus.done, dateNum = i).apply {
+                MoneyOper(MoneyOperStatus.done, dateNum = i).apply {
                     domainEventPublisher.publish(this)
                 }
             }

@@ -63,7 +63,7 @@ internal class MoneyOperServiceTest {
     }
 
     private fun newMoneyOperWithTags(tags: List<Tag>): MoneyOper {
-        val moneyOper = MoneyOper(UUID.randomUUID(), balanceSheet, mutableListOf(), MoneyOperStatus.doneNew,
+        val moneyOper = MoneyOper(UUID.randomUUID(), mutableListOf(), MoneyOperStatus.doneNew,
             LocalDate.now(), 0, tags, null, Period.month)
         val balance1 = Balance(AccountType.debit, "Some account name", BigDecimal.ZERO)
         val balance2 = Balance(AccountType.debit, "Some account name", BigDecimal.ZERO)

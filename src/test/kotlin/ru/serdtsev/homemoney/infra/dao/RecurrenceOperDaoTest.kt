@@ -53,7 +53,7 @@ internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
     }
 
     private fun createRecurrenceOper(balanceSheet: BalanceSheet): RecurrenceOper {
-        val template = MoneyOper(balanceSheet, MoneyOperStatus.done)
+        val template = MoneyOper(MoneyOperStatus.done)
         moneyOperDao.save(template)
         return RecurrenceOper(balanceSheet, template, LocalDate.now().plusDays(1))
     }

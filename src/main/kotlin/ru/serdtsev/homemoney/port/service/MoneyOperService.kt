@@ -6,7 +6,6 @@ import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.*
-import ru.serdtsev.homemoney.infra.dao.TagDao
 import ru.serdtsev.homemoney.port.dto.moneyoper.RecurrenceOperDto
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -32,7 +31,7 @@ class MoneyOperService (
     fun getNextRecurrenceOpers(balanceSheet: BalanceSheet, search: String, beforeDate: LocalDate?): List<MoneyOper> {
         return getRecurrenceOpers(balanceSheet, search)
                 .filter { it.nextDate.isBefore(beforeDate) }
-                .map { createMoneyOperByRecurrenceOper(balanceSheet, it) }
+                .map { createMoneyOperByRecurrenceOper(it) }
     }
 
     /**
@@ -68,11 +67,11 @@ class MoneyOperService (
         }
     }
 
-    private fun createMoneyOperByRecurrenceOper(balanceSheet: BalanceSheet, recurrenceOper: RecurrenceOper): MoneyOper {
+    private fun createMoneyOperByRecurrenceOper(recurrenceOper: RecurrenceOper): MoneyOper {
         val template = recurrenceOper.template
         val performed = recurrenceOper.nextDate
-        val oper = MoneyOper(balanceSheet, MoneyOperStatus.recurrence, performed, 0, template.tags,
-                template.comment, template.period)
+        val oper = MoneyOper(MoneyOperStatus.recurrence, performed, 0, template.tags, template.comment,
+            template.period)
         template.items.forEach { oper.addItem(it.balance, it.value, performed) }
         oper.recurrenceId = template.recurrenceId
         return oper
@@ -80,9 +79,8 @@ class MoneyOperService (
 
     fun createRecurrenceOper(balanceSheet: BalanceSheet, operId: UUID) {
         val sample = moneyOperRepository.findById(operId)
-        checkMoneyOperBelongsBalanceSheet(sample, balanceSheet.id)
-        val template = MoneyOper(balanceSheet, MoneyOperStatus.template, sample.performed, 0, sample.tags,
-                sample.comment, sample.period)
+        val template = MoneyOper(MoneyOperStatus.template, sample.performed, 0, sample.tags, sample.comment,
+            sample.period)
         sample.items.forEach { template.addItem(it.balance, it.value, it.performed) }
         val recurrenceOper = RecurrenceOper(balanceSheet, template, sample.performed)
         recurrenceOper.skipNextDate()
@@ -133,9 +131,6 @@ class MoneyOperService (
         origTemplate.setTags(tags)
         DomainEventPublisher.instance.publish(origRecurrenceOper)
     }
-
-    fun checkMoneyOperBelongsBalanceSheet(oper: MoneyOper, bsId: UUID) =
-            assert(oper.balanceSheet.id == bsId) { "MoneyOper id='${oper.id}' belongs the other balance sheet." }
 
     fun getTagsByStrings(balanceSheet: BalanceSheet, strTags: List<String>): MutableList<Tag> =
             strTags.map { findOrCreateTag(balanceSheet, it) }.toMutableList()

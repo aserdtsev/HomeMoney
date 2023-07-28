@@ -30,7 +30,7 @@ class MoneyOperDtoToModelConverter(private val appCtx: ApplicationContext) : Con
                 MoneyOperItem(it.id, source.id, balance, value, it.performedAt, it.index)
             }
             .toMutableList()
-        return MoneyOper(source.id, balanceSheet, items, source.status, source.operDate, dateNum, tags,
+        return MoneyOper(source.id, items, source.status, source.operDate, dateNum, tags,
             source.comment, period).apply {
                this.recurrenceId = source.recurrenceId
         }
