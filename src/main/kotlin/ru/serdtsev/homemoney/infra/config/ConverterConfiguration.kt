@@ -25,7 +25,7 @@ class ConverterConfiguration : ApplicationContextAware {
             MoneyOperItemToDtoConverter(ctx),
             RecurrenceOperToDtoConverter(ctx),
             TagToTagDtoConverter(),
-            TagDtoToModelConverter(ctx)
+            TagDtoToModelConverter()
         )
         setConverters(converters)
     }

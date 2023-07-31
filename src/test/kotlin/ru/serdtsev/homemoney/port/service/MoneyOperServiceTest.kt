@@ -73,7 +73,7 @@ internal class MoneyOperServiceTest {
     }
 
     private fun newTag(name: String): Tag {
-        return Tag(balanceSheet, name).apply {
+        return Tag(name).apply {
             this.isCategory = true
             this.categoryType = CategoryType.expense
         }

@@ -6,7 +6,7 @@ import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import ru.serdtsev.homemoney.domain.event.BaseDomainEventPublisherTest
+import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
@@ -15,7 +15,7 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 
-internal class DeleteMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
+internal class DeleteMoneyOperUseCaseTest: DomainBaseTest() {
     private val moneyOperRepository: MoneyOperRepository = mock { }
     private val useCase = DeleteMoneyOperUseCase(moneyOperRepository)
 

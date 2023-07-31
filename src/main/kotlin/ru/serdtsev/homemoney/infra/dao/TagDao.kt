@@ -7,16 +7,13 @@ import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
-import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
 import ru.serdtsev.homemoney.domain.repository.TagRepository
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.sql.ResultSet
 import java.util.*
 
 @Repository
-class TagDao(
-    private val jdbcTemplate: NamedParameterJdbcTemplate,
-    private val balanceSheetRepository: BalanceSheetRepository
-) : DomainModelDao<Tag>, TagRepository {
+class TagDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : DomainModelDao<Tag>, TagRepository {
     override fun save(domainAggregate: Tag) {
         val sql = """
             insert into tag(id, name, is_category, root_id, is_arc, cat_type, balance_sheet_id)
@@ -27,7 +24,7 @@ class TagDao(
         """.trimIndent()
         val paramMap = with(domainAggregate) {
             mapOf("id" to id, "name" to name, "isCategory" to isCategory, "rootId" to rootId, "isArc" to arc,
-                "categoryType" to categoryType?.toString(), "bsId" to balanceSheet.id)
+                "categoryType" to categoryType?.toString(), "bsId" to ApiRequestContextHolder.balanceSheet.id)
         }
         jdbcTemplate.update(sql, paramMap)
     }
@@ -95,9 +92,6 @@ class TagDao(
         val isCategory = rs.getBoolean("is_category")
         val categoryType = rs.getString("cat_type")?.let { CategoryType.valueOf(it) }
         val isArc = rs.getBoolean("is_arc")
-        val balanceSheet = rs.getString("balance_sheet_id")
-            .let { UUID.fromString(it) }
-            .let { balanceSheetRepository.findById(it) }
-        Tag(id, balanceSheet, name, rootId, isCategory, categoryType, isArc)
+        Tag(id, name, rootId, isCategory, categoryType, isArc)
     }
 }

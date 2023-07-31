@@ -3,7 +3,7 @@ package ru.serdtsev.homemoney.domain.usecase.moneyoper
 import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import ru.serdtsev.homemoney.domain.event.BaseDomainEventPublisherTest
+import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
@@ -11,7 +11,7 @@ import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
-internal class UpdateMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
+internal class UpdateMoneyOperUseCaseTest: DomainBaseTest() {
     private val moneyOperRepository: MoneyOperRepository = mock { }
     private val useCase = UpdateMoneyOperUseCase(moneyOperRepository)
 
@@ -19,8 +19,8 @@ internal class UpdateMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
     fun run() {
         val balance1 = Balance(AccountType.debit, "Balance 1", value = BigDecimal("1.00"))
         val balance2 = Balance(AccountType.debit, "Balance 2")
-        val tag1 = Tag(balanceSheet, "Tag 1")
-        val tag2 = Tag(balanceSheet, "Tag 2")
+        val tag1 = Tag("Tag 1")
+        val tag2 = Tag("Tag 2")
 
         val origMoneyOper = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusDays(1),
             0, mutableSetOf(tag1), "Comment 1", Period.month

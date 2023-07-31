@@ -4,8 +4,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import java.util.*
@@ -16,14 +14,12 @@ internal class TagDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun crud() {
-        val balanceSheet = createBalanceSheet()
-
-        val tag = createTag(balanceSheet, "tag-name")
+        val tag = createTag("tag-name")
 
         assertTrue(tagDao.exists(tag.id))
         assertEquals(tag, tagDao.findById(tag.id))
 
-        val rootTag = Tag(balanceSheet, "root-tag-name").apply {
+        val rootTag = Tag("root-tag-name").apply {
             isCategory = true
             categoryType = CategoryType.income
         }
@@ -44,8 +40,7 @@ internal class TagDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun `link, findByObjId and unlinkAll`() {
-        val balanceSheet = createBalanceSheet()
-        val tags = listOf(createTag(balanceSheet, "tag_name"))
+        val tags = listOf(createTag("tag_name"))
         val objId = UUID.randomUUID()
 
         tagDao.updateLinks(tags, objId, "operation")
@@ -57,9 +52,8 @@ internal class TagDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun findByBalanceSheetAndName() {
-        val balanceSheet = createBalanceSheet()
         val name = "tag-name"
-        val tag = createTag(balanceSheet, name)
+        val tag = createTag(name)
 
         tagDao.findByBalanceSheetAndName(balanceSheet, name).also {
             assertEquals(tag, it)
@@ -70,11 +64,10 @@ internal class TagDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun findByBalanceSheetOrderByName() {
-        val balanceSheet = createBalanceSheet()
         val tags = listOf(
-            createTag(balanceSheet, "tag-name-3"),
-            createTag(balanceSheet, "tag-name-2"),
-            createTag(balanceSheet, "tag-name-1"),
+            createTag("tag-name-3"),
+            createTag("tag-name-2"),
+            createTag("tag-name-1"),
         ).reversed()
 
         val actual = tagDao.findByBalanceSheetOrderByName(balanceSheet)
@@ -82,11 +75,5 @@ internal class TagDaoTest: SpringBootBaseTest() {
         assertEquals(tags, actual)
     }
 
-    private fun createTag(balanceSheet: BalanceSheet, name: String): Tag =
-        Tag(balanceSheet, name).apply { tagDao.save(this) }
-
-    private fun createBalanceSheet(): BalanceSheet = BalanceSheet().apply {
-        balanceSheetDao.save(this)
-        ApiRequestContextHolder.bsId = id
-    }
+    private fun createTag(name: String): Tag = Tag(name).apply { tagDao.save(this) }
 }

@@ -6,7 +6,7 @@ import org.apache.commons.lang3.SerializationUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import ru.serdtsev.homemoney.domain.event.BaseDomainEventPublisherTest
+import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
@@ -14,7 +14,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
 
-internal class MoneyOperTest: BaseDomainEventPublisherTest() {
+internal class MoneyOperTest: DomainBaseTest() {
     private val balance1 = Balance(AccountType.debit, "Balance 1", BigDecimal("100.00"))
     private val balance2 = Balance(AccountType.debit, "Balance 2", BigDecimal("200.00"))
     private val cash = Balance(AccountType.debit, "Cash", BigDecimal("10.00"))
@@ -87,11 +87,11 @@ internal class MoneyOperTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun merge() {
-        val origTags = listOf(Tag(balanceSheet, "tag1"), Tag(balanceSheet, "tag2"))
+        val origTags = listOf(Tag("tag1"), Tag("tag2"))
         val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
-        val newTags = listOf(Tag(balanceSheet, "tag2"), Tag(balanceSheet, "tag3"))
+        val newTags = listOf(Tag("tag2"), Tag("tag3"))
         val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance1, BigDecimal("-30.00"))
@@ -114,11 +114,11 @@ internal class MoneyOperTest: BaseDomainEventPublisherTest() {
 
     @Test
     fun `merge changed balance`() {
-        val origTags = listOf(Tag(balanceSheet, "tag1"), Tag(balanceSheet, "tag2"))
+        val origTags = listOf(Tag("tag1"), Tag("tag2"))
         val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
-        val newTags = listOf(Tag(balanceSheet, "tag2"), Tag(balanceSheet, "tag3"))
+        val newTags = listOf(Tag("tag2"), Tag("tag3"))
         val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance2, BigDecimal("-30.00"))

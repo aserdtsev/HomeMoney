@@ -281,7 +281,7 @@ class StatService(
                             putRecurrenceTurnover(turnovers, item.value.abs(), TurnoverType.valueOf(operType.name), nextDate)
                         }
                     }
-                    roNextDate = it.calcNextDate(nextDate, moneyOperRepository)
+                    roNextDate = it.calcNextDate(nextDate)
                 }
             }
 

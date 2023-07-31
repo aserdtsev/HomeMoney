@@ -7,7 +7,7 @@ import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import ru.serdtsev.homemoney.domain.event.BaseDomainEventPublisherTest
+import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
@@ -19,7 +19,7 @@ import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
-internal class SkipMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
+internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
     private val recurrenceOperRepository: RecurrenceOperRepository = mock { }
     private val moneyOperRepository: MoneyOperRepository = mock { }
     private val useCase = SkipMoneyOperUseCase(recurrenceOperRepository, moneyOperRepository)
@@ -58,6 +58,7 @@ internal class SkipMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
 
         whenever(recurrenceOperRepository.findById(recurrenceOper.id)).thenReturn(recurrenceOper)
         whenever(moneyOperRepository.findById(template.id)).thenReturn(template)
+        whenever(repositoryRegistry.moneyOperRepository).thenReturn(moneyOperRepository)
 
         doAnswer {
             val publishedRecurrenceOper = it.arguments[0] as RecurrenceOper

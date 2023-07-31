@@ -3,7 +3,7 @@ package ru.serdtsev.homemoney.domain.usecase.moneyoper
 import com.nhaarman.mockito_kotlin.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import ru.serdtsev.homemoney.domain.event.BaseDomainEventPublisherTest
+import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
@@ -12,7 +12,7 @@ import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
-internal class UpMoneyOperUseCaseTest: BaseDomainEventPublisherTest() {
+internal class UpMoneyOperUseCaseTest: DomainBaseTest() {
     private val moneyOperRepository: MoneyOperRepository = mock { }
     private val useCase = UpMoneyOperUseCase(moneyOperRepository)
 

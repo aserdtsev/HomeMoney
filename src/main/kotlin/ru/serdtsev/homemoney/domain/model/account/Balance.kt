@@ -72,6 +72,7 @@ open class Balance(
         private val log = KotlinLogging.logger {  }
 
         fun merge(from: Balance, to: Balance) {
+            to.name = from.name
             to.credit = from.credit
             to.minValue = from.minValue
             to.reserve = from.reserve

@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
@@ -18,7 +19,7 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
 import java.math.BigDecimal
 import java.util.stream.Stream
 
-internal class MoneyOperStatusChangedHandlerTest: BaseDomainEventPublisherTest() {
+internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
     private val moneyOperStatusChangedHandler = MoneyOperStatusChangedHandler()
 
     @ParameterizedTest

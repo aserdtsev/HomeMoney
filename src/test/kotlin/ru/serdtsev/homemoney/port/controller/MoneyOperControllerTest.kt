@@ -28,8 +28,8 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
         false, balanceSheet.currencyCode, BigDecimal("100.00"))
     private val cardBalance = Balance(UUID.randomUUID(), AccountType.debit, "Карта", now,
         false, balanceSheet.currencyCode, BigDecimal("0.00"))
-    private val foodstuffsTag = Tag(balanceSheet, "Продукты")
-    private val salaryTag = Tag(balanceSheet, "Зарплата")
+    private val foodstuffsTag = Tag("Продукты")
+    private val salaryTag = Tag("Зарплата")
     @Autowired
     private lateinit var balanceRepository: BalanceRepository
     @Autowired

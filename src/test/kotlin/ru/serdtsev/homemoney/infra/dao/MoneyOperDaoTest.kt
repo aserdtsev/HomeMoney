@@ -33,8 +33,8 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
     internal fun setUp() {
         balanceA = Balance(AccountType.debit, "a").apply { balanceDao.save(this) }
         balanceB = Balance(AccountType.debit, "b").apply { balanceDao.save(this) }
-        tagA = Tag(balanceSheet, "tagA").apply { tagDao.save(this) }
-        tagB = Tag(balanceSheet, "tagB").apply { tagDao.save(this) }
+        tagA = Tag("tagA").apply { tagDao.save(this) }
+        tagB = Tag("tagB").apply { tagDao.save(this) }
     }
 
     @Test

@@ -56,6 +56,6 @@ class CreateMoneyOperUseCase(
     }
 
     private fun skipRecurrenceOper(recurrenceId: UUID) {
-        recurrenceOperRepository.findById(recurrenceId).skipNextDate(moneyOperRepository)
+        recurrenceOperRepository.findById(recurrenceId).skipNextDate()
     }
 }

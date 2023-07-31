@@ -5,14 +5,14 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import ru.serdtsev.homemoney.domain.event.BaseDomainEventPublisherTest
+import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
 
-internal class MoneyOperItemTest : BaseDomainEventPublisherTest() {
+internal class MoneyOperItemTest : DomainBaseTest() {
     private lateinit var cash: Balance
     private lateinit var checkingAccount: Balance
     private lateinit var oper: MoneyOper

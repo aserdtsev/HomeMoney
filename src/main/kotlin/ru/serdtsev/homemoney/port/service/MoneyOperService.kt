@@ -83,7 +83,7 @@ class MoneyOperService (
             sample.period)
         sample.items.forEach { template.addItem(it.balance, it.value, it.performed) }
         val recurrenceOper = RecurrenceOper(template.id, sample.performed)
-        recurrenceOper.skipNextDate(moneyOperRepository)
+        recurrenceOper.skipNextDate()
         DomainEventPublisher.instance.publish(template)
         DomainEventPublisher.instance.publish(recurrenceOper)
 
@@ -103,7 +103,7 @@ class MoneyOperService (
 
     fun skipRecurrenceOper(balanceSheet: BalanceSheet, recurrenceId: UUID) {
         val recurrenceOper = recurrenceOperRepository.findByIdOrNull(recurrenceId)!!
-        recurrenceOper.skipNextDate(moneyOperRepository)
+        recurrenceOper.skipNextDate()
         DomainEventPublisher.instance.publish(recurrenceOper)
     }
 
@@ -136,10 +136,10 @@ class MoneyOperService (
             strTags.map { findOrCreateTag(balanceSheet, it) }.toMutableList()
 
     fun findOrCreateTag(balanceSheet: BalanceSheet, name: String): Tag =
-            tagRepository.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleTag(balanceSheet, name) }
+            tagRepository.findByBalanceSheetAndName(balanceSheet, name) ?: run { createSimpleTag(name) }
 
-    private fun createSimpleTag(balanceSheet: BalanceSheet, name: String): Tag =
-            Tag(UUID.randomUUID(), balanceSheet, name).apply {
+    private fun createSimpleTag(name: String): Tag =
+            Tag(name).apply {
                 DomainEventPublisher.instance.publish(this)
             }
 
