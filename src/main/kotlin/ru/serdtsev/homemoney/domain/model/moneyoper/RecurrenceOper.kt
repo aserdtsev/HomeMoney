@@ -16,6 +16,16 @@ data class RecurrenceOper(
 ) : DomainEvent, Serializable {
     constructor(templateId: UUID, nextDate: LocalDate) : this(UUID.randomUUID(), templateId, nextDate)
 
+    fun createNextMoneyOper(): MoneyOper {
+        val moneyOperRepository = RepositoryRegistry.instance.moneyOperRepository
+        val template = moneyOperRepository.findById(templateId)
+        val moneyOper = MoneyOper(MoneyOperStatus.recurrence, nextDate, 0, template.tags, template.comment,
+            template.period)
+        template.items.forEach { moneyOper.addItem(it.balance, it.value, nextDate) }
+        moneyOper.recurrenceId = template.recurrenceId
+        return moneyOper
+    }
+
     fun skipNextDate(): LocalDate {
         nextDate = calcNextDate(nextDate)
         DomainEventPublisher.instance.publish(this)
@@ -35,6 +45,7 @@ data class RecurrenceOper(
      */
     fun arc() {
         arc = true
+        DomainEventPublisher.instance.publish(this)
     }
 
     private fun getTemplate(): MoneyOper {

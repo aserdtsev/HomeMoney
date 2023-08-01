@@ -304,7 +304,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       }
       item.performedAt = oper.operDate;
     }
-    if (oper.status === 'doneNew') {
+    if (oper.status === 'doneNew' || oper.status === 'recurrence') {
       $scope.createOper(oper);
     } else {
       $scope.updateOper(oper);

@@ -15,7 +15,7 @@ class MoneyOperStatusChangedHandler {
 
         val beforeStatus = event.beforeStatus
         val afterStatus = event.afterStatus
-        if (beforeStatus in listOf(pending, cancelled, doneNew) && afterStatus in listOf(pending, cancelled)) {
+        if (beforeStatus in listOf(pending, cancelled, doneNew, recurrence) && afterStatus in listOf(pending, cancelled)) {
             return
         }
         val revert = beforeStatus == done && afterStatus != done

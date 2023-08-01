@@ -22,16 +22,13 @@ class MoneyOperService (
     private val balanceRepository: BalanceRepository,
     private val tagRepository: TagRepository,
 ) {
-    // todo Порефакторить
-    fun save(recurrenceOper: RecurrenceOper) = DomainEventPublisher.instance.publish(recurrenceOper)
-
     /**
      * Возвращает следующие повторы операций.
      */
     fun getNextRecurrenceOpers(balanceSheet: BalanceSheet, search: String, beforeDate: LocalDate?): List<MoneyOper> {
         return getRecurrenceOpers(balanceSheet, search)
                 .filter { it.nextDate.isBefore(beforeDate) }
-                .map { createMoneyOperByRecurrenceOper(it) }
+                .map { it.createNextMoneyOper() }
     }
 
     /**
@@ -65,16 +62,6 @@ class MoneyOperService (
                         || template.comment?.lowercase()?.contains(search) ?: false
             }
         }
-    }
-
-    private fun createMoneyOperByRecurrenceOper(recurrenceOper: RecurrenceOper): MoneyOper {
-        val template = moneyOperRepository.findById(recurrenceOper.templateId)
-        val performed = recurrenceOper.nextDate
-        val oper = MoneyOper(MoneyOperStatus.recurrence, performed, 0, template.tags, template.comment,
-            template.period)
-        template.items.forEach { oper.addItem(it.balance, it.value, performed) }
-        oper.recurrenceId = template.recurrenceId
-        return oper
     }
 
     fun createRecurrenceOper(balanceSheet: BalanceSheet, operId: UUID) {

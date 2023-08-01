@@ -73,7 +73,8 @@ internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
                 arguments(pending, cancelled),
                 arguments(cancelled, pending),
                 arguments(doneNew, cancelled),
-                arguments(doneNew, pending)
+                arguments(doneNew, pending),
+                arguments(recurrence, pending)
             )
         }
     }
