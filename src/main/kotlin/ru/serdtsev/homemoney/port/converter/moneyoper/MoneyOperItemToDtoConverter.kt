@@ -6,9 +6,9 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperItemDto
 
-class MoneyOperItemToDtoConverter(private val appCtx: ApplicationContext) : Converter<MoneyOperItem, MoneyOperItemDto> {
+class MoneyOperItemToDtoConverter(private val applicationContext: ApplicationContext) : Converter<MoneyOperItem, MoneyOperItemDto> {
     private val balanceRepository: BalanceRepository
-        get() = appCtx.getBean(BalanceRepository::class.java)
+        get() = applicationContext.getBean(BalanceRepository::class.java)
 
     override fun convert(item: MoneyOperItem): MoneyOperItemDto {
         val balanceId = item.balance.id

@@ -1,9 +1,6 @@
 package ru.serdtsev.homemoney.domain.usecase.moneyoper
 
-import com.nhaarman.mockito_kotlin.doAnswer
-import com.nhaarman.mockito_kotlin.mock
-import com.nhaarman.mockito_kotlin.verify
-import com.nhaarman.mockito_kotlin.whenever
+import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -46,19 +43,26 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
     @Test
     fun run_byRecurrenceOper() {
         val balance = Balance(AccountType.debit, "Cash")
-        val template =  MoneyOper(MoneyOperStatus.done).apply {
+        val sample =  MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1)).apply {
             this.addItem(balance, BigDecimal("1.00"))
             this.period = Period.month
         }
-        val recurrenceOper = RecurrenceOper(template.id, LocalDate.now())
-        val moneyOper = MoneyOper(MoneyOperStatus.recurrence).apply {
-            this.recurrenceId = recurrenceOper.id
+
+        whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
+        whenever(repositoryRegistry.moneyOperRepository).thenReturn(moneyOperRepository)
+        whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
+            val model = invocation.arguments[0]
+            if (model is MoneyOper && model.status == MoneyOperStatus.template) {
+                whenever(moneyOperRepository.findById(model.id)).thenReturn(model)
+            }
+        }
+
+        val recurrenceOper = RecurrenceOper.of(sample)
+        val moneyOper = MoneyOper(MoneyOperStatus.recurrence, recurrenceId = recurrenceOper.id).apply {
             this.addItem(balance, BigDecimal("1.00"))
         }
 
         whenever(recurrenceOperRepository.findById(recurrenceOper.id)).thenReturn(recurrenceOper)
-        whenever(moneyOperRepository.findById(template.id)).thenReturn(template)
-        whenever(repositoryRegistry.moneyOperRepository).thenReturn(moneyOperRepository)
 
         doAnswer {
             val publishedRecurrenceOper = it.arguments[0] as RecurrenceOper
@@ -67,6 +71,6 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
 
         useCase.run(moneyOper)
 
-        verify(domainEventPublisher).publish(recurrenceOper)
+        verify(domainEventPublisher, atLeastOnce()).publish(recurrenceOper)
     }
 }

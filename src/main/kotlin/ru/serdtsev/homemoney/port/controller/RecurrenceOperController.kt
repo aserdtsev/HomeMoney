@@ -13,14 +13,22 @@ import ru.serdtsev.homemoney.port.common.HmResponse
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
 import ru.serdtsev.homemoney.port.dto.moneyoper.RecurrenceOperDto
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
+import ru.serdtsev.homemoney.domain.usecase.moneyoper.CreateRecurrenceOperUseCase
+import ru.serdtsev.homemoney.domain.usecase.moneyoper.DeleteRecurrenceOperUseCase
+import ru.serdtsev.homemoney.domain.usecase.moneyoper.SkipRecurrenceOperUseCase
+import ru.serdtsev.homemoney.domain.usecase.moneyoper.UpdateRecurrenceOperUseCase
 import ru.serdtsev.homemoney.port.service.MoneyOperService
 import java.util.stream.Collectors
 
 @RestController
 @RequestMapping("/api/recurrence-opers")
 @Transactional
-class RecurrenceOperController constructor(
+class RecurrenceOperController(
     private val apiRequestContextHolder: ApiRequestContextHolder,
+    private val createRecurrenceOperUseCase: CreateRecurrenceOperUseCase,
+    private val deleteRecurrenceOperUseCase: DeleteRecurrenceOperUseCase,
+    private val skipRecurrenceOperUseCase: SkipRecurrenceOperUseCase,
+    private val updateRecurrenceOperUseCase: UpdateRecurrenceOperUseCase,
     private val moneyOperService: MoneyOperService,
     @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
@@ -41,20 +49,20 @@ class RecurrenceOperController constructor(
 
     @RequestMapping("/create")
     fun create(@RequestBody moneyOperDto: MoneyOperDto): HmResponse {
-        moneyOperService.createRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), moneyOperDto.id)
+        createRecurrenceOperUseCase.run(moneyOperDto.id)
         return HmResponse.getOk()
     }
 
     @RequestMapping("/skip")
     fun skip(@RequestBody oper: RecurrenceOperDto): HmResponse {
-        moneyOperService.skipRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), oper.id)
+        skipRecurrenceOperUseCase.run(oper.id)
         return HmResponse.getOk()
     }
 
     @RequestMapping("/delete")
     fun delete(@RequestBody oper: RecurrenceOperDto): HmResponse {
         return try {
-            moneyOperService.deleteRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), oper.id)
+            deleteRecurrenceOperUseCase.run(oper.id)
             HmResponse.getOk()
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)
@@ -62,9 +70,11 @@ class RecurrenceOperController constructor(
     }
 
     @RequestMapping("/update")
-    fun updateRecurrenceOper(@RequestBody oper: RecurrenceOperDto?): HmResponse {
+    fun updateRecurrenceOper(@RequestBody recurrenceOperDto: RecurrenceOperDto): HmResponse {
         return try {
-            moneyOperService.updateRecurrenceOper(apiRequestContextHolder.getBalanceSheet(), oper!!)
+            val recurrenceOper = requireNotNull(
+                conversionService.convert(recurrenceOperDto, RecurrenceOper::class.java))
+            updateRecurrenceOperUseCase.run(recurrenceOper)
             HmResponse.getOk()
         } catch (e: HmException) {
             HmResponse.getFail(e.code.name)

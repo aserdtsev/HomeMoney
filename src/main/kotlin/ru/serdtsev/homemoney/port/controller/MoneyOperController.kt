@@ -232,8 +232,7 @@ class MoneyOperController(
         @RequestParam search: String?,
         @RequestParam tags: Array<String>?
     ): HmResponse {
-        val bsId = apiRequestContextHolder.getBsId()
-        val suggestTags = moneyOperService.getSuggestTags(bsId, operType, search, tags?.toList() ?: emptyList())
+        val suggestTags = moneyOperService.getSuggestTags(operType, search, tags?.toList() ?: emptyList())
                 .map(Tag::name)
         return HmResponse.getOk(suggestTags)
     }

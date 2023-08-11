@@ -1,28 +1,27 @@
 package ru.serdtsev.homemoney.domain.model.moneyoper
 
+import mu.KotlinLogging
 import ru.serdtsev.homemoney.domain.event.DomainEvent
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
-import ru.serdtsev.homemoney.domain.repository.RepositoryRegistry
 import java.io.Serializable
 import java.time.LocalDate
 import java.util.*
 
 data class RecurrenceOper(
     val id: UUID,
-    /** Id шаблона операции (MoneyOper) */
-    val templateId: UUID,
-    var nextDate: LocalDate,
+    var template: MoneyOper,
+    var nextDate: LocalDate = LocalDate.MAX,
     var arc: Boolean = false
 ) : DomainEvent, Serializable {
-    constructor(templateId: UUID, nextDate: LocalDate) : this(UUID.randomUUID(), templateId, nextDate)
+    init {
+        template.linkToRecurrenceOper(this)
+    }
 
     fun createNextMoneyOper(): MoneyOper {
-        val moneyOperRepository = RepositoryRegistry.instance.moneyOperRepository
-        val template = moneyOperRepository.findById(templateId)
         val moneyOper = MoneyOper(MoneyOperStatus.recurrence, nextDate, 0, template.tags, template.comment,
             template.period)
         template.items.forEach { moneyOper.addItem(it.balance, it.value, nextDate) }
-        moneyOper.recurrenceId = template.recurrenceId
+        moneyOper.linkToRecurrenceOper(this)
         return moneyOper
     }
 
@@ -33,7 +32,7 @@ data class RecurrenceOper(
     }
 
     fun calcNextDate(date: LocalDate): LocalDate =
-        when (getTemplate().period) {
+        when (template.period) {
             Period.month -> date.plusMonths(1)
             Period.quarter -> date.plusMonths(3)
             Period.year -> date.plusYears(1)
@@ -46,10 +45,23 @@ data class RecurrenceOper(
     fun arc() {
         arc = true
         DomainEventPublisher.instance.publish(this)
+        log.info("RecurrenceOper $id moved to archive.")
     }
 
-    private fun getTemplate(): MoneyOper {
-        return RepositoryRegistry.instance.moneyOperRepository.findById(templateId)
+    companion object {
+        private val log = KotlinLogging.logger {  }
+        fun of(sample: MoneyOper): RecurrenceOper {
+            val template = sample.createTemplate()
+            val recurrenceOper = RecurrenceOper(UUID.randomUUID(), template).apply {
+                nextDate = calcNextDate(template.performed)
+            }
+            DomainEventPublisher.instance.publish(recurrenceOper)
+
+            sample.linkToRecurrenceOper(recurrenceOper)
+            DomainEventPublisher.instance.publish(sample)
+
+            return recurrenceOper
+        }
     }
 
 }

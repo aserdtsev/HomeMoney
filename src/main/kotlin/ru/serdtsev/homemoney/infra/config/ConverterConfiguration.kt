@@ -10,7 +10,7 @@ import ru.serdtsev.homemoney.port.converter.moneyoper.*
 
 @Configuration
 class ConverterConfiguration : ApplicationContextAware {
-    private lateinit var ctx: ApplicationContext
+    private lateinit var applicationContext: ApplicationContext
 
     @Bean("conversionService")
     fun getConversionService(): ConversionServiceFactoryBean = ConversionServiceFactoryBean().apply {
@@ -20,10 +20,11 @@ class ConverterConfiguration : ApplicationContextAware {
             BalanceDtoToModel(),
             ReserveToDto(),
             ReserveDtoToModel(),
-            MoneyOperToDtoConverter(ctx),
-            MoneyOperDtoToModelConverter(ctx),
-            MoneyOperItemToDtoConverter(ctx),
-            RecurrenceOperToDtoConverter(ctx),
+            MoneyOperToDtoConverter(applicationContext),
+            MoneyOperDtoToModelConverter(applicationContext),
+            MoneyOperItemToDtoConverter(applicationContext),
+            RecurrenceOperToDtoConverter(applicationContext),
+            RecurrenceOperToModelConverter(applicationContext),
             TagToTagDtoConverter(),
             TagDtoToModelConverter()
         )
@@ -31,6 +32,6 @@ class ConverterConfiguration : ApplicationContextAware {
     }
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {
-        ctx = applicationContext
+        this.applicationContext = applicationContext
     }
 }

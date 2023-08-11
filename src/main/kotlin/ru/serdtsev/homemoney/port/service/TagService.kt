@@ -15,7 +15,7 @@ class TagService(
 ) {
     fun getTags(search: String?, category: Boolean?, categoryType: CategoryType?): List<Tag> {
         val balanceSheet = apiRequestContextHolder.getBalanceSheet()
-        return tagRepository.findByBalanceSheetOrderByName(balanceSheet)
+        return tagRepository.findByBalanceSheetOrderByName()
             .filter { search == null || it.name.lowercase().startsWith(search) }
             .filter { category == null || category && (categoryType == null || it.categoryType == categoryType) }
     }

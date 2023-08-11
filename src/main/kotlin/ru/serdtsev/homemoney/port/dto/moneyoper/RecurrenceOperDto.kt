@@ -6,12 +6,10 @@ import java.util.*
 
 class RecurrenceOperDto(
     val id: UUID,
-    val sampleId: UUID,
-    val lastMoneyTrnId: UUID,
-    val nextDate: LocalDate,
-    val period: Period,
-    val comment: String?,
-    val tags: List<String>,
+    var nextDate: LocalDate,
+    var period: Period,
+    var comment: String?,
+    var tags: List<String>,
     val type: String
 ) {
     var status: Status? = null

@@ -22,7 +22,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
 
-internal class MoneyOperControllerTest: SpringBootBaseTest() {
+internal class MoneyOperControllerTest : SpringBootBaseTest() {
     private val now = LocalDate.now()
     private val cashBalance = Balance(UUID.randomUUID(), AccountType.debit, "Наличные", now,
         false, balanceSheet.currencyCode, BigDecimal("100.00"))
@@ -55,16 +55,16 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
 
     @Test
     fun createMoneyOper_simpleExpense() {
-        val template = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1), period = Period.month)
-        domainEventPublisher.publish(template)
-        val recurrenceOper = RecurrenceOper(template.id, LocalDate.now())
-        domainEventPublisher.publish(recurrenceOper)
+        val sample = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1),
+            period = Period.month, tags = mutableListOf(foodstuffsTag), comment = "comment").apply {
+            addItem(cashBalance, BigDecimal("-1.00"))
+            domainEventPublisher.publish(this)
+        }
+        val recurrenceOper = RecurrenceOper.of(sample)
 
-        val moneyOper = MoneyOper(MoneyOperStatus.doneNew,
-            tags = mutableListOf(foodstuffsTag),
-            comment = "comment",
-            period = Period.single).apply { this.recurrenceId = recurrenceOper.id }
-        moneyOper.addItem(cashBalance, BigDecimal("-1.00"))
+        val moneyOper = recurrenceOper.createNextMoneyOper().apply {
+            status = MoneyOperStatus.doneNew
+        }
         val moneyOperDto = conversionService.convert(moneyOper, MoneyOperDto::class.java)!!
 
         moneyOperController.createMoneyOper(moneyOperDto)
@@ -74,7 +74,7 @@ internal class MoneyOperControllerTest: SpringBootBaseTest() {
         assertThat(actualMoneyOper)
             .isNotNull
             .extracting("items", "status", "performed", "comment", "period", "tags")
-            .contains(expectedItems, MoneyOperStatus.done, now, moneyOperDto.comment, Period.single, mutableSetOf(foodstuffsTag))
+            .contains(expectedItems, MoneyOperStatus.done, now, moneyOperDto.comment, Period.month, mutableSetOf(foodstuffsTag))
 
         val actualBalance = balanceRepository.findById(cashBalance.id)
         assertEquals(BigDecimal("99.00"), actualBalance.value)

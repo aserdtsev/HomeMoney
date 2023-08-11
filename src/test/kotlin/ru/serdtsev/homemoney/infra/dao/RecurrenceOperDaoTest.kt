@@ -9,7 +9,6 @@ import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
-import java.time.LocalDate
 
 internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
     @Autowired
@@ -52,8 +51,8 @@ internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
     }
 
     private fun createRecurrenceOper(): RecurrenceOper {
-        val template = MoneyOper(MoneyOperStatus.done)
-        moneyOperDao.save(template)
-        return RecurrenceOper(template.id, LocalDate.now().plusDays(1))
+        val sample = MoneyOper(MoneyOperStatus.done)
+        moneyOperDao.save(sample)
+        return RecurrenceOper.of(sample)
     }
 }

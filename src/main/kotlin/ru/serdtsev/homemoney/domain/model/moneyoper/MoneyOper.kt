@@ -22,7 +22,8 @@ class MoneyOper (
     var dateNum: Int = 0,
     tags: Collection<Tag> = mutableListOf(),
     comment: String? = null,
-    var period: Period? = null
+    var period: Period? = null,
+    aRecurrenceId: UUID? = null
 ) : DomainEvent, Serializable {
     var created: Timestamp = Timestamp.from(Instant.now().truncatedTo(ChronoUnit.MILLIS))
     val tags: MutableSet<Tag> = tags.toMutableSet()
@@ -30,7 +31,8 @@ class MoneyOper (
     /**
      * Идентификатор повторяющейся операции. Служит для получения списка операций, которые были созданы по одному шаблону.
      */
-    var recurrenceId: UUID? = null
+    var recurrenceId: UUID? = aRecurrenceId
+        private set
 
     var comment: String? = comment
         get() = field.orEmpty()
@@ -49,9 +51,11 @@ class MoneyOper (
             return MoneyOperType.transfer
         }
 
+    // todo Перенести параметр dateNum в конец
     constructor(status: MoneyOperStatus, performed: LocalDate? = LocalDate.now(), dateNum: Int = 0,
-        tags: Collection<Tag>? = mutableListOf(), comment: String? = null, period: Period? = Period.month
-    ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, dateNum, tags!!, comment, period)
+        tags: Collection<Tag>? = mutableListOf(), comment: String? = null, period: Period? = Period.month,
+        recurrenceId: UUID? = null
+    ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, dateNum, tags!!, comment, period, recurrenceId)
 
     fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate = this.performed,
                 index: Int = items.size, id: UUID = UUID.randomUUID()): MoneyOperItem {
@@ -110,6 +114,16 @@ class MoneyOper (
     fun skipPending() {
         recurrenceId = null
         cancel()
+    }
+
+    fun createTemplate(): MoneyOper {
+        val template = MoneyOper(template, performed, 0, tags, comment, period)
+        items.forEach { template.addItem(it.balance, it.value, it.performed) }
+        return template
+    }
+
+    fun linkToRecurrenceOper(recurrenceOper: RecurrenceOper) {
+        recurrenceId = recurrenceOper.id
     }
 
     override fun toString(): String {

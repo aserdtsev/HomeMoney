@@ -6,22 +6,18 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
-import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
 import ru.serdtsev.homemoney.port.service.MoneyOperService
 
-class MoneyOperDtoToModelConverter(private val appCtx: ApplicationContext) : Converter<MoneyOperDto, MoneyOper> {
-    private val apiRequestContextHolder: ApiRequestContextHolder
-        get() = appCtx.getBean(ApiRequestContextHolder::class.java)
+class MoneyOperDtoToModelConverter(private val applicationContext: ApplicationContext) : Converter<MoneyOperDto, MoneyOper> {
     private val balanceRepository: BalanceRepository
-        get() = appCtx.getBean(BalanceRepository::class.java)
+        get() = applicationContext.getBean(BalanceRepository::class.java)
     private val moneyOperService: MoneyOperService
-        get() = appCtx.getBean(MoneyOperService::class.java)
+        get() = applicationContext.getBean(MoneyOperService::class.java)
 
     override fun convert(source: MoneyOperDto): MoneyOper {
-        val balanceSheet = apiRequestContextHolder.getBalanceSheet()
         val dateNum = source.dateNum
-        val tags = moneyOperService.getTagsByStrings(balanceSheet, source.tags)
+        val tags = moneyOperService.getTagsByStrings(source.tags)
         val period = source.period ?: Period.month
         val items = source.items
             .map {
@@ -31,8 +27,6 @@ class MoneyOperDtoToModelConverter(private val appCtx: ApplicationContext) : Con
             }
             .toMutableList()
         return MoneyOper(source.id, items, source.status, source.operDate, dateNum, tags,
-            source.comment, period).apply {
-               this.recurrenceId = source.recurrenceId
-        }
+            source.comment, period, source.recurrenceId)
     }
 }

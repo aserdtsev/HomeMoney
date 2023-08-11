@@ -24,6 +24,6 @@ class SkipMoneyOperUseCase(
     }
 
     private fun skipRecurrenceMoneyOper(moneyOper: MoneyOper) {
-        recurrenceOperRepository.findById(moneyOper.recurrenceId!!).skipNextDate()
+        recurrenceOperRepository.findById(requireNotNull(moneyOper.recurrenceId)).skipNextDate()
     }
 }

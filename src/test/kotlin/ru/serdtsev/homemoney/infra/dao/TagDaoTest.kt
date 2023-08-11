@@ -55,11 +55,11 @@ internal class TagDaoTest: SpringBootBaseTest() {
         val name = "tag-name"
         val tag = createTag(name)
 
-        tagDao.findByBalanceSheetAndName(balanceSheet, name).also {
+        tagDao.findByBalanceSheetAndName(name).also {
             assertEquals(tag, it)
         }
 
-        assertNull(tagDao.findByBalanceSheetAndName(balanceSheet, "other-tag-name"))
+        assertNull(tagDao.findByBalanceSheetAndName("other-tag-name"))
     }
 
     @Test
@@ -70,7 +70,7 @@ internal class TagDaoTest: SpringBootBaseTest() {
             createTag("tag-name-1"),
         ).reversed()
 
-        val actual = tagDao.findByBalanceSheetOrderByName(balanceSheet)
+        val actual = tagDao.findByBalanceSheetOrderByName()
 
         assertEquals(tags, actual)
     }

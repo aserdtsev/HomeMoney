@@ -267,18 +267,20 @@ class StatService(
         val today = LocalDate.now()
         recurrenceOpers
             .forEach {
-                val template = moneyOperRepository.findById(it.templateId)
                 var roNextDate = it.nextDate
                 while (roNextDate.isBefore(toDate)) {
                     // Если дата повторяющейся операции раньше или равно текущему дню, то считаем, что она будет
                     // выполнена завтра, а не сегодня. Чтобы в графике не искажать баланс текущего дня операциями,
                     // которые с большей вероятностью сегодня не будут выполнены.
                     val nextDate = if (roNextDate.isBefore(today)) today.plusDays(1) else roNextDate
-                    template.items.forEach { item ->
+                    it.template.items.forEach { item ->
                         putRecurrenceTurnover(turnovers, item.value, TurnoverType.valueOf(item.balance.type), nextDate)
-                        val operType = template.type
+                        val operType = it.template.type
                         if (operType != MoneyOperType.transfer) {
-                            putRecurrenceTurnover(turnovers, item.value.abs(), TurnoverType.valueOf(operType.name), nextDate)
+                            putRecurrenceTurnover(turnovers,
+                                item.value.abs(),
+                                TurnoverType.valueOf(operType.name),
+                                nextDate)
                         }
                     }
                     roNextDate = it.calcNextDate(nextDate)

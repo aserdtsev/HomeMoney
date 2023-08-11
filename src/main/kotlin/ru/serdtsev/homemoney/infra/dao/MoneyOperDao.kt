@@ -124,14 +124,17 @@ class MoneyOperDao(
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
-    override fun findByBalanceSheetAndStatusAndPerformedGreaterThan(balanceSheet: BalanceSheet, status: MoneyOperStatus,
+    override fun findByBalanceSheetAndStatusAndPerformedGreaterThan(status: MoneyOperStatus,
         performed: LocalDate): List<MoneyOper> {
         val sql = """
             select * from money_oper 
             where balance_sheet_id = :bsId and status = :status and trn_date > :performed 
             order by date_num 
         """.trimIndent()
-        val paramMap = mapOf("bsId" to balanceSheet.id, "status" to status.toString(), "performed" to performed)
+        val paramMap = mapOf(
+            "bsId" to ApiRequestContextHolder.balanceSheet.id,
+            "status" to status.toString(),
+            "performed" to performed)
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
@@ -204,9 +207,9 @@ class MoneyOperDao(
         val tags = tagDao.findByObjId(id)
         val comment = rs.getString("comment")
         val period = rs.getString("period")?.let { Period.valueOf(it) }
-        MoneyOper(id, items, status, performed, dateNum, tags, comment, period).apply {
+        val recurrenceId = rs.getString("recurrence_id")?.let { UUID.fromString(it) }
+        MoneyOper(id, items, status, performed, dateNum, tags, comment, period, recurrenceId).apply {
             this.created = rs.getTimestamp("created_ts")
-            this.recurrenceId = rs.getString("recurrence_id")?.let { UUID.fromString(it) }
         }
     }
 

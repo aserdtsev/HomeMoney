@@ -21,7 +21,7 @@ open class DomainBaseTest {
     }
 
     @BeforeEach
-    open fun setUp() {
+    open internal fun setUp() {
         DomainEventPublisher.instance = domainEventPublisher
         RepositoryRegistry.instance = repositoryRegistry
     }

@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.domain.repository
 
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import java.util.*
 
@@ -13,7 +12,7 @@ interface TagRepository {
     fun findById(id: UUID): Tag
     fun findByIdOrNull(id: UUID): Tag?
     fun exists(id: UUID): Boolean
-    fun findByBalanceSheetAndName(balanceSheet: BalanceSheet, name: String): Tag?
-    fun findByBalanceSheetOrderByName(balanceSheet: BalanceSheet): List<Tag>
+    fun findByBalanceSheetAndName(name: String): Tag?
+    fun findByBalanceSheetOrderByName(): List<Tag>
     fun findByObjId(objId: UUID): List<Tag>
 }

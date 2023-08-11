@@ -11,9 +11,11 @@ import java.util.*
 
 @Repository
 class RecurrenceOperDao(
-    private val jdbcTemplate: NamedParameterJdbcTemplate
+    private val jdbcTemplate: NamedParameterJdbcTemplate,
+    private val moneyOperDao: MoneyOperDao
 ): DomainModelDao<RecurrenceOper>, RecurrenceOperRepository {
     override fun save(domainAggregate: RecurrenceOper) {
+        moneyOperDao.save(domainAggregate.template)
         val sql = """
             insert into recurrence_oper(id, template_id, next_date, balance_sheet_id, is_arc)
                 values(:id, :templateId, :nextDate, :bsId, :isArc)
@@ -21,7 +23,7 @@ class RecurrenceOperDao(
                 template_id = :templateId, next_date = :nextDate, balance_sheet_id = :bsId, is_arc = :isArc
         """.trimIndent()
         val paramMap = with(domainAggregate) {
-            mapOf("id" to id, "templateId" to templateId, "nextDate" to nextDate,
+            mapOf("id" to id, "templateId" to template.id, "nextDate" to nextDate,
                 "bsId" to ApiRequestContextHolder.balanceSheet.id, "isArc" to arc)
         }
         jdbcTemplate.update(sql, paramMap)
@@ -45,10 +47,11 @@ class RecurrenceOperDao(
 
     private val rowMapper: (rs: ResultSet, rowNum: Int) -> RecurrenceOper = { rs, _ ->
         val id = rs.getString("id").let { UUID.fromString(it) }
-        val templateId = rs.getString("template_id")
+        val template = rs.getString("template_id")
             .let { UUID.fromString(it) }
+            .let { moneyOperDao.findById(it) }
         val nextDate = rs.getDate("next_date").toLocalDate()
         val isArc = rs.getBoolean("is_arc")
-        RecurrenceOper(id, templateId, nextDate).apply { this.arc = isArc }
+        RecurrenceOper(id, template, nextDate, isArc)
     }
 }

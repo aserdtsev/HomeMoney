@@ -4,7 +4,6 @@ import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import ru.serdtsev.homemoney.domain.repository.TagRepository
@@ -68,15 +67,16 @@ class TagDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : DomainModel
 
     override fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
-    override fun findByBalanceSheetAndName(balanceSheet: BalanceSheet, name: String): Tag? {
+    override fun findByBalanceSheetAndName(name: String): Tag? {
         val sql = "select * from tag where balance_sheet_id = :bsId and name = :name"
-        val paramMap = mapOf("bsId" to balanceSheet.id, "name" to name)
+        val paramMap = mapOf(
+            "bsId" to ApiRequestContextHolder.balanceSheet.id, "name" to name)
         return jdbcTemplate.query(sql, paramMap, rowMapper).firstOrNull()
     }
 
-    override fun findByBalanceSheetOrderByName(balanceSheet: BalanceSheet): List<Tag> {
+    override fun findByBalanceSheetOrderByName(): List<Tag> {
         val sql = "select * from tag where balance_sheet_id = :bsId order by name"
-        return jdbcTemplate.query(sql, mapOf("bsId" to balanceSheet.id), rowMapper)
+        return jdbcTemplate.query(sql, mapOf("bsId" to ApiRequestContextHolder.balanceSheet.id), rowMapper)
     }
 
     @Cacheable("TagDao.findByObjId")

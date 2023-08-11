@@ -3,14 +3,14 @@ package ru.serdtsev.homemoney.port.converter.moneyoper
 import org.springframework.context.ApplicationContext
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.converter.Converter
-import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
-import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperItemDto
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
+import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
+import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperItemDto
 
-class MoneyOperToDtoConverter(private val appCtx: ApplicationContext) : Converter<MoneyOper, MoneyOperDto> {
+class MoneyOperToDtoConverter(private val applicationContext: ApplicationContext) : Converter<MoneyOper, MoneyOperDto> {
     private val conversionService: ConversionService
-        get() = appCtx.getBean("conversionService") as ConversionService
+        get() = applicationContext.getBean("conversionService") as ConversionService
 
     override fun convert(source: MoneyOper): MoneyOperDto =
         MoneyOperDto(source.id, source.status, source.performed, source.period, source.comment,
