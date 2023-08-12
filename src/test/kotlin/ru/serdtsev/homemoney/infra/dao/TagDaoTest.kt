@@ -55,11 +55,11 @@ internal class TagDaoTest: SpringBootBaseTest() {
         val name = "tag-name"
         val tag = createTag(name)
 
-        tagDao.findByBalanceSheetAndName(name).also {
+        tagDao.findOrNullByBalanceSheetAndName(name).also {
             assertEquals(tag, it)
         }
 
-        assertNull(tagDao.findByBalanceSheetAndName("other-tag-name"))
+        assertNull(tagDao.findOrNullByBalanceSheetAndName("other-tag-name"))
     }
 
     @Test

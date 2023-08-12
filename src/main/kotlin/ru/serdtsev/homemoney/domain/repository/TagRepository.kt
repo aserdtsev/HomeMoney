@@ -12,7 +12,7 @@ interface TagRepository {
     fun findById(id: UUID): Tag
     fun findByIdOrNull(id: UUID): Tag?
     fun exists(id: UUID): Boolean
-    fun findByBalanceSheetAndName(name: String): Tag?
+    fun findOrNullByBalanceSheetAndName(name: String): Tag?
     fun findByBalanceSheetOrderByName(): List<Tag>
     fun findByObjId(objId: UUID): List<Tag>
 }

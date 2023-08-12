@@ -4,45 +4,35 @@ import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.jupiter.api.Assertions.assertIterableEquals
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.Account
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
-import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.TagRepository
 import ru.serdtsev.homemoney.infra.dao.AccountDao
-import ru.serdtsev.homemoney.infra.dao.BalanceSheetDao
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
 
-internal class MoneyOperServiceTest {
-    private val balanceSheetDao: BalanceSheetDao = mock {  }
+internal class TagServiceTest : SpringBootBaseTest() {
     private val tagRepository: TagRepository = mock {  }
     private val moneyOperRepository: MoneyOperRepository = mock {  }
-    private val balanceSheet = BalanceSheet()
     private val accountDao: AccountDao = mock {  }
-    private val service = MoneyOperService(moneyOperRepository, mock {  }, tagRepository)
-
-    @BeforeEach
-    fun setUp() {
-        whenever(balanceSheetDao.findById(any())).thenReturn(balanceSheet)
-    }
+    private val service = TagService(tagRepository, moneyOperRepository)
 
     @Test
     fun getTagsSuggest() {
-        val car = newTag("car")
-        val food = newTag("food")
-        val clothes = newTag("clothes")
+        val car = createExpenseTag("car")
+        val food = createExpenseTag("food")
+        val clothes = createExpenseTag("clothes")
         val tagsA = listOf(car, food, clothes)
         val tagsB = listOf(food, clothes)
         val tagsC = listOf(clothes)
 
-        val opers = listOf(newMoneyOperWithTags(tagsA), newMoneyOperWithTags(tagsB), newMoneyOperWithTags(tagsC))
+        val opers = listOf(createMoneyOperWithTags(tagsA), createMoneyOperWithTags(tagsB), createMoneyOperWithTags(tagsC))
         whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformedGreaterThan(any(), any()))
             .thenReturn(opers)
 
@@ -53,14 +43,14 @@ internal class MoneyOperServiceTest {
             LocalDate.now(),false)
         whenever(accountDao.findNameById(any())).thenReturn(account.name)
 
-        val moneyOper = newMoneyOperWithTags(ArrayList())
+        val moneyOper = createMoneyOperWithTags(ArrayList())
         val tags = moneyOper.tags.map { it.name }
         val actual = service.getSuggestTags(MoneyOperType.expense.name, null, tags)
         val expectedTags = listOf(car, food, clothes)
         assertIterableEquals(expectedTags, actual)
     }
 
-    private fun newMoneyOperWithTags(tags: List<Tag>): MoneyOper {
+    private fun createMoneyOperWithTags(tags: List<Tag>): MoneyOper {
         val moneyOper = MoneyOper(UUID.randomUUID(), mutableListOf(), MoneyOperStatus.doneNew,
             LocalDate.now(), 0, tags, null, Period.month)
         val balance1 = Balance(AccountType.debit, "Some account name", BigDecimal.ZERO)
@@ -70,10 +60,8 @@ internal class MoneyOperServiceTest {
         return moneyOper
     }
 
-    private fun newTag(name: String): Tag {
-        return Tag(name).apply {
-            this.isCategory = true
-            this.categoryType = CategoryType.expense
-        }
+    private fun createExpenseTag(name: String): Tag = Tag(name).apply {
+        this.isCategory = true
+        this.categoryType = CategoryType.expense
     }
 }

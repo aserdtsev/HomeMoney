@@ -7,17 +7,17 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
-import ru.serdtsev.homemoney.port.service.MoneyOperService
+import ru.serdtsev.homemoney.port.service.TagService
 
 class MoneyOperDtoToModelConverter(private val applicationContext: ApplicationContext) : Converter<MoneyOperDto, MoneyOper> {
     private val balanceRepository: BalanceRepository
         get() = applicationContext.getBean(BalanceRepository::class.java)
-    private val moneyOperService: MoneyOperService
-        get() = applicationContext.getBean(MoneyOperService::class.java)
+    private val tagService: TagService
+        get() = applicationContext.getBean(TagService::class.java)
 
     override fun convert(source: MoneyOperDto): MoneyOper {
         val dateNum = source.dateNum
-        val tags = moneyOperService.getTagsByStrings(source.tags)
+        val tags = tagService.getTagsByStrings(source.tags)
         val period = source.period ?: Period.month
         val items = source.items
             .map {

@@ -67,7 +67,7 @@ class TagDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : DomainModel
 
     override fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
-    override fun findByBalanceSheetAndName(name: String): Tag? {
+    override fun findOrNullByBalanceSheetAndName(name: String): Tag? {
         val sql = "select * from tag where balance_sheet_id = :bsId and name = :name"
         val paramMap = mapOf(
             "bsId" to ApiRequestContextHolder.balanceSheet.id, "name" to name)

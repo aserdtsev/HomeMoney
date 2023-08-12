@@ -11,7 +11,6 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
-import ru.serdtsev.homemoney.domain.repository.TagRepository
 import ru.serdtsev.homemoney.domain.usecase.moneyoper.*
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.exception.HmException
@@ -19,6 +18,7 @@ import ru.serdtsev.homemoney.port.common.HmResponse
 import ru.serdtsev.homemoney.port.common.PagedList
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
 import ru.serdtsev.homemoney.port.service.MoneyOperService
+import ru.serdtsev.homemoney.port.service.TagService
 import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
@@ -38,7 +38,7 @@ class MoneyOperController(
     private val apiRequestContextHolder: ApiRequestContextHolder,
     private val moneyOperService: MoneyOperService,
     private val moneyOperRepository: MoneyOperRepository,
-    private val tagRepository: TagRepository,
+    private val tagService: TagService,
     @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
     @RequestMapping
@@ -139,7 +139,7 @@ class MoneyOperController(
                                 (oper.items.any { item: MoneyOperItem -> item.balance.name.lowercase(Locale.getDefault())
                                     .contains(search) } // по комментарию
                                         || oper.comment?.lowercase(Locale.getDefault())?.contains(search) ?: false // по меткам
-                                        || oper.tags.any { tagContains(it, search) })
+                                        || oper.tags.any { tagService.tagContains(it, search) })
                             }
                     opers.addAll(opersChunk)
                 }
@@ -153,11 +153,6 @@ class MoneyOperController(
         return opers.subList(offset, opers.size).take(limit)
     }
 
-    fun tagContains(tag: Tag, search: String): Boolean {
-        return tag.name.lowercase().contains(search) ||
-                tag.isCategory && tag.rootId?.let { tagRepository.findByIdOrNull(it) }
-            ?.let { tagContains(it, search) } ?: false
-    }
 
     @RequestMapping("/item")
     @Transactional(readOnly = true)
@@ -232,7 +227,7 @@ class MoneyOperController(
         @RequestParam search: String?,
         @RequestParam tags: Array<String>?
     ): HmResponse {
-        val suggestTags = moneyOperService.getSuggestTags(operType, search, tags?.toList() ?: emptyList())
+        val suggestTags = tagService.getSuggestTags(operType, search, tags?.toList() ?: emptyList())
                 .map(Tag::name)
         return HmResponse.getOk(suggestTags)
     }
@@ -240,7 +235,7 @@ class MoneyOperController(
     @RequestMapping(value = ["/tags"])
     @Transactional(readOnly = true)
     fun tags(): HmResponse {
-        val tags = moneyOperService.getTags(apiRequestContextHolder.getBsId()).map(Tag::name)
+        val tags = tagService.getTags(apiRequestContextHolder.getBsId()).map(Tag::name)
         return HmResponse.getOk(tags)
     }
 

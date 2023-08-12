@@ -7,15 +7,15 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import ru.serdtsev.homemoney.port.dto.moneyoper.RecurrenceOperDto
-import ru.serdtsev.homemoney.port.service.MoneyOperService
+import ru.serdtsev.homemoney.port.service.TagService
 
 class RecurrenceOperToModelConverter(private val applicationContext: ApplicationContext) : Converter<RecurrenceOperDto, RecurrenceOper> {
     private val recurrenceOperRepository: RecurrenceOperRepository
         get() = applicationContext.getBean(RecurrenceOperRepository::class.java)
     private val balanceRepository: BalanceRepository
         get() = applicationContext.getBean(BalanceRepository::class.java)
-    private val moneyOperService: MoneyOperService
-        get() = applicationContext.getBean(MoneyOperService::class.java)
+    private val tagService: TagService
+        get() = applicationContext.getBean(TagService::class.java)
 
     override fun convert(source: RecurrenceOperDto): RecurrenceOper {
         val recurrenceOper = recurrenceOperRepository.findById(source.id)
@@ -33,7 +33,7 @@ class RecurrenceOperToModelConverter(private val applicationContext: Application
             this.items.addAll(items)
 
             this.tags.clear()
-            val tags = moneyOperService.getTagsByStrings(source.tags)
+            val tags = tagService.getTagsByStrings(source.tags)
             this.tags.addAll(tags)
         }
         return RecurrenceOper(source.id, template, source.nextDate)
