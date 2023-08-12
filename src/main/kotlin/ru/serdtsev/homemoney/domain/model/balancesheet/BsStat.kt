@@ -14,11 +14,10 @@ data class BsStat(
     var chargesAmount: BigDecimal = BigDecimal.ZERO
     var dayStats: List<BsDayStat>? = null
     var categories: List<CategoryStat>? = null
+    var actualDebt: BigDecimal = BigDecimal.ZERO
 
     @JsonIgnore
     val saldoMap = HashMap<AccountType, BigDecimal>()
-    @JsonIgnore
-    var actualDebt: BigDecimal = BigDecimal.ZERO;
 
     val freeAmount: BigDecimal
         get() = debitSaldo - reserveSaldo + actualDebt

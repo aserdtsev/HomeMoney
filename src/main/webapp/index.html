@@ -56,6 +56,11 @@
     <span ng-bind-html="formatMoney(bsStat.reserveSaldo)"
           class="{{bsStat.reserveSaldo >= 0 ? 'positive-money' : 'negative-money'}}">
     </span>
+    Кредитная нагрузка:
+    <span ng-bind-html="formatMoney(bsStat.actualDebt)"
+          class="negative-money">
+    </span>
+
   </div>
   <div>
     Последние
