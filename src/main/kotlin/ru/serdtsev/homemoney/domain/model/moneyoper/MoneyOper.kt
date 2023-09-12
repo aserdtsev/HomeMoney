@@ -5,6 +5,7 @@ import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
+import ru.serdtsev.homemoney.domain.repository.RepositoryRegistry
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.io.Serializable
 import java.math.BigDecimal
@@ -14,16 +15,16 @@ import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.*
 
-class MoneyOper (
+class MoneyOper(
     val id: UUID,
     var items: MutableList<MoneyOperItem> = mutableListOf(),
     var status: MoneyOperStatus,
     var performed: LocalDate = LocalDate.now(),
-    var dateNum: Int = 0,
     tags: Collection<Tag> = mutableListOf(),
     comment: String? = null,
     var period: Period? = null,
-    aRecurrenceId: UUID? = null
+    aRecurrenceId: UUID? = null,
+    var dateNum: Int = 0
 ) : DomainEvent, Serializable {
     var created: Timestamp = Timestamp.from(Instant.now().truncatedTo(ChronoUnit.MILLIS))
     val tags: MutableSet<Tag> = tags.toMutableSet()
@@ -51,15 +52,18 @@ class MoneyOper (
             return MoneyOperType.transfer
         }
 
-    // todo Перенести параметр dateNum в конец
-    constructor(status: MoneyOperStatus, performed: LocalDate? = LocalDate.now(), dateNum: Int = 0,
-        tags: Collection<Tag>? = mutableListOf(), comment: String? = null, period: Period? = Period.month,
-        recurrenceId: UUID? = null
-    ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, dateNum, tags!!, comment, period, recurrenceId)
+    constructor(status: MoneyOperStatus,
+        performed: LocalDate? = LocalDate.now(),
+        tags: Collection<Tag>? = mutableListOf(),
+        comment: String? = null,
+        period: Period? = Period.month,
+        recurrenceId: UUID? = null,
+        dateNum: Int = 0
+    ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, tags!!, comment, period, recurrenceId, dateNum)
 
-    fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate = this.performed,
-                index: Int = items.size, id: UUID = UUID.randomUUID()): MoneyOperItem {
-        val item = MoneyOperItem(id, this.id, balance, value, performed, index)
+    fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate = this.performed, index: Int = items.size,
+            id: UUID = UUID.randomUUID()): MoneyOperItem {
+        val item = MoneyOperItem.of(this.id, balance, value, performed, index, id)
         items.add(item)
         return item
     }
@@ -117,7 +121,7 @@ class MoneyOper (
     }
 
     fun createTemplate(): MoneyOper {
-        val template = MoneyOper(template, performed, 0, tags, comment, period)
+        val template = MoneyOper(template, performed, tags, comment, period, dateNum = 0)
         items.forEach { template.addItem(it.balance, it.value, it.performed) }
         return template
     }

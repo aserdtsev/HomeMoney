@@ -11,10 +11,10 @@ import org.springframework.core.convert.ConversionService
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
+import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
-import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.dao.RecurrenceOperDao
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperItemDto
@@ -26,10 +26,14 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     private val now = LocalDate.now()
     private val cashBalance = Balance(UUID.randomUUID(), AccountType.debit, "Наличные", now,
         false, balanceSheet.currencyCode, BigDecimal("100.00"))
-    private val cardBalance = Balance(UUID.randomUUID(), AccountType.debit, "Карта", now,
-        false, balanceSheet.currencyCode, BigDecimal("0.00"))
-    private val foodstuffsTag = Tag("Продукты")
-    private val salaryTag = Tag("Зарплата")
+    private val cardBalance = run {
+        val credit = Credit(BigDecimal("400000.00"), 12, 55)
+        Balance(UUID.randomUUID(), AccountType.debit, "Карта", now,
+            false, balanceSheet.currencyCode, BigDecimal("0.00"), credit = credit)
+    }
+    private lateinit var foodstuffsTag: Tag
+    private lateinit var salaryTag: Tag
+
     @Autowired
     private lateinit var balanceRepository: BalanceRepository
     @Autowired
@@ -44,20 +48,18 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
 
     @BeforeEach
     fun setUp() {
-        ApiRequestContextHolder.bsId = balanceSheet.id
-        ApiRequestContextHolder.requestId = "REQUEST_ID"
-
+        foodstuffsTag = Tag.of("Продукты")
+        salaryTag = Tag.of("Зарплата")
         domainEventPublisher.publish(cashBalance)
         domainEventPublisher.publish(cardBalance)
-        domainEventPublisher.publish(foodstuffsTag)
-        domainEventPublisher.publish(salaryTag)
     }
 
     @Test
     fun createMoneyOper_simpleExpense() {
+        val balance = cardBalance
         val sample = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1),
-            period = Period.month, tags = mutableListOf(foodstuffsTag), comment = "comment").apply {
-            addItem(cashBalance, BigDecimal("-1.00"))
+            tags = mutableListOf(foodstuffsTag), comment = "comment", period = Period.month).apply {
+            addItem(cardBalance, BigDecimal("-1.00"))
             domainEventPublisher.publish(this)
         }
         val recurrenceOper = RecurrenceOper.of(sample)
@@ -76,8 +78,8 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
             .extracting("items", "status", "performed", "comment", "period", "tags")
             .contains(expectedItems, MoneyOperStatus.done, now, moneyOperDto.comment, Period.month, mutableSetOf(foodstuffsTag))
 
-        val actualBalance = balanceRepository.findById(cashBalance.id)
-        assertEquals(BigDecimal("99.00"), actualBalance.value)
+        val actualBalance = balanceRepository.findById(balance.id)
+        assertEquals(BigDecimal("-1.00"), actualBalance.value)
 
         val expectedRecurrenceOper = recurrenceOperDao.findById(actualMoneyOper.recurrenceId!!)
         assertEquals(LocalDate.now().plusMonths(1), expectedRecurrenceOper.nextDate)
@@ -96,8 +98,8 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
 
         val actualMoneyOper = moneyOperRepository.findById(moneyOperDto.id)
         val expectedItems = mutableListOf(
-            MoneyOperItem(moneyOperItemDto.id, moneyOperDto.id, cashBalance, moneyOperItemDto.value,
-                moneyOperItemDto.performedAt, 0)
+            MoneyOperItem.of(moneyOperDto.id, cashBalance, moneyOperItemDto.value,
+                moneyOperItemDto.performedAt, 0, id = moneyOperItemDto.id)
         )
         assertThat(actualMoneyOper)
             .isNotNull
@@ -124,10 +126,10 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
 
         val actualMoneyOper = moneyOperRepository.findById(moneyOperDto.id)
         val expectedItems = mutableListOf(
-            MoneyOperItem(moneyOperItemDto1.id, moneyOperDto.id, cashBalance, moneyOperItemDto1.value,
-                moneyOperItemDto1.performedAt, 0),
-            MoneyOperItem(moneyOperItemDto2.id, moneyOperDto.id, cashBalance, moneyOperItemDto2.value,
-                moneyOperItemDto2.performedAt, 1)
+            MoneyOperItem.of(moneyOperDto.id, cashBalance, moneyOperItemDto1.value, moneyOperItemDto1.performedAt,
+                0, id = moneyOperItemDto1.id),
+            MoneyOperItem.of(moneyOperDto.id, cashBalance, moneyOperItemDto2.value, moneyOperItemDto2.performedAt,
+                1, id = moneyOperItemDto2.id)
         )
         assertThat(actualMoneyOper)
             .isNotNull
@@ -140,9 +142,9 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
 
     @Test
     internal fun updateMoneyOper() {
-        val origMoneyOper = MoneyOper(MoneyOperStatus.done, now, 0, mutableSetOf(salaryTag),
-            "Comment 1", Period.month)
-        origMoneyOper.addItem(cashBalance, BigDecimal("1.00"), now, 0)
+        val origMoneyOper = MoneyOper(MoneyOperStatus.done, now, mutableSetOf(salaryTag), "Comment 1",
+            Period.month)
+        origMoneyOper.addItem(cashBalance, BigDecimal("-1.00"), now, 0)
         domainEventPublisher.publish(origMoneyOper)
 
         val moneyOperDto = conversionService.convert(origMoneyOper, MoneyOperDto::class.java)!!.apply {
@@ -164,11 +166,12 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
             .extracting("items", "status", "performed", "comment", "period", "tags")
             .contains(expectedItems, MoneyOperStatus.done, now, moneyOperDto.comment, Period.single, mutableSetOf(salaryTag))
 
-        val actualCashBalance = balanceRepository.findById(cashBalance.id)
-        assertEquals(BigDecimal("99.00"), actualCashBalance.value)
+        assertEquals(BigDecimal("101.00"), balanceRepository.findById(cashBalance.id).value)
+        assertEquals(BigDecimal("-2.00"), balanceRepository.findById(cardBalance.id).value)
 
-        val actualCardBalance = balanceRepository.findById(cardBalance.id)
-        assertEquals(BigDecimal("2.00"), actualCardBalance.value)
+        moneyOperDto.items[0].value = BigDecimal("3.00")
+        moneyOperController.updateMoneyOper(moneyOperDto)
+        assertEquals(BigDecimal("-3.00"), balanceRepository.findById(cardBalance.id).value)
     }
 
     @Test

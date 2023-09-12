@@ -160,16 +160,15 @@ create table money_oper_item
     index integer,
     bs_id uuid not null
         constraint money_oper_item_bs_id_fk
-            references balance_sheet (id)
+            references balance_sheet (id),
+    repayment_schedule jsonb
 );
 
 comment on column money_oper_item.oper_id is 'Идентификатор операции';
-
 comment on column money_oper_item.balance_id is 'Идентификатор остатка (баланса)';
-
 comment on column money_oper_item.performed is 'Дата изменения';
-
 comment on column money_oper_item.index is 'Порядковый номер';
+comment on column money_oper_item.repayment_schedule is 'График гашения задолженности';
 
 create index money_oper_item_bs_id_fki
     on money_oper_item (bs_id);

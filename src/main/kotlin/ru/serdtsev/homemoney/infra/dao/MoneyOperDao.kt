@@ -1,5 +1,7 @@
 package ru.serdtsev.homemoney.infra.dao
 
+import com.fatboyindustrial.gsonjavatime.Converters
+import com.google.gson.GsonBuilder
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
@@ -14,10 +16,12 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
+import ru.serdtsev.homemoney.infra.utils.toJsonb
 import java.math.BigDecimal
 import java.sql.ResultSet
 import java.time.LocalDate
 import java.util.*
+
 
 @Repository
 class MoneyOperDao(
@@ -25,7 +29,9 @@ class MoneyOperDao(
     private val tagDao: TagDao,
     private val balanceDao: BalanceDao
 ) : DomainModelDao<MoneyOper>, MoneyOperRepository {
-    @CacheEvict(cacheNames = ["TagDao.findByObjId"], key = "#domainAggregate.getId()")
+    private val gson = Converters.registerAll(GsonBuilder()).create()
+
+    @CacheEvict(cacheNames = ["TagDao.findByObjId"], key = "#domainAggregate.id")
     override fun save(domainAggregate: MoneyOper) {
         val sql = """
             insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, status, recurrence_id)
@@ -54,15 +60,23 @@ class MoneyOperDao(
 
     private fun saveItem(moneyOperItem: MoneyOperItem) {
         val sql = """
-            insert into money_oper_item(id, oper_id, balance_id, value, performed, index, bs_id)
-                values(:id, :operId, :balanceId, :value, :performed, :index, :bsId)
+            insert into money_oper_item(id, oper_id, balance_id, value, performed, index, bs_id, repayment_schedule)
+                values(:id, :operId, :balanceId, :value, :performed, :index, :bsId, :repaymentSchedule)
             on conflict(id) do update set  
                 oper_id = :operId, balance_id = :balanceId, value = :value, performed = :performed, index = :index,
-                bs_id = :bsId
+                bs_id = :bsId, repayment_schedule = :repaymentSchedule
         """.trimIndent()
         val paramMap = with(moneyOperItem) {
-            mapOf("id" to id, "operId" to moneyOperId, "balanceId" to balance.id, "value" to value,
-                "performed" to performed, "index" to index, "bsId" to  ApiRequestContextHolder.balanceSheet.id)
+            mapOf(
+                "id" to id,
+                "operId" to moneyOperId,
+                "balanceId" to balanceId,
+                "value" to value,
+                "performed" to performed,
+                "index" to index,
+                "bsId" to  ApiRequestContextHolder.balanceSheet.id,
+                "repaymentSchedule" to repaymentSchedule?.let { gson.toJsonb(it) }
+            )
         }
         jdbcTemplate.update(sql, paramMap)
     }
@@ -168,16 +182,36 @@ class MoneyOperDao(
         return PageImpl(list, pageable, total)
     }
 
-    override fun findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet: BalanceSheet, startDate: LocalDate,
-        finishDate: LocalDate, status: MoneyOperStatus): List<MoneyOper> {
+    override fun findByPerformedBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
+        status: MoneyOperStatus): List<MoneyOper> {
         val sql = """
             select o.* 
             from money_oper o  
             where o.balance_sheet_id = :bsId 
-                and o.trn_date between :startDate and :finishDate 
+                and o.trn_date between :startDate and :finishDate
                 and o.status = :status
         """.trimIndent()
-        val paramMap = mapOf("bsId" to balanceSheet.id,
+        val bsId = ApiRequestContextHolder.balanceSheet.id
+        val paramMap = mapOf("bsId" to bsId,
+            "startDate" to startDate, "finishDate" to finishDate, "status" to status.toString())
+        return jdbcTemplate.query(sql, paramMap, rowMapper)
+    }
+
+    override fun findByCreditCardAndDateBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
+            status: MoneyOperStatus): List<MoneyOper> {
+        val sql = """
+            select o.* 
+            from money_oper o
+            join money_oper_item i on i.oper_id = o.id
+            where o.balance_sheet_id = :bsId 
+                and o.status = :status
+                and i.repayment_schedule is not null    
+                and (i.performed between :startDate and :finishDate 
+                    or (i.repayment_schedule -> 0 ->> 'endDate')::date between :startDate and :finishDate)
+                and (i.repayment_schedule -> 0 ->> 'endDate')::date > i.performed     
+        """.trimIndent()
+        val bsId = ApiRequestContextHolder.balanceSheet.id
+        val paramMap = mapOf("bsId" to bsId,
             "startDate" to startDate, "finishDate" to finishDate, "status" to status.toString())
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
@@ -208,7 +242,7 @@ class MoneyOperDao(
         val comment = rs.getString("comment")
         val period = rs.getString("period")?.let { Period.valueOf(it) }
         val recurrenceId = rs.getString("recurrence_id")?.let { UUID.fromString(it) }
-        MoneyOper(id, items, status, performed, dateNum, tags, comment, period, recurrenceId).apply {
+        MoneyOper(id, items, status, performed, tags, comment, period, recurrenceId, dateNum).apply {
             this.created = rs.getTimestamp("created_ts")
         }
     }
@@ -220,6 +254,6 @@ class MoneyOperDao(
         val value = rs.getBigDecimal("value")
         val performed = rs.getDate("performed").toLocalDate()
         val index = rs.getInt("index")
-        MoneyOperItem(id, moneyOperId, balance, value, performed, index)
+        MoneyOperItem.of(moneyOperId, balance, value, performed, index, id)
     }
 }

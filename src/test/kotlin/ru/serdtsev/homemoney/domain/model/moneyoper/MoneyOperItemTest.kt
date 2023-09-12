@@ -24,8 +24,8 @@ internal class MoneyOperItemTest : DomainBaseTest() {
             "RUB", BigDecimal.TEN)
         checkingAccount = Balance(UUID.randomUUID(), AccountType.debit, "Checking account",
                 LocalDate.now(), false, "RUB", BigDecimal.valueOf(1000L))
-        oper = MoneyOper(UUID.randomUUID(), mutableListOf(), MoneyOperStatus.pending, LocalDate.now(), 0,
-               listOf(), "", null)
+        oper = MoneyOper(UUID.randomUUID(), mutableListOf(), MoneyOperStatus.pending, LocalDate.now(), listOf(),
+            "", null, dateNum = 0)
     }
 
     @Test
@@ -37,7 +37,7 @@ internal class MoneyOperItemTest : DomainBaseTest() {
         item.index = item.index + 1
         assertTrue(MoneyOperItem.balanceEquals(item, origItem))
         item = SerializationUtils.clone(origItem)
-        item.balance = checkingAccount
+        item.balanceId = checkingAccount.id
         assertFalse(MoneyOperItem.balanceEquals(item, origItem))
         item = SerializationUtils.clone(origItem)
         item.value = origItem.value.add(BigDecimal.ONE)

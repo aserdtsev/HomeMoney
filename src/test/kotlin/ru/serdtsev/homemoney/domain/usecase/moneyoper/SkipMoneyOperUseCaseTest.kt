@@ -11,19 +11,20 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
-import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
 internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
     private val recurrenceOperRepository: RecurrenceOperRepository = mock { }
-    private val moneyOperRepository: MoneyOperRepository = mock { }
+    private val balanceRepository = repositoryRegistry.balanceRepository
+    private val moneyOperRepository = repositoryRegistry.moneyOperRepository
     private val useCase = SkipMoneyOperUseCase(recurrenceOperRepository, moneyOperRepository)
 
     @Test
     fun run_byPendingMoneyOper() {
         val balance = Balance(AccountType.debit, "Cash")
+        whenever(balanceRepository.findById(balance.id)).thenReturn(balance)
         val moneyOper = MoneyOper(MoneyOperStatus.pending).apply {
             this.addItem(balance, BigDecimal("1.00"))
         }
@@ -43,6 +44,7 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
     @Test
     fun run_byRecurrenceOper() {
         val balance = Balance(AccountType.debit, "Cash")
+            .apply { whenever(balanceRepository.findById(id)).thenReturn(this) }
         val sample =  MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1)).apply {
             this.addItem(balance, BigDecimal("1.00"))
             this.period = Period.month

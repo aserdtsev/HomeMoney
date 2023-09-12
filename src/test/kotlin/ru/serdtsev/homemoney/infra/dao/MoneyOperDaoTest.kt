@@ -9,10 +9,10 @@ import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
+import ru.serdtsev.homemoney.domain.model.account.AnnuityPayment
 import ru.serdtsev.homemoney.domain.model.account.Balance
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
-import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
+import ru.serdtsev.homemoney.domain.model.account.Credit
+import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import java.math.BigDecimal
 import java.time.LocalDate
 
@@ -31,14 +31,17 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
     @BeforeEach
     internal fun setUp() {
-        balanceA = Balance(AccountType.debit, "a").apply { balanceDao.save(this) }
+        balanceA = run {
+            val annuityPayment = AnnuityPayment(BigDecimal("1000.00"))
+            val credit = Credit(BigDecimal("400000.00"), 14, 55, annuityPayment = annuityPayment)
+            Balance(AccountType.debit, "a", credit = credit).apply { balanceDao.save(this) }
+        }
         balanceB = Balance(AccountType.debit, "b").apply { balanceDao.save(this) }
-        tagA = Tag("tagA").apply { tagDao.save(this) }
-        tagB = Tag("tagB").apply { tagDao.save(this) }
+        tagA = Tag.of("tagA")
+        tagB = Tag.of("tagB")
     }
 
     @Test
-    // todo Даписать тест
     internal fun crud() {
         val value = BigDecimal("1.00")
         val moneyOper = MoneyOper(MoneyOperStatus.done, tags = listOf(tagA), comment = "comment")
@@ -108,7 +111,7 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
         val moneyOper = MoneyOper(MoneyOperStatus.done)
         moneyOperDao.save(moneyOper)
 
-        moneyOperDao.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet, LocalDate.now(),
-            LocalDate.now(), MoneyOperStatus.done).also { assertEquals(listOf(moneyOper), it) }
+        moneyOperDao.findByPerformedBetweenAndMoneyOperStatus(LocalDate.now(), LocalDate.now(),
+            MoneyOperStatus.done).also { assertEquals(listOf(moneyOper), it) }
     }
 }

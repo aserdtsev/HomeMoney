@@ -1,13 +1,14 @@
 package ru.serdtsev.homemoney.infra.dao
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
+import ru.serdtsev.homemoney.domain.model.account.AnnuityPayment
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.math.BigDecimal
 
@@ -17,31 +18,34 @@ internal class BalanceDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun crud() {
-        val balanceSheet = BalanceSheet()
         balanceSheetDao.save(balanceSheet)
-        ApiRequestContextHolder.bsId = balanceSheet.id
+        ApiRequestContextHolder.balanceSheet = balanceSheet
 
-        val balance = Balance(AccountType.debit, "name")
-        balanceDao.save(balance)
+        val balance = run {
+            val annuityPayment = AnnuityPayment(BigDecimal("1000.00"))
+            val credit = Credit(BigDecimal("400000.00"), 14, 55, annuityPayment = annuityPayment)
+            Balance(AccountType.debit, "name", credit = credit).apply { balanceDao.save(this) }
+        }
 
         assertTrue(balanceDao.exists(balance.id))
 
-        balanceDao.findByIdOrNull(balance.id).also { actual ->
-            assertNotNull(actual)
-            assertEquals(balance, actual)
+        assertThat(balanceDao.findById(balance.id))
+            .usingRecursiveComparison()
+            .isEqualTo(balance)
+
+        with (balance) {
+            value = value.plus(BigDecimal.ONE)
+            minValue = minValue.plus(BigDecimal.ONE)
+            this.credit = Credit(BigDecimal("500000.00"), 15, 60,
+                AnnuityPayment(BigDecimal("2000.00")))
+            num = 1
+            isArc = true
         }
-
-        balanceDao.findById(balance.id).also { actual ->
-            assertEquals(balance, actual)
-        }
-
-        balance.value = BigDecimal.ONE
-        balance.minValue = balance.minValue.plus(BigDecimal.ONE)
-        balance.credit = Credit(BigDecimal.ONE)
-        balance.num = 1
-        balance.isArc = true
-
         balanceDao.save(balance)
+        assertThat(balanceDao.findById(balance.id))
+            .usingRecursiveComparison()
+            .isEqualTo(balance)
+
         balanceDao.findByIdOrNull(balance.id).also { actual ->
             assertNotNull(actual)
             assertEquals(actual, balance)

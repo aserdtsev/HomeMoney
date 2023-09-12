@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class RepositoryRegistry(
+    val balanceRepository: BalanceRepository,
     val moneyOperRepository: MoneyOperRepository
 ) {
     @PostConstruct

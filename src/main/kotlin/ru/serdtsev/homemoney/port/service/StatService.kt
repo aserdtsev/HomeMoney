@@ -1,24 +1,22 @@
 package ru.serdtsev.homemoney.port.service
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import mu.KotlinLogging
+import org.apache.commons.lang3.ObjectUtils.min
+import org.apache.commons.lang3.compare.ComparableUtils.max
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.balancesheet.*
-import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperType
-import ru.serdtsev.homemoney.domain.model.moneyoper.Period
+import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import ru.serdtsev.homemoney.domain.repository.TagRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.config.CoroutineApiRequestContext
+import ru.serdtsev.homemoney.infra.utils.iterator
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -40,45 +38,55 @@ class StatService(
         return runBlocking(Dispatchers.Default + CoroutineApiRequestContext()) {
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
 
-            val trendTurnovers = async {
-                withContext(Dispatchers.IO) {
-                    getTrendTurnovers(balanceSheet, interval)
-                }
-            }
-
             val today = LocalDate.now()
             val fromDate = today.minusDays(interval)
+            val toDate = today.plusDays(interval)
 
             val bsStat = BsStat(fromDate, today)
             calcCurrentSaldo(bsStat)
             bsStat.actualDebt = balanceSheetRepository.getActualDebt(balanceSheet.id)
 
-            val realTurnovers = withContext(Dispatchers.IO) {
-                getRealTurnovers(balanceSheet, MoneyOperStatus.done, fromDate, today)
-            }
-            val pendingTurnovers = withContext(Dispatchers.IO) {
-                getRealTurnovers(
-                    balanceSheet, MoneyOperStatus.pending,
-                    LocalDate.ofEpochDay(0), today.plusDays(interval)
-                )
-            }
-            val recurrenceTurnovers = withContext(Dispatchers.IO) {
-                getRecurrenceTurnovers(balanceSheet, today.plusDays(interval))
-            }
+            val realTurnovers = getRealTurnovers(MoneyOperStatus.done, fromDate, today, interval)
+            val pendingTurnovers = getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval)
+            val recurrenceTurnovers = getRecurrenceTurnovers(balanceSheet, today.plusDays(interval))
+            val trendTurnovers = getTrendTurnovers(interval)
+
+            val creditCardDayDebtMap = getCreditCardDayDebtMap(MoneyOperStatus.done, fromDate, toDate)
+                .apply {
+                    getCreditCardDayDebtMap(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate)
+                        .forEach { (date, debt) ->
+                            this.compute(date) { _, aDebt -> (aDebt ?: BigDecimal.ZERO) + debt }
+                        }
+                    getRecurrenceCreditCardDayDebtMap(balanceSheet, toDate)
+                        .forEach { (date, debt) ->
+                            this.compute(date) { _, aDebt -> (aDebt ?: BigDecimal.ZERO) + debt }
+                        }
+                    getTrendCreditCardDayDebtMap(interval)
+                        .forEach { (date, debt) ->
+                            this.compute(date) { _, aDebt -> (aDebt ?: BigDecimal.ZERO) + debt }
+                        }
+                }
 
             val map = TreeMap<LocalDate, BsDayStat>()
             fillBsDayStatMap(map, realTurnovers)
-            calcPastSaldoAndTurnovers(bsStat, map)
+            calcPastSaldoAndTurnovers(bsStat, map, creditCardDayDebtMap)
 
             val trendMap = TreeMap<LocalDate, BsDayStat>()
             fillBsDayStatMap(trendMap, pendingTurnovers)
             fillBsDayStatMap(trendMap, recurrenceTurnovers)
-            fillBsDayStatMap(trendMap, trendTurnovers.await())
-            calcTrendSaldoAndTurnovers(bsStat, trendMap)
+            fillBsDayStatMap(trendMap, trendTurnovers)
+            calcFutureSaldoAndTurnovers(bsStat, trendMap, creditCardDayDebtMap)
 
-            map.putAll(trendMap)
-            bsStat.dayStats = ArrayList(map.values)
-            bsStat.categories = getCategories(balanceSheet, fromDate, today)
+            trendMap.forEach { k, v ->
+                map.merge(k, v) { dayStat1, dayStat2 ->
+                    dayStat1.debt = dayStat2.debt
+                    dayStat1
+                }
+            }
+
+            bsStat.dayStats += map.values
+            bsStat.categories += getCategories(fromDate, today)
+            bsStat.actualDebt += creditCardDayDebtMap.getOrDefault(today, BigDecimal.ZERO)
 
             bsStat
         }
@@ -96,9 +104,9 @@ class StatService(
      * Создает ассоциированный массив экземпляров BsDayStat и наполняет их суммами из оборотов.
      */
     private fun fillBsDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
-        turnovers.forEach { (operDate, turnoverType, amount) ->
-            val dayStat = map.computeIfAbsent(operDate) {
-                BsDayStat(operDate)
+        turnovers.forEach { (date, turnoverType, amount, debt) ->
+            val dayStat = map.computeIfAbsent(date) {
+                BsDayStat(date)
             }
             when (turnoverType) {
                 TurnoverType.income ->
@@ -108,14 +116,18 @@ class StatService(
                 else -> {
                     val accountType = AccountType.valueOf(turnoverType.name)
                     dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
+                    dayStat.debt += debt
                 }
             }
         }
     }
 
-    private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>) {
-        val cursorSaldoMap =  HashMap<AccountType, BigDecimal>(AccountType.values().size)
-        bsStat.saldoMap.forEach { (type, value) -> cursorSaldoMap[type] = value }
+    private fun calcPastSaldoAndTurnovers(bsStat: BsStat, bsDayStatMap: Map<LocalDate, BsDayStat>,
+        creditCardDebtMap: Map<LocalDate, BigDecimal>) {
+        val cursorSaldoMap = bsStat.saldoMap
+            .map { (type, value) -> type to value }
+            .toMap()
+            .toMutableMap()
         val dayStats = bsDayStatMap.values.toMutableList()
         dayStats.sortByDescending { it.localDate }
         var prev: BsDayStat? = null
@@ -127,31 +139,39 @@ class StatService(
             }
             bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
             bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
-            // todo учесть начало действия кредитного договора
-            dayStat.actualDebt = bsStat.actualDebt.plus()
+            run {
+                // todo учесть начало действия кредитного договора
+                val creditCardDebt = creditCardDebtMap.getOrDefault(dayStat.localDate, BigDecimal.ZERO)
+                dayStat.debt += bsStat.actualDebt + creditCardDebt
+            }
             prev = dayStat
         }
     }
 
-    private fun calcTrendSaldoAndTurnovers(bsStat: BsStat, trendMap: Map<LocalDate, BsDayStat>) {
+    private fun calcFutureSaldoAndTurnovers(bsStat: BsStat, trendMap: Map<LocalDate, BsDayStat>,
+        creditCardDebtMap: Map<LocalDate, BigDecimal>) {
         val dayStats = ArrayList(trendMap.values)
-        val saldoMap = HashMap<AccountType, BigDecimal>(AccountType.values().size)
-        bsStat.saldoMap.forEach { (type, value) -> saldoMap[type] = value }
+        val cursorSaldoMap = bsStat.saldoMap
+            .map { (type, value) -> type to value }
+            .toMap()
+            .toMutableMap()
         dayStats.forEach { dayStat ->
             AccountType.values().forEach { type ->
-                val saldo = (saldoMap as Map<AccountType, BigDecimal>).getOrDefault(type, BigDecimal.ZERO) + dayStat.getDelta(type)
-                saldoMap[type] = saldo
+                val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO) + dayStat.getDelta(type)
+                cursorSaldoMap[type] = saldo
                 dayStat.setSaldo(type, saldo)
             }
-            // todo учесть окончание действия кредитного договора
-            dayStat.actualDebt = bsStat.actualDebt.plus()
+            run {
+                // todo учесть окончание действия кредитного договора
+                val creditCardDebt = creditCardDebtMap.getOrDefault(dayStat.localDate, BigDecimal.ZERO)
+                dayStat.debt += bsStat.actualDebt + creditCardDebt
+            }
         }
     }
 
-    private fun getCategories(balanceSheet: BalanceSheet, fromDate: LocalDate, toDate: LocalDate): List<CategoryStat> {
-        val absentCatId = UUID.randomUUID()
-        val map = moneyOperRepository.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet, fromDate,
-            toDate, MoneyOperStatus.done)
+    private fun getCategories(fromDate: LocalDate, toDate: LocalDate): List<CategoryStat> {
+        val map = moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, toDate,
+            MoneyOperStatus.done)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .filter {
                 val item = it.first
@@ -163,17 +183,12 @@ class StatService(
                 val moneyOper = it.second
                 val category = moneyOper.tags.firstOrNull { tag -> tag.isCategory }
                     ?.let { tag -> tag.rootId?.let { rootId -> tagRepository.findByIdOrNull(rootId) } ?: tag }
-
                 val isReserve = item.balance.type == AccountType.reserve
-
-                val id = when {
-                    category != null -> category.id
-                    isReserve -> item.balance.id
-                    else -> absentCatId
+                when {
+                    category != null -> CategoryStat.of(category, item.value)
+                    isReserve -> CategoryStat.of(item.balance, item.value)
+                    else -> CategoryStat.ofAbsentCategory(item.value)
                 }
-
-                val name = category?.name ?: if (isReserve) item.balance.name else "<Без категории>"
-                CategoryStat(id!!, isReserve, name, item.value)
             }
             .groupBy { it }
         map.forEach { (categoryStat, list) ->
@@ -184,12 +199,12 @@ class StatService(
         return map.keys.sortedByDescending { it.amount }
     }
 
-    fun getRealTurnovers(balanceSheet: BalanceSheet, status: MoneyOperStatus, fromDate: LocalDate, toDate: LocalDate): Collection<Turnover> {
+    private fun getRealTurnovers(status: MoneyOperStatus, fromDate: LocalDate, toDate: LocalDate, interval: Long): Collection<Turnover> {
         log.info { "getRealTurnovers start by $status, ${fromDate.format(DateTimeFormatter.ISO_DATE)} - ${toDate.format(
             DateTimeFormatter.ISO_DATE)}" }
 
         val turnovers =
-            moneyOperRepository.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet, fromDate, toDate, status)
+            moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, toDate, status)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .filter {
                 val item = it.first
@@ -201,12 +216,14 @@ class StatService(
                 val moneyOper = it.second
                 val itemTurnovers = ArrayList<Turnover>()
                 val balance = item.balance
-                val value = if (item.balance.currencyCode != balanceSheet.currencyCode && moneyOper.isForeignCurrencyTransaction)
-                    moneyOper.valueInNationalCurrency.negate()
-                else item.value
                 val turnoverType = TurnoverType.valueOf(balance.type)
-                val turnover = Turnover(item.performed, turnoverType, value)
-                itemTurnovers.add(turnover)
+                Turnover(item.performed, turnoverType, item.value).apply { itemTurnovers.add(this) }
+                if (item.dateWithGracePeriod > item.performed && item.dateWithGracePeriod <= toDate.plusDays(interval)) {
+                    // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
+                    // экземпляр BsDayStat.
+                    Turnover(item.dateWithGracePeriod, turnoverType, BigDecimal("0.00"))
+                        .apply { itemTurnovers.add(this) }
+                }
                 moneyOper.tags
                     .firstOrNull()?.let {
                         if (balance.type == AccountType.debit) {
@@ -218,39 +235,51 @@ class StatService(
             }
             .groupBy { Turnover(it.operDate, it.turnoverType) }
 
-        turnovers.forEach { (turnover, dayAndTypeTurnovers) -> dayAndTypeTurnovers.forEach { turnover.plus(it.amount) } }
+        turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
+            dayAndTypeTurnovers.forEach { turnover.plus(it) } }
 
         log.info { "getRealTurnovers finish" }
         return turnovers.keys
     }
 
-    fun getTrendTurnovers(balanceSheet: BalanceSheet, interval: Long): Collection<Turnover> {
+    private fun getTrendTurnovers(interval: Long): Collection<Turnover> {
         log.info { "getTrendTurnovers start" }
         val today = LocalDate.now()
         val fromDate = today.minusDays(interval)
-        val turnovers = moneyOperRepository.findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(
-            balanceSheet, fromDate, today, MoneyOperStatus.done)
+        val turnovers = moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(
+            fromDate, today, MoneyOperStatus.done)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .filter {
                 val item = it.first
                 val moneyOper = it.second
-                moneyOper.period == Period.month && moneyOper.recurrenceId == null &&
-                        moneyOper.type != MoneyOperType.transfer &&
-                        item.balance.type.isBalance && item.balance.type != AccountType.reserve
-
+                moneyOper.period == Period.month
+                        && moneyOper.recurrenceId == null
+                        && moneyOper.type != MoneyOperType.transfer
+                        && item.balance.type.isBalance
+                        && item.balance.type != AccountType.reserve
             }
             .sortedBy { it.first.performed }
             .flatMap {
                 val item = it.first
                 val moneyOper = it.second
+                val moneyOperItemsTurnovers = mutableListOf<Turnover>()
                 val trendDate = today.plusDays(ChronoUnit.DAYS.between(item.performed, today))
-                val turnover1 = Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value)
-                val turnover2 = Turnover(trendDate, TurnoverType.valueOf(moneyOper.type.name), item.value.abs())
-                listOf(turnover1, turnover2)
+                Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value)
+                    .apply { moneyOperItemsTurnovers.add(this) }
+                if (item.dateWithGracePeriod > item.performed && item.dateWithGracePeriod <= today.plusDays(interval)) {
+                    // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
+                    // экземпляр BsDayStat.
+                    Turnover(item.dateWithGracePeriod, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"))
+                        .apply { moneyOperItemsTurnovers.add(this) }
+                }
+                Turnover(trendDate, TurnoverType.valueOf(moneyOper.type.name), item.value.abs())
+                    .apply { moneyOperItemsTurnovers.add(this) }
+                moneyOperItemsTurnovers
             }
             .groupBy { Turnover(it.operDate, it.turnoverType) }
 
-        turnovers.forEach { (turnover, dayAndTypeTurnovers) -> dayAndTypeTurnovers.forEach { turnover.plus(it.amount) } }
+        turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
+            dayAndTypeTurnovers.forEach { turnover.plus(it) } }
 
         val trendTurnovers = turnovers.keys.toMutableList()
         trendTurnovers.sortBy { it.operDate }
@@ -259,7 +288,7 @@ class StatService(
         return trendTurnovers
     }
 
-    fun getRecurrenceTurnovers(balanceSheet: BalanceSheet, toDate: LocalDate): Collection<Turnover> {
+    private fun getRecurrenceTurnovers(balanceSheet: BalanceSheet, toDate: LocalDate): Collection<Turnover> {
         log.info { "getRecurrenceTurnovers start" }
 
         val recurrenceOpers = recurrenceOperRepository.findByBalanceSheetAndArc(balanceSheet, false)
@@ -269,7 +298,7 @@ class StatService(
             .forEach {
                 var roNextDate = it.nextDate
                 while (roNextDate.isBefore(toDate)) {
-                    // Если дата повторяющейся операции раньше или равно текущему дню, то считаем, что она будет
+                    // Если дата повторяющейся операции раньше или равна текущему дню, то считаем, что она будет
                     // выполнена завтра, а не сегодня. Чтобы в графике не искажать баланс текущего дня операциями,
                     // которые с большей вероятностью сегодня не будут выполнены.
                     val nextDate = if (roNextDate.isBefore(today)) today.plusDays(1) else roNextDate
@@ -295,9 +324,99 @@ class StatService(
     }
 
     private fun putRecurrenceTurnover(turnovers: MutableSet<Turnover>, amount: BigDecimal, turnoverType: TurnoverType,
-                                      nextDate: LocalDate) {
+        nextDate: LocalDate) {
         val turnover = Turnover(nextDate, turnoverType, amount)
         turnovers.firstOrNull { it == turnover }?.let { it.amount += amount }
             ?: turnovers.add(turnover)
+    }
+
+    /**
+     * Возвращает ассоциативный массив дат и задолженности по кредитным картам
+     */
+    private fun getCreditCardDayDebtMap(status: MoneyOperStatus, fromDate: LocalDate, toDate: LocalDate):
+            MutableMap<LocalDate, BigDecimal> {
+        val map = mutableMapOf<LocalDate, BigDecimal>()
+        moneyOperRepository.findByCreditCardAndDateBetweenAndMoneyOperStatus(fromDate, toDate, status)
+            .flatMap { moneyOper -> moneyOper.items }
+            .filter {
+                it.dateWithGracePeriod > it.performed
+            }
+            .forEach {
+                val first = max(fromDate, it.performed)
+                val last = min(it.dateWithGracePeriod.minusDays(1L), toDate)
+                for (date in (first..last).iterator()) {
+                    map.compute(date) { _, debt -> (debt ?: BigDecimal.ZERO) + it.value.negate() }
+                }
+            }
+        return map
+    }
+
+    private fun getRecurrenceCreditCardDayDebtMap(balanceSheet: BalanceSheet, toDate: LocalDate): Map<LocalDate, BigDecimal> {
+        val recurrenceOpers = recurrenceOperRepository.findByBalanceSheetAndArc(balanceSheet, false)
+        val map = mutableMapOf<LocalDate, BigDecimal>()
+        val today = LocalDate.now()
+        recurrenceOpers
+            .forEach {
+                var roNextDate = it.nextDate
+                while (roNextDate.isBefore(toDate)) {
+                    // Если дата повторяющейся операции раньше или равна текущему дню, то считаем, что она будет
+                    // выполнена завтра, а не сегодня. Чтобы в графике не искажать баланс текущего дня операциями,
+                    // которые с большей вероятностью сегодня не будут выполнены.
+                    val nextDate = if (roNextDate.isBefore(today)) today.plusDays(1) else roNextDate
+                    it.template.items
+                        .filter { item -> (item.balance.credit?.gracePeriodDays ?: 0) > 0 && item.value < BigDecimal.ZERO}
+                        .forEach { item ->
+                            val repaymentScheduleItem = item.balance.credit
+                                .let { credit -> RepaymentScheduleItem.of(roNextDate, requireNotNull(credit), item.value) }
+                            val debt = repaymentScheduleItem?.let { rsItem ->
+                                if (rsItem.endDate.isAfter(roNextDate)) rsItem.mainDebtAmount.abs() else BigDecimal.ZERO
+                            } ?: BigDecimal.ZERO
+                            val first = max(today, roNextDate)
+                            val last = min(repaymentScheduleItem!!.endDate.minusDays(1L), toDate)
+                            for (date in (first..last).iterator()) {
+                                map.compute(date) { _, aDebt -> (aDebt ?: BigDecimal.ZERO) + debt }
+                            }
+                        }
+                    roNextDate = it.calcNextDate(nextDate)
+                }
+            }
+        return map
+    }
+
+    private fun getTrendCreditCardDayDebtMap(interval: Long): Map<LocalDate, BigDecimal> {
+        val today = LocalDate.now()
+        val fromDate = today.minusDays(interval)
+        val toDate = today.plusDays(interval)
+        val map = mutableMapOf<LocalDate, BigDecimal>()
+        moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(
+            fromDate, today, MoneyOperStatus.done)
+            .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
+            .filter {
+                val item = it.first
+                val moneyOper = it.second
+                moneyOper.period == Period.month
+                        && moneyOper.recurrenceId == null
+                        && moneyOper.type != MoneyOperType.transfer
+                        && item.balance.type.isBalance
+                        && item.balance.type != AccountType.reserve
+                        && (item.balance.credit?.gracePeriodDays ?: 0) > 0
+                        && item.value < BigDecimal.ZERO
+            }
+            .forEach {
+                val item = it.first
+                val trendDate = today.plusDays(ChronoUnit.DAYS.between(item.performed, today))
+                val repaymentScheduleItem = item.balance.credit
+                    ?.let { RepaymentScheduleItem.of(trendDate, it, item.value) }
+                val debt = repaymentScheduleItem
+                    ?.let { rsItem ->
+                        if (rsItem.endDate.isAfter(trendDate)) rsItem.mainDebtAmount.abs() else BigDecimal.ZERO
+                    } ?: BigDecimal.ZERO
+                val first = max(today, trendDate)
+                val last = min(repaymentScheduleItem!!.endDate.minusDays(1L), toDate)
+                for (date in (first..last).iterator()) {
+                    map.compute(date) { _, aDebt -> (aDebt ?: BigDecimal.ZERO) + debt }
+                }
+            }
+        return map
     }
 }

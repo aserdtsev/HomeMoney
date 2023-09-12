@@ -27,7 +27,7 @@ class RecurrenceOperToModelConverter(private val applicationContext: Application
                 .map {
                     val balance = balanceRepository.findById(it.balanceId)
                     val value = it.value.multiply(it.sgn.toBigDecimal())
-                    MoneyOperItem(it.id, template.id, balance, value, it.performedAt, it.index)
+                    MoneyOperItem.of(template.id, balance, value, it.performedAt, it.index, id = it.id)
                 }
                 .toMutableList()
             this.items.addAll(items)

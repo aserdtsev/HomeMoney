@@ -26,9 +26,9 @@ internal class RecurrenceOperControllerTest : SpringBootBaseTest() {
         false, balanceSheet.currencyCode, BigDecimal("100.00"))
     private val cardBalance = Balance(UUID.randomUUID(), AccountType.debit, "Карта", now,
         false, balanceSheet.currencyCode, BigDecimal("0.00"))
-    private val foodstuffsTag = Tag("Продукты")
-    private val fitnessTag = Tag("Фитнес")
-    private val salaryTag = Tag("Зарплата")
+    private val foodstuffsTag by lazy { Tag.of("Продукты") }
+    private val fitnessTag by lazy { Tag.of("Фитнес") }
+    private val salaryTag by lazy { Tag.of("Зарплата") }
 
     @Autowired
     @Qualifier("conversionService")
@@ -47,14 +47,12 @@ internal class RecurrenceOperControllerTest : SpringBootBaseTest() {
 
         domainEventPublisher.publish(cashBalance)
         domainEventPublisher.publish(cardBalance)
-        domainEventPublisher.publish(foodstuffsTag)
-        domainEventPublisher.publish(salaryTag)
     }
 
     @Test
     fun updateRecurrenceOper() {
         val sample = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1),
-            period = Period.month, tags = mutableListOf(foodstuffsTag), comment = "comment").apply {
+            tags = mutableListOf(foodstuffsTag), comment = "comment", period = Period.month).apply {
             addItem(cashBalance, BigDecimal("-1.00"))
             domainEventPublisher.publish(this)
         }

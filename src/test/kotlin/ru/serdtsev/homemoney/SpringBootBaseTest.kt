@@ -1,5 +1,8 @@
 package ru.serdtsev.homemoney
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fatboyindustrial.gsonjavatime.Converters
+import com.google.gson.GsonBuilder
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -15,6 +18,8 @@ import ru.serdtsev.homemoney.infra.dao.BalanceSheetDao
 @SpringBootTest(classes = [Main::class, PostgreSqlConfiguration::class, FlywayConfiguration::class])
 @Testcontainers
 abstract class SpringBootBaseTest {
+    protected val objectMapper = ObjectMapper()
+
     @Autowired
     protected lateinit var domainEventPublisher: DomainEventPublisher
     @Autowired
@@ -28,6 +33,7 @@ abstract class SpringBootBaseTest {
 
     @PostConstruct
     fun init() {
+        ApiRequestContextHolder.requestId = "REQUEST_ID"
         DomainEventPublisher.instance = domainEventPublisher
         domainEventPublisher.publish(balanceSheet)
 

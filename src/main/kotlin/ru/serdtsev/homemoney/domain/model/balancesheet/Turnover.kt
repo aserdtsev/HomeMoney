@@ -9,10 +9,15 @@ import java.time.LocalDate
 data class Turnover(
     val operDate: LocalDate,
     val turnoverType: TurnoverType,
-    /** Сумма оборотов со знаком */
-        var amount: BigDecimal = BigDecimal.ZERO
+    /** Сумма оборота со знаком */
+    var amount: BigDecimal = BigDecimal.ZERO,
+    /** Сумма задолженности со знаком */
+    var debt: BigDecimal = BigDecimal.ZERO
 ) {
-    operator fun plus(value: BigDecimal) { amount = amount.add(value) }
+    operator fun plus(other: Turnover) {
+        amount += other.amount
+        debt += other.debt
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

@@ -40,8 +40,8 @@ open class Balance(
     open val reserveId: UUID?
         get() = reserve?.id
     
-    internal constructor(type: AccountType, name: String, value: BigDecimal = BigDecimal.ZERO) :
-            this(UUID.randomUUID(), type, name, value = value)
+    internal constructor(type: AccountType, name: String, value: BigDecimal = BigDecimal.ZERO, credit: Credit? = null) :
+            this(UUID.randomUUID(), type, name, value = value, credit = credit)
 
     private fun getCurrencyFractionDigits() = ApiRequestContextHolder.balanceSheet.getCurrencyFractionDigits()
 
@@ -54,6 +54,7 @@ open class Balance(
     open fun changeValue(amount: BigDecimal, moneyOperId: UUID) {
         val beforeValue = value.plus()
         value += amount
+        DomainEventPublisher.instance.publish(this)
         log.info("Balance value changed; id: $id, operId: ${moneyOperId}, " +
                 "before: $beforeValue, amount: $amount, after: $value")
     }
@@ -62,10 +63,9 @@ open class Balance(
         get() = value + (credit?.creditLimit ?: BigDecimal.ZERO) - minValue
 
     override fun toString(): String {
-        return """
-            Balance(id=$id, type=$type, name='$name', createdDate=$createdDate, isArc=$isArc, currencyCode='$currencyCode', 
-            value=$value, minValue=$minValue, credit=$credit, num=$num, reserveId=$reserveId)
-            """.trimIndent()
+        return "Balance(id=$id, type=$type, name='$name', createdDate=$createdDate, isArc=$isArc, " +
+                "currencyCode='$currencyCode', " + "value=$value, minValue=$minValue, credit=$credit, num=$num, " +
+                "reserveId=$reserveId)"
     }
 
     companion object {
@@ -81,7 +81,7 @@ open class Balance(
                     to.value = from.value
                 } else {
                     val moneyOper = MoneyOper(MoneyOperStatus.pending, LocalDate.now(),
-                        0, emptyList(), "корректировка остатка", Period.single)
+                        emptyList(), "корректировка остатка", Period.single, dateNum = 0)
                     val amount = from.value - to.value
                     moneyOper.addItem(to, amount, moneyOper.performed)
                     moneyOper.complete()
@@ -93,6 +93,13 @@ open class Balance(
     }
 }
 
-data class Credit(var creditLimit: BigDecimal? = null, var annuityPayment: AnnuityPayment? = null)
+data class Credit(
+    var creditLimit: BigDecimal? = null,
+    /** Расчетный день месяца */
+    var estimatedDay: Int? = null,
+    /** Льготный период, дни */
+    var gracePeriodDays: Int? = null,
+    var annuityPayment: AnnuityPayment? = null
+)
 
 data class AnnuityPayment(var value: BigDecimal)

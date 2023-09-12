@@ -76,7 +76,7 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
             where a.type = 'credit' and a.balance_sheet_id = :bsId            
         """.trimIndent()
         val paramMap = mapOf("bsId" to id)
-        return jdbcTemplate.queryForObject(sql, paramMap, BigDecimal::class.java)!!
+        return jdbcTemplate.queryForObject(sql, paramMap, BigDecimal::class.java) ?: BigDecimal.ZERO
     }
 
 }

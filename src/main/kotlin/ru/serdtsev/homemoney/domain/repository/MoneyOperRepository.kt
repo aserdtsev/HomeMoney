@@ -22,7 +22,11 @@ interface MoneyOperRepository {
     fun findByBalanceSheetAndStatusAndPerformedGreaterThan(status: MoneyOperStatus, performed: LocalDate): List<MoneyOper>
     fun findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet: BalanceSheet, absValue: BigDecimal,
         pageable: Pageable): Page<MoneyOper>
-    fun findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus(balanceSheet: BalanceSheet, startDate: LocalDate,
-        finishDate: LocalDate, status: MoneyOperStatus): List<MoneyOper>
+    fun findByPerformedBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
+        status: MoneyOperStatus): List<MoneyOper>
+    /** Возвращает расходные операции по кредитным картам */
+    // todo Переименовать
+    fun findByCreditCardAndDateBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
+        status: MoneyOperStatus): List<MoneyOper>
     fun existsByBalance(balance: Balance): Boolean
 }

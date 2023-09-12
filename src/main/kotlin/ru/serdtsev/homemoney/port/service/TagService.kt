@@ -58,8 +58,6 @@ class TagService(
     fun getTagsByStrings(strTags: List<String>): MutableList<Tag> = strTags.map { findOrCreateTag(it) }.toMutableList()
 
     private fun findOrCreateTag(name: String): Tag =
-        tagRepository.findOrNullByBalanceSheetAndName(name) ?: run {
-            Tag(name).apply { DomainEventPublisher.instance.publish(this) }
-        }
+        tagRepository.findOrNullByBalanceSheetAndName(name) ?: run { Tag.of(name) }
 
 }

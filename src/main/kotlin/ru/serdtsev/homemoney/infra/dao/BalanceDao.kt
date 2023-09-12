@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.infra.dao
 
 import com.google.gson.Gson
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CacheEvict
@@ -13,7 +14,7 @@ import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
-import ru.serdtsev.homemoney.port.common.toJsonb
+import ru.serdtsev.homemoney.infra.utils.toJsonb
 import java.sql.ResultSet
 import java.util.*
 
@@ -23,8 +24,10 @@ class BalanceDao(
     private val reserveDao: ReserveDao,
     @Qualifier("firstLevelCacheManager") private val cacheManager: CacheManager
 ) : DomainModelDao<Balance>, BalanceRepository {
+    private val log = KotlinLogging.logger {  }
     private val gson = Gson()
 
+    @CacheEvict("Balance", key = "#domainAggregate.id", cacheManager = "firstLevelCacheManager")
     override fun save(domainAggregate: Balance) {
         val sql = """
             insert into account(id, balance_sheet_id, name, created_date, type, is_arc) 
@@ -47,7 +50,7 @@ class BalanceDao(
         jdbcTemplate.update(sql, paramMap)
     }
 
-    @CacheEvict("Balance", key = "#balance.id")
+    @CacheEvict("Balance", key = "#balance.id", cacheManager = "firstLevelCacheManager")
     override fun delete(balance: Balance) {
         val sql = """
             delete from balance where id = :id;
@@ -64,8 +67,8 @@ class BalanceDao(
     @Cacheable("Balance", cacheManager = "firstLevelCacheManager")
     override fun findByIdOrNull(id: UUID): Balance? {
         val sql = """
-            select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc, 
-                b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num
+            select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc,
+                b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num, b.credit
             from account a, balance b
             where a.id = :id and b.id = a.id
         """.trimIndent()
@@ -74,8 +77,8 @@ class BalanceDao(
 
     override fun findByBalanceSheet(balanceSheet: BalanceSheet): List<Balance> {
         val sql = """
-            select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc, 
-                b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num
+            select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc,
+                b.currency_code, b.value, b.credit, b.min_value, b.reserve_id, b.num, b.credit
             from account a, balance b
             where a.balance_sheet_id = :bsId and b.id = a.id and a.type in (:types)
             """.trimIndent()

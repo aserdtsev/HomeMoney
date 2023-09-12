@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.util.*
 
@@ -19,7 +18,6 @@ internal class AccountDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun findNameByIdOrNull() {
-        val balanceSheet = BalanceSheet()
         balanceSheetDao.save(balanceSheet)
         ApiRequestContextHolder.bsId = balanceSheet.id
 

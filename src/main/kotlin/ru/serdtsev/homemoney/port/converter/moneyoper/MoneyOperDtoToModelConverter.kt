@@ -23,10 +23,10 @@ class MoneyOperDtoToModelConverter(private val applicationContext: ApplicationCo
             .map {
                 val balance = balanceRepository.findById(it.balanceId)
                 val value = it.value.multiply(it.sgn.toBigDecimal())
-                MoneyOperItem(it.id, source.id, balance, value, it.performedAt, it.index)
+                MoneyOperItem.of(source.id, balance, value, it.performedAt, it.index, id = it.id)
             }
             .toMutableList()
-        return MoneyOper(source.id, items, source.status, source.operDate, dateNum, tags,
-            source.comment, period, source.recurrenceId)
+        return MoneyOper(source.id, items, source.status, source.operDate, tags, source.comment,
+            period, source.recurrenceId, dateNum)
     }
 }

@@ -18,8 +18,12 @@ data class RecurrenceOper(
     }
 
     fun createNextMoneyOper(): MoneyOper {
-        val moneyOper = MoneyOper(MoneyOperStatus.recurrence, nextDate, 0, template.tags, template.comment,
-            template.period)
+        val moneyOper = MoneyOper(MoneyOperStatus.recurrence,
+            nextDate,
+            template.tags,
+            template.comment,
+            template.period,
+            dateNum = 0)
         template.items.forEach { moneyOper.addItem(it.balance, it.value, nextDate) }
         moneyOper.linkToRecurrenceOper(this)
         return moneyOper

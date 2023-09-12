@@ -89,9 +89,8 @@ class TagDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : DomainModel
         val id = UUID.fromString(rs.getString("id"))
         val name = rs.getString("name")
         val rootId = rs.getString("root_id")?.let { UUID.fromString(it) }
-        val isCategory = rs.getBoolean("is_category")
         val categoryType = rs.getString("cat_type")?.let { CategoryType.valueOf(it) }
         val isArc = rs.getBoolean("is_arc")
-        Tag(id, name, rootId, isCategory, categoryType, isArc)
+        Tag(id, name, categoryType, rootId, isArc)
     }
 }

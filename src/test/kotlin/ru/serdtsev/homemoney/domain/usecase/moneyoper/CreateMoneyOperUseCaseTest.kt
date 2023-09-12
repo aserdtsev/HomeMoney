@@ -12,14 +12,14 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
-import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
 internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
     private val recurrenceOperRepository: RecurrenceOperRepository = mock { }
-    private val moneyOperRepository: MoneyOperRepository = mock { }
+    private val balanceRepository = repositoryRegistry.balanceRepository
+    private val moneyOperRepository = repositoryRegistry.moneyOperRepository
     private val useCase = CreateMoneyOperUseCase(recurrenceOperRepository, moneyOperRepository)
 
     // todo Перенести сюда кейсы из MoneyOperControllerTest
@@ -27,11 +27,11 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
     @Test
     fun run_done() {
         val balance = Balance(AccountType.debit, "Cash")
+        whenever(balanceRepository.findById(balance.id)).thenReturn(balance)
         val sample =  MoneyOper(done, LocalDate.now().minusMonths(1), period = Period.month)
             .apply {this.addItem(balance, BigDecimal("1.00")) }
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
-        whenever(repositoryRegistry.moneyOperRepository).thenReturn(moneyOperRepository)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
             val model = invocation.arguments[0]
             if (model is MoneyOper && model.status == template) {

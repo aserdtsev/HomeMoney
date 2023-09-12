@@ -1,35 +1,40 @@
 package ru.serdtsev.homemoney.domain.usecase.moneyoper
 
-import com.nhaarman.mockito_kotlin.*
+import com.nhaarman.mockito_kotlin.doAnswer
+import com.nhaarman.mockito_kotlin.times
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
-import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 import java.time.LocalDate
 
 internal class UpdateMoneyOperUseCaseTest: DomainBaseTest() {
-    private val moneyOperRepository: MoneyOperRepository = mock { }
+    private val balanceRepository = repositoryRegistry.balanceRepository
+    private val moneyOperRepository = repositoryRegistry.moneyOperRepository
     private val useCase = UpdateMoneyOperUseCase(moneyOperRepository)
 
     @Test
     fun run() {
         val balance1 = Balance(AccountType.debit, "Balance 1", value = BigDecimal("1.00"))
+            .apply { whenever(balanceRepository.findById(id)).thenReturn(this) }
         val balance2 = Balance(AccountType.debit, "Balance 2")
-        val tag1 = Tag("Tag 1")
-        val tag2 = Tag("Tag 2")
+            .apply { whenever(balanceRepository.findById(id)).thenReturn(this) }
+        val tag1 = Tag.of("Tag 1")
+        val tag2 = Tag.of("Tag 2")
 
         val origMoneyOper = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusDays(1),
-            0, mutableSetOf(tag1), "Comment 1", Period.month
+            mutableSetOf(tag1), "Comment 1", Period.month, dateNum = 0
         ).apply {
             this.addItem(balance1, BigDecimal("1.00"))
         }
 
         val moneyOper = MoneyOper(origMoneyOper.id, mutableListOf(), MoneyOperStatus.done,
-            LocalDate.now(), 1, mutableSetOf(tag2), "Comment 2", Period.single
+            LocalDate.now(), mutableSetOf(tag2), "Comment 2", Period.single, dateNum = 1
         ).apply {
             this.addItem(balance2, BigDecimal("1.00"))
         }

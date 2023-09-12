@@ -8,16 +8,21 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.HashMap
 
-data class BsDayStat(@JsonIgnore val localDate: LocalDate) {
+data class BsDayStat(
+    @JsonIgnore val localDate: LocalDate,
     /** Сумма дохода за день (см. StatService#fillBsDayStatMap) */
-    var incomeAmount: BigDecimal = BigDecimal.ZERO
+    var incomeAmount: BigDecimal = BigDecimal.ZERO,
     /** Сумма расходов за день (см. StatService#fillBsDayStatMap) */
-    var chargeAmount: BigDecimal = BigDecimal.ZERO
+    var chargeAmount: BigDecimal = BigDecimal.ZERO,
+    /** Текущая задолженность */
+    var debt: BigDecimal = BigDecimal("0.00")
+) {
     /** Ассоциативный массив разницы сумм типов за день (см. StatService#fillBsDayStatMap) */
+    @JsonIgnore
     private val deltaMap = HashMap<AccountType, BigDecimal>()
     /** Ассоциативный массив сальдо типов счетов на дату объекта */
+    @JsonIgnore
     private val saldoMap = HashMap<AccountType, BigDecimal>()
-    var actualDebt: BigDecimal = BigDecimal.ZERO
 
     // Unix-дата и время конца дня в UTC. Так нужно для визуального компонента.
     val date: Long
@@ -28,7 +33,7 @@ data class BsDayStat(@JsonIgnore val localDate: LocalDate) {
         get() = getSaldo(AccountType.debit).add(getSaldo(AccountType.credit)).add(getSaldo(AccountType.asset))
 
     val freeAmount: BigDecimal
-        get() = getSaldo(AccountType.debit) - reserveSaldo + actualDebt
+        get() = getSaldo(AccountType.debit) - reserveSaldo + debt
 
     private val reserveSaldo: BigDecimal
         get() = getSaldo(AccountType.reserve)
@@ -51,4 +56,20 @@ data class BsDayStat(@JsonIgnore val localDate: LocalDate) {
     fun setDelta(type: AccountType, amount: BigDecimal) {
         deltaMap[type] = amount
     }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as BsDayStat
+
+        if (localDate != other.localDate) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return localDate.hashCode()
+    }
+
 }

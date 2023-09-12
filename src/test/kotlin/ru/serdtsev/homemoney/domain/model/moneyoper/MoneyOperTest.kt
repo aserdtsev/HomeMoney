@@ -2,9 +2,11 @@ package ru.serdtsev.homemoney.domain.model.moneyoper
 
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import org.apache.commons.lang3.SerializationUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
@@ -19,6 +21,15 @@ internal class MoneyOperTest: DomainBaseTest() {
     private val balance2 = Balance(AccountType.debit, "Balance 2", BigDecimal("200.00"))
     private val cash = Balance(AccountType.debit, "Cash", BigDecimal("10.00"))
     private val checkingAccount = Balance(AccountType.debit, "Checking account",  BigDecimal("1000.00"))
+
+    @BeforeEach
+    override fun setUp() {
+        super.setUp()
+        whenever(repositoryRegistry.balanceRepository.findById(balance1.id)).thenReturn(balance1)
+        whenever(repositoryRegistry.balanceRepository.findById(balance2.id)).thenReturn(balance2)
+        whenever(repositoryRegistry.balanceRepository.findById(cash.id)).thenReturn(cash)
+        whenever(repositoryRegistry.balanceRepository.findById(checkingAccount.id)).thenReturn(checkingAccount)
+    }
 
     @Test
     fun complete() {
@@ -70,15 +81,19 @@ internal class MoneyOperTest: DomainBaseTest() {
 
     @Test
     fun balanceEquals() {
+
         var origOper = createExpenseFromCash()
         var oper = SerializationUtils.clone(origOper)
         assertTrue(MoneyOper.balanceEquals(oper, origOper))
+
         val item = oper.items[0]
         item.value = item.value.add(BigDecimal.ONE)
         assertFalse(MoneyOper.balanceEquals(oper, origOper))
+
         oper = SerializationUtils.clone(origOper)
-        oper.addItem(cash, BigDecimal.TEN, LocalDate.now(), 0, UUID.randomUUID())
+        oper.addItem(cash, BigDecimal.TEN, LocalDate.now(), 0, id = UUID.randomUUID())
         assertFalse(MoneyOper.balanceEquals(oper, origOper))
+
         origOper = createTransferFromCheckingAccountToCash(done)
         oper = SerializationUtils.clone(origOper)
         oper.items.removeAt(0)
@@ -87,11 +102,11 @@ internal class MoneyOperTest: DomainBaseTest() {
 
     @Test
     fun merge() {
-        val origTags = listOf(Tag("tag1"), Tag("tag2"))
+        val origTags = listOf(Tag.of("tag1"), Tag.of("tag2"))
         val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
-        val newTags = listOf(Tag("tag2"), Tag("tag3"))
+        val newTags = listOf(Tag.of("tag2"), Tag.of("tag3"))
         val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance1, BigDecimal("-30.00"))
@@ -114,11 +129,11 @@ internal class MoneyOperTest: DomainBaseTest() {
 
     @Test
     fun `merge changed balance`() {
-        val origTags = listOf(Tag("tag1"), Tag("tag2"))
+        val origTags = listOf(Tag.of("tag1"), Tag.of("tag2"))
         val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
-        val newTags = listOf(Tag("tag2"), Tag("tag3"))
+        val newTags = listOf(Tag.of("tag2"), Tag.of("tag3"))
         val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance2, BigDecimal("-30.00"))
@@ -150,23 +165,23 @@ internal class MoneyOperTest: DomainBaseTest() {
     }
 
     private fun createExpenseFromCash(): MoneyOper {
-        val oper = MoneyOper(UUID.randomUUID(), mutableListOf(), done, LocalDate.now(), 0,
-            ArrayList(), "", null)
-        oper.addItem(cash, BigDecimal.ONE.negate(), LocalDate.now(), 0, UUID.randomUUID())
+        val oper = MoneyOper(UUID.randomUUID(), mutableListOf(), done, LocalDate.now(), ArrayList(),
+            "", null, dateNum = 0)
+        oper.addItem(cash, BigDecimal.ONE.negate(), LocalDate.now(), 0, id = UUID.randomUUID())
         return oper
     }
 
     private fun createIncomeToCash(): MoneyOper {
         val oper = MoneyOper(done)
-        oper.addItem(cash, BigDecimal.ONE, LocalDate.now(), 0, UUID.randomUUID())
+        oper.addItem(cash, BigDecimal.ONE, LocalDate.now(), 0, id = UUID.randomUUID())
         return oper
     }
 
     private fun createTransferFromCheckingAccountToCash(status: MoneyOperStatus): MoneyOper {
         val oper = MoneyOper(status)
         val amount = BigDecimal.ONE
-        oper.addItem(checkingAccount, amount.negate(), LocalDate.now(), 0, UUID.randomUUID())
-        oper.addItem(cash, amount, LocalDate.now(), 1, UUID.randomUUID())
+        oper.addItem(checkingAccount, amount.negate(), LocalDate.now(), 0, id = UUID.randomUUID())
+        oper.addItem(cash, amount, LocalDate.now(), 1, id = UUID.randomUUID())
         return oper
     }
 

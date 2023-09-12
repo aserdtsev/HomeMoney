@@ -14,19 +14,14 @@ internal class TagDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun crud() {
-        val tag = createTag("tag-name")
+        val tag = Tag.of("tag-name")
 
         assertTrue(tagDao.exists(tag.id))
         assertEquals(tag, tagDao.findById(tag.id))
 
-        val rootTag = Tag("root-tag-name").apply {
-            isCategory = true
-            categoryType = CategoryType.income
-        }
-        tagDao.save(rootTag)
+        val rootTag = Tag.of("root-tag-name", CategoryType.income)
         with(tag) {
             name = "new-tag-name"
-            isCategory = true
             rootId = rootTag.id
             categoryType = CategoryType.income
             arc = true
@@ -40,7 +35,7 @@ internal class TagDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun `link, findByObjId and unlinkAll`() {
-        val tags = listOf(createTag("tag_name"))
+        val tags = listOf(Tag.of("tag_name"))
         val objId = UUID.randomUUID()
 
         tagDao.updateLinks(tags, objId, "operation")
@@ -53,7 +48,7 @@ internal class TagDaoTest: SpringBootBaseTest() {
     @Test
     internal fun findByBalanceSheetAndName() {
         val name = "tag-name"
-        val tag = createTag(name)
+        val tag = Tag.of(name)
 
         tagDao.findOrNullByBalanceSheetAndName(name).also {
             assertEquals(tag, it)
@@ -65,15 +60,13 @@ internal class TagDaoTest: SpringBootBaseTest() {
     @Test
     internal fun findByBalanceSheetOrderByName() {
         val tags = listOf(
-            createTag("tag-name-3"),
-            createTag("tag-name-2"),
-            createTag("tag-name-1"),
+            Tag.of("tag-name-3"),
+            Tag.of("tag-name-2"),
+            Tag.of("tag-name-1"),
         ).reversed()
 
         val actual = tagDao.findByBalanceSheetOrderByName()
 
         assertEquals(tags, actual)
     }
-
-    private fun createTag(name: String): Tag = Tag(name).apply { tagDao.save(this) }
 }

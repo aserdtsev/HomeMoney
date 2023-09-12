@@ -25,11 +25,12 @@ internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
     @ParameterizedTest
     @MethodSource("paramsFor_handler_balanceIsChanged")
     fun handler_balanceIsChanged(beforeStatus: MoneyOperStatus, afterStatus: MoneyOperStatus, expected: BigDecimal) {
-        val moneyOper = MoneyOper(afterStatus)
         val balance = Balance(AccountType.debit, "Cash", value = BigDecimal("100.00"))
+        val moneyOper = MoneyOper(afterStatus)
         moneyOper.addItem(balance, BigDecimal("1.00"))
         val event = MoneyOperStatusChanged(beforeStatus, afterStatus, moneyOper)
 
+        whenever(repositoryRegistry.balanceRepository.findById(balance.id)).thenReturn(balance)
         doAnswer {
             val aBalance= it.arguments[0] as Balance
             assertEquals(expected, aBalance.value)

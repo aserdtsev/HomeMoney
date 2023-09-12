@@ -8,14 +8,13 @@ import java.util.*
 
 data class BsStat(
     val fromDate: LocalDate,
-    val toDate: LocalDate
-) {
-    var incomeAmount: BigDecimal = BigDecimal.ZERO
-    var chargesAmount: BigDecimal = BigDecimal.ZERO
-    var dayStats: List<BsDayStat>? = null
-    var categories: List<CategoryStat>? = null
+    val toDate: LocalDate,
+    var incomeAmount: BigDecimal = BigDecimal("0.00"),
+    var chargesAmount: BigDecimal = BigDecimal("0.00"),
+    var dayStats: List<BsDayStat> = mutableListOf(),
+    var categories: List<CategoryStat> = mutableListOf(),
     var actualDebt: BigDecimal = BigDecimal.ZERO
-
+) {
     @JsonIgnore
     val saldoMap = HashMap<AccountType, BigDecimal>()
 

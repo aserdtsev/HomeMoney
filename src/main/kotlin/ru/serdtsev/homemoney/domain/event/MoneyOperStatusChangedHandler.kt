@@ -23,7 +23,6 @@ class MoneyOperStatusChangedHandler {
         val moneyOper = event.moneyOper
         moneyOper.items.forEach {
             it.balance.changeValue(it.value * factor, moneyOper.id)
-            DomainEventPublisher.instance.publish(it.balance)
         }
     }
 }

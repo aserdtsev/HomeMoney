@@ -7,7 +7,7 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 class TagDtoToModelConverter : Converter<TagDto, Tag> {
     override fun convert(source: TagDto): Tag {
         return with (source) {
-            Tag(id, name, rootId, isCategory ?: false, categoryType, isArc ?: false)
+            Tag(id, name, categoryType, rootId, isArc ?: false)
         }
     }
 }

@@ -15,15 +15,10 @@ import java.math.BigDecimal
 internal class RecurrenceOperTest : DomainBaseTest() {
     private val moneyOperRepository: MoneyOperRepository = mock { }
 
-    @BeforeEach
-    override fun setUp() {
-        super.setUp()
-        whenever(repositoryRegistry.moneyOperRepository).thenReturn(moneyOperRepository)
-    }
-
     @Test
     fun createNextMoneyOper() {
         val balance = Balance(AccountType.debit, "Cash")
+        whenever(repositoryRegistry.balanceRepository.findById(balance.id)).thenReturn(balance)
         val sample = MoneyOper(MoneyOperStatus.template).apply {
             addItem(balance, BigDecimal("1.00"))
         }
