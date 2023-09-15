@@ -2,7 +2,6 @@ package ru.serdtsev.homemoney.infra.dao
 
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
@@ -38,7 +37,8 @@ class RecurrenceOperDao(
 
     override fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
-    override fun findByBalanceSheetAndArc(balanceSheet: BalanceSheet, isArc: Boolean?): List<RecurrenceOper> {
+    override fun findByBalanceSheetAndArc(isArc: Boolean?): List<RecurrenceOper> {
+        val balanceSheet = ApiRequestContextHolder.balanceSheet
         val sql = "select * from recurrence_oper where balance_sheet_id = :bsId " +
                 if (isArc != null) "and is_arc = :isArc" else ""
         val paramMap = mapOf("bsId" to balanceSheet.id, "isArc" to isArc)

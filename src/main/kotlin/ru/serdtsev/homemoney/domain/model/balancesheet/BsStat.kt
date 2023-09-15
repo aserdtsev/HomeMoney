@@ -13,13 +13,14 @@ data class BsStat(
     var chargesAmount: BigDecimal = BigDecimal("0.00"),
     var dayStats: List<BsDayStat> = mutableListOf(),
     var categories: List<CategoryStat> = mutableListOf(),
-    var actualDebt: BigDecimal = BigDecimal.ZERO
+    var actualDebt: BigDecimal = BigDecimal.ZERO,
+    var actualCreditCardDebt: BigDecimal = BigDecimal("0.00")
 ) {
     @JsonIgnore
     val saldoMap = HashMap<AccountType, BigDecimal>()
 
     val freeAmount: BigDecimal
-        get() = debitSaldo - reserveSaldo + actualDebt
+        get() = debitSaldo - reserveSaldo + actualDebt - actualCreditCardDebt
 
     val reserveSaldo: BigDecimal
         get() = saldoMap.getOrDefault(AccountType.reserve, BigDecimal.ZERO)

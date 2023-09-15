@@ -216,6 +216,21 @@ class MoneyOperDao(
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
+    override fun getCurrentCreditCardDebt(currentDate: LocalDate): BigDecimal {
+        val sql = """
+            select sum(i.value) 
+            from money_oper o
+                join money_oper_item i on i.oper_id = o.id
+            where o.balance_sheet_id = :bsId 
+                and o.status = 'done'
+                and i.repayment_schedule is not null    
+                and (i.repayment_schedule -> 0 ->> 'endDate')::date > :currentDate
+        """.trimIndent()
+        val bsId = ApiRequestContextHolder.balanceSheet.id
+        val paramMap = mapOf("bsId" to bsId, "currentDate" to currentDate)
+        return jdbcTemplate.queryForObject(sql, paramMap, BigDecimal::class.java) ?: BigDecimal("0.00")
+    }
+
     private fun findItemsByMoneyOperId(moneyOperId: UUID): List<MoneyOperItem> {
         val sql = "select * from money_oper_item where oper_id = :operId order by index"
         return jdbcTemplate.query(sql, mapOf("operId" to moneyOperId), itemRowMapper)

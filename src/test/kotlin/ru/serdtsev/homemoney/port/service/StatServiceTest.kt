@@ -3,11 +3,9 @@ package ru.serdtsev.homemoney.port.service
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
-import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
@@ -58,7 +56,7 @@ internal class StatServiceTest : SpringBootBaseTest() {
                 complete()
             }
 
-        val actual = statService.getBsStat(interval)
+        val actual = statService.getBsStat(currentDate, interval)
 
         val dayStatM1 = BsDayStat(m1Date, BigDecimal("100.00"))
         val dayStats: List<BsDayStat> = listOf(dayStatM1)
@@ -100,7 +98,7 @@ internal class StatServiceTest : SpringBootBaseTest() {
                 RecurrenceOper.of(this)
             }
 
-        val actual = statService.getBsStat(interval)
+        val actual = statService.getBsStat(currentDate, interval)
 
         val dayStatM1 = BsDayStat(m1Date, incomeAmount = BigDecimal("100000.00"))
         val dayStatP1 = BsDayStat(p1Date, incomeAmount = BigDecimal("100000.00"))
@@ -148,7 +146,7 @@ internal class StatServiceTest : SpringBootBaseTest() {
                 complete()
             }
 
-        val actual = statService.getBsStat(interval)
+        val actual = statService.getBsStat(currentDate, interval)
 
         val dayStatM1 = BsDayStat(m1Date, chargeAmount = BigDecimal("100.00"))
         val dayStatP1 = BsDayStat(p1Date, chargeAmount = BigDecimal("100.00"))
@@ -188,37 +186,49 @@ internal class StatServiceTest : SpringBootBaseTest() {
 
     @Test
     internal fun `getBsStat by simple charge from credit card`() {
-        val currentDate = LocalDate.now()
+        val currentDate = LocalDate.parse("2023-09-03")
 
+        val m2Date = currentDate.minusDays(2)
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(1)
-        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+        val p2Date = currentDate.plusDays(2)
+
+        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m2Date, mutableListOf(foodstuffsTag), period = Period.month)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 complete()
             }
-        val p2Date = moneyOper.items[0].dateWithGracePeriod
-        val interval = ChronoUnit.DAYS.between(currentDate, p2Date)
+        val p3Date = moneyOper.items[0].dateWithGracePeriod
+        val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
 
-        val actual = statService.getBsStat(interval)
+        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+            .apply {
+                addItem(creditCard, BigDecimal("-100.00"))
+                complete()
+                assert(items[0].dateWithGracePeriod == p3Date)
+            }
 
-        val dayStatM1 = BsDayStat(m1Date, chargeAmount = BigDecimal("100.00"), debt = BigDecimal("100.00"))
-        val dayStatP1 = BsDayStat(p1Date, chargeAmount = BigDecimal("100.00"), debt = BigDecimal("200.00"))
-        val dayStatP2 = BsDayStat(p2Date, debt = BigDecimal("0.00"))
-        val dayStats: List<BsDayStat> = listOf(dayStatM1, dayStatP1, dayStatP2)
+        val actual = statService.getBsStat(currentDate, interval)
+
+        val dayStatM2 = BsDayStat(m2Date, chargeAmount = BigDecimal("100.00"), freeCorrection = BigDecimal("100.00"))
+        val dayStatM1 = BsDayStat(m1Date, chargeAmount = BigDecimal("100.00"), freeCorrection = BigDecimal("200.00"))
+        val dayStatP1 = BsDayStat(p1Date, chargeAmount = BigDecimal("100.00"), freeCorrection = BigDecimal("300.00"))
+        val dayStatP2 = BsDayStat(p2Date, chargeAmount = BigDecimal("100.00"), freeCorrection = BigDecimal("400.00"))
+        val dayStatP3 = BsDayStat(p3Date, debt = BigDecimal("0.00"))
+        val dayStats: List<BsDayStat> = listOf(dayStatM2, dayStatM1, dayStatP1, dayStatP2, dayStatP3)
 
         val categories = run {
-            val foodstuffsCategoryStat = CategoryStat.of(foodstuffsTag, BigDecimal("100.00"))
+            val foodstuffsCategoryStat = CategoryStat.of(foodstuffsTag, BigDecimal("200.00"))
             listOf(foodstuffsCategoryStat)
         }
-        val expected = BsStat(currentDate.minusDays(interval), currentDate, chargesAmount = BigDecimal("100.00"),
-            dayStats = dayStats, categories = categories, actualDebt = BigDecimal("100.00"))
+        val expected = BsStat(currentDate.minusDays(interval), currentDate, chargesAmount = BigDecimal("200.00"),
+            dayStats = dayStats, categories = categories, actualCreditCardDebt = BigDecimal("-200.00"))
         assertThat(actual)
             .usingRecursiveComparison()
             .ignoringFields("saldoMap", "dayStats.deltaMap", "dayStats.saldoMap")
             .isEqualTo(expected)
-        assertEquals(BigDecimal("99900.00"), actual.totalSaldo)
-        assertEquals(BigDecimal("99900.00"), actual.debitSaldo)
+        assertEquals(BigDecimal("99800.00"), actual.totalSaldo)
+        assertEquals(BigDecimal("99800.00"), actual.debitSaldo)
         assertEquals(BigDecimal.ZERO, actual.reserveSaldo)
         assertEquals(BigDecimal.ZERO, actual.creditSaldo)
         assertEquals(BigDecimal.ZERO, actual.assetSaldo)
@@ -226,110 +236,25 @@ internal class StatServiceTest : SpringBootBaseTest() {
         actual.dayStats
             .forEach {
                 when (it) {
-                    dayStatM1 -> {
+                    dayStatM2 -> {
                         assertEquals(BigDecimal("99900.00"), it.totalSaldo)
                         assertEquals(BigDecimal("100000.00"), it.freeAmount)
                     }
-                    dayStatP1 -> {
+                    dayStatM1 -> {
                         assertEquals(BigDecimal("99800.00"), it.totalSaldo)
                         assertEquals(BigDecimal("100000.00"), it.freeAmount)
                     }
-                    dayStatP2 -> {
-                        assertEquals(BigDecimal("99800.00"), it.totalSaldo)
-                        assertEquals(BigDecimal("99800.00"), it.freeAmount)
-                    }
-                }
-            }
-    }
-
-    @Test
-    @Disabled
-    internal fun getBsStat() {
-        val currentDate = LocalDate.now()
-        // todo Расширить до месяца
-        val interval = 1L
-
-        val m1Date = currentDate.minusDays(1)
-        val p1Date = currentDate.plusDays(1)
-        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(salaryTag),
-            period = Period.month, comment = "Зарплата")
-            .apply {
-                addItem(debitCard, BigDecimal("100000.00"))
-                domainEventPublisher.publish(this)
-                RecurrenceOper.of(this)
-            }
-        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag),
-            period = Period.month, comment = "Продукты, дебетовая карта")
-            .apply {
-                addItem(debitCard, BigDecimal("-100.00"))
-                domainEventPublisher.publish(this)
-            }
-        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag),
-            period = Period.month, comment = "Продукты, кредитная карта")
-            .apply {
-                addItem(creditCard, BigDecimal("-50.00"))
-                domainEventPublisher.publish(this)
-            }
-        run {
-            val sample = MoneyOper(MoneyOperStatus.done, m1Date.minusMonths(3L), mutableListOf(foodstuffsTag),
-                period = Period.month, comment = "Продукты, кредитная карта")
-                .apply {
-                    addItem(creditCard, BigDecimal("-40.00"))
-                    domainEventPublisher.publish(this)
-                }
-            val recurrenceOper = RecurrenceOper.of(sample)
-                .apply {
-                    skipNextDate()
-                    skipNextDate()
-                    DomainEventPublisher.instance.publish(this)
-                }
-            recurrenceOper.createNextMoneyOper().apply {
-                this.status = MoneyOperStatus.done
-                DomainEventPublisher.instance.publish(this)
-            }
-        }
-        // todo Добавить повторение
-//        MoneyOper(MoneyOperStatus.done, currentDate.minusDays(1),
-//            period = Period.month, comment = "Пополнение кредитной карты")
-//            .apply {
-//                addItem(debitCard, BigDecimal("-200.00"))
-//                addItem(creditCard, BigDecimal("200.00"))
-//                domainEventPublisher.publish(this)
-//            }
-
-        val actual = statService.getBsStat(interval)
-
-        val dayStatM1 = BsDayStat(m1Date, BigDecimal("100000.00"),
-            BigDecimal("190.00"), debt = BigDecimal("90.00"))
-        val dayStatP1 = BsDayStat(p1Date, BigDecimal.ZERO, BigDecimal("150.00"),
-            debt = BigDecimal("100.00"))
-        val dayStats: List<BsDayStat> = listOf(dayStatM1, dayStatP1)
-
-        val foodstuffsCategoryStat = CategoryStat.of(foodstuffsTag, BigDecimal("190.00"))
-        val categories = listOf(foodstuffsCategoryStat)
-        val expected = BsStat(currentDate.minusDays(interval), currentDate, BigDecimal("100000.00"),
-            BigDecimal("190.00"), dayStats, categories, actualDebt = BigDecimal("90.00"))
-        assertThat(actual)
-            .usingRecursiveComparison()
-            .ignoringFields("saldoMap", "dayStats.deltaMap", "dayStats.saldoMap")
-            .isEqualTo(expected)
-        assertEquals(BigDecimal("199810.00"), actual.totalSaldo)
-        assertEquals(BigDecimal("199810.00"), actual.debitSaldo)
-        assertEquals(BigDecimal.ZERO, actual.reserveSaldo)
-        assertEquals(BigDecimal.ZERO, actual.creditSaldo)
-        assertEquals(BigDecimal.ZERO, actual.assetSaldo)
-        assertEquals(BigDecimal("199900.00"), actual.freeAmount)
-        actual.dayStats
-            .forEach {
-                when (it) {
-                    dayStatM1 -> {
-                        assertEquals(BigDecimal("199810.00"), it.totalSaldo)
-                        assertEquals(BigDecimal("199900.00"), it.freeAmount)
-                    }
-
                     dayStatP1 -> {
-                        assertEquals(BigDecimal("199700.00"), it.totalSaldo)
-                        assertEquals(BigDecimal("199800.00"), it.freeAmount)
+                        assertEquals(BigDecimal("99700.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("100000.00"), it.freeAmount)
+                    }
+                    dayStatP2 -> {
+                        assertEquals(BigDecimal("99600.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("100000.00"), it.freeAmount)
+                    }
+                    dayStatP3 -> {
+                        assertEquals(BigDecimal("99600.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("99600.00"), it.freeAmount)
                     }
                 }
             }

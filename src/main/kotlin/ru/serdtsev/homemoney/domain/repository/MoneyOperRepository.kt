@@ -28,5 +28,6 @@ interface MoneyOperRepository {
     // todo Переименовать
     fun findByCreditCardAndDateBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
         status: MoneyOperStatus): List<MoneyOper>
+    fun getCurrentCreditCardDebt(currentDate: LocalDate): BigDecimal
     fun existsByBalance(balance: Balance): Boolean
 }

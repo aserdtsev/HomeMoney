@@ -27,7 +27,7 @@ class MoneyOperService(private val recurrenceOperRepository: RecurrenceOperRepos
      * Возвращает повторяющиеся операции.
      */
     fun getRecurrenceOpers(balanceSheet: BalanceSheet, search: String): List<RecurrenceOper> =
-            recurrenceOperRepository.findByBalanceSheetAndArc(balanceSheet, false).filter { isOperMatchSearch(it, search) }
+            recurrenceOperRepository.findByBalanceSheetAndArc(false).filter { isOperMatchSearch(it, search) }
 
     /**
      * @return true, если шаблон операции соответствует строке поиска

@@ -2,11 +2,18 @@ import org.apache.tools.ant.filters.*
 import com.bmuschko.gradle.docker.tasks.image.*
 
 buildscript {
+    ext.kotlin_version = '1.0.0'
     ext {
         javaVersion = '17'
         kotlinVersion = '1.9.0'
         springBootVersion = '3.1.2'
         flywayVersion = '9.16.0'
+    }
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
@@ -82,14 +89,15 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter-cache')
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
-    implementation('org.jetbrains.kotlin:kotlin-reflect')
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
     implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1')
     implementation('io.github.microutils:kotlin-logging:3.0.5')
 
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
     implementation("org.flywaydb:flyway-core:$flywayVersion")
-    implementation 'org.ehcache:ehcache:3.8.2.1'
+    implementation 'org.ehcache:ehcache:3.8.2.1' // Ehcache 3.10 не поднимается.
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.2'
     implementation 'org.apache.commons:commons-lang3:3.13.0'

@@ -15,7 +15,8 @@ data class BsDayStat(
     /** Сумма расходов за день (см. StatService#fillBsDayStatMap) */
     var chargeAmount: BigDecimal = BigDecimal.ZERO,
     /** Текущая задолженность */
-    var debt: BigDecimal = BigDecimal("0.00")
+    var debt: BigDecimal = BigDecimal("0.00"),
+    var freeCorrection: BigDecimal = BigDecimal("0.00")
 ) {
     /** Ассоциативный массив разницы сумм типов за день (см. StatService#fillBsDayStatMap) */
     @JsonIgnore
@@ -33,7 +34,7 @@ data class BsDayStat(
         get() = getSaldo(AccountType.debit).add(getSaldo(AccountType.credit)).add(getSaldo(AccountType.asset))
 
     val freeAmount: BigDecimal
-        get() = getSaldo(AccountType.debit) - reserveSaldo + debt
+        get() = getSaldo(AccountType.debit) - reserveSaldo + debt + freeCorrection
 
     private val reserveSaldo: BigDecimal
         get() = getSaldo(AccountType.reserve)

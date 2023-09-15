@@ -41,13 +41,13 @@ internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
 
     @Test
     fun findByBalanceSheetAndArc() {
-        assertEquals(listOf(recurrenceOper), recurrenceOperDao.findByBalanceSheetAndArc(balanceSheet))
-        assertEquals(listOf(recurrenceOper), recurrenceOperDao.findByBalanceSheetAndArc(balanceSheet, false))
-        assertTrue(recurrenceOperDao.findByBalanceSheetAndArc(balanceSheet, true).isEmpty())
+        assertEquals(listOf(recurrenceOper), recurrenceOperDao.findByBalanceSheetAndArc())
+        assertEquals(listOf(recurrenceOper), recurrenceOperDao.findByBalanceSheetAndArc(false))
+        assertTrue(recurrenceOperDao.findByBalanceSheetAndArc(true).isEmpty())
 
         recurrenceOper.arc = true
         recurrenceOperDao.save(recurrenceOper)
-        assertEquals(listOf(recurrenceOper), recurrenceOperDao.findByBalanceSheetAndArc(balanceSheet, true))
+        assertEquals(listOf(recurrenceOper), recurrenceOperDao.findByBalanceSheetAndArc(true))
     }
 
     private fun createRecurrenceOper(): RecurrenceOper {
