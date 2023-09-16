@@ -262,7 +262,7 @@ internal class StatServiceTest : SpringBootBaseTest() {
     }
 
     @Test
-    internal fun `getBsStat by recurrence debt repayment`() {
+    internal fun `getBsStat by recurrence debt repayment from debit card`() {
         val credit = run {
             val annuityPayment = AnnuityPayment(BigDecimal("25000.00"))
             val creditParams = Credit(annuityPayment = annuityPayment)

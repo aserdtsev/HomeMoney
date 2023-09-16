@@ -270,7 +270,8 @@ class StatService(
                     if (endDate > trendDate && endDate <= currentDate.plusDays(interval)) {
                         // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
                         // экземпляр BsDayStat.
-                        Turnover(item.dateWithGracePeriod, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"), freeCorrection.negate(), false)
+                        Turnover(item.dateWithGracePeriod, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"),
+                            freeCorrection.negate(), false)
                             .apply { moneyOperItemsTurnovers.add(this) }
                     }
                 }
@@ -301,16 +302,20 @@ class StatService(
                 while (roNextDate.isBefore(toDate)) {
                     // Если дата повторяющейся операции раньше или равна текущему дню, то считаем, что она будет
                     // выполнена завтра, а не сегодня. Чтобы в графике не искажать баланс текущего дня операциями,
-                    // которые с большей вероятностью сегодня не будут выполнены.
+                    // которые, возможно, сегодня не будут выполнены.
                     val nextDate = if (roNextDate.isBefore(currentDate)) currentDate.plusDays(1) else roNextDate
                     it.template.items.forEach { item ->
-                        putRecurrenceTurnover(turnovers, item.value, TurnoverType.valueOf(item.balance.type), nextDate)
+                        val repaymentScheduleItem = item.balance.credit
+                            ?.let { credit -> RepaymentScheduleItem.of(nextDate, credit, item.value) }
+                        val freeCorrection = repaymentScheduleItem?.let {
+                            if (repaymentScheduleItem.endDate > nextDate) repaymentScheduleItem.mainDebtAmount.negate()
+                            else null
+                        } ?: BigDecimal.ZERO
+                        putRecurrenceTurnover(turnovers, item.value, TurnoverType.valueOf(item.balance.type), nextDate,
+                            freeCorrection)
                         val operType = it.template.type
                         if (operType != MoneyOperType.transfer) {
-                            putRecurrenceTurnover(turnovers,
-                                item.value.abs(),
-                                TurnoverType.valueOf(operType.name),
-                                nextDate)
+                            putRecurrenceTurnover(turnovers, item.value.abs(), TurnoverType.valueOf(operType.name), nextDate)
                         }
                     }
                     roNextDate = it.calcNextDate(nextDate)
@@ -325,8 +330,8 @@ class StatService(
     }
 
     private fun putRecurrenceTurnover(turnovers: MutableSet<Turnover>, amount: BigDecimal, turnoverType: TurnoverType,
-        nextDate: LocalDate) {
-        val turnover = Turnover(nextDate, turnoverType, amount, isReal = false)
+        nextDate: LocalDate, freeCorrection: BigDecimal = BigDecimal("0.00")) {
+        val turnover = Turnover(nextDate, turnoverType, amount, freeCorrection, isReal = false)
         turnovers.firstOrNull { it == turnover }?.let { it.amount += amount }
             ?: turnovers.add(turnover)
     }
