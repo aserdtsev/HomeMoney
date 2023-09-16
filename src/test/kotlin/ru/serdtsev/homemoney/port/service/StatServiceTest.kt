@@ -317,4 +317,60 @@ internal class StatServiceTest : SpringBootBaseTest() {
             }
     }
 
+    @Test
+    internal fun `getBsStat by recurrence charge from credit card`() {
+        val currentDate = LocalDate.parse("2023-09-02")
+        val m1Date = currentDate.minusDays(1)
+        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+            .apply {
+                addItem(creditCard, BigDecimal("-100.00"))
+                complete()
+            }
+        val recurrenceOper = RecurrenceOper.of(moneyOper)
+        val p1Date = recurrenceOper.nextDate
+        val p2Date = moneyOper.items[0].dateWithGracePeriod
+        val interval = ChronoUnit.DAYS.between(currentDate, p2Date)
+
+        val actual = statService.getBsStat(currentDate, interval)
+
+        val dayStatM1 = BsDayStat(m1Date, chargeAmount = BigDecimal("100.00"), freeCorrection = BigDecimal("100.00"))
+        val dayStatP1 = BsDayStat(p1Date, chargeAmount = BigDecimal("100.00"), freeCorrection = BigDecimal("200.00"))
+        val dayStatP2 = BsDayStat(p2Date, freeCorrection = BigDecimal("100.00"))
+        val dayStats: List<BsDayStat> = listOf(dayStatM1, dayStatP1, dayStatP2)
+
+        val categories = run {
+            val foodstuffsCategoryStat = CategoryStat.of(foodstuffsTag, BigDecimal("100.00"))
+            listOf(foodstuffsCategoryStat)
+        }
+        val expected = BsStat(currentDate.minusDays(interval), currentDate, chargesAmount = BigDecimal("100.00"),
+            dayStats = dayStats, categories = categories, actualCreditCardDebt = BigDecimal("-100.00"))
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .ignoringFields("saldoMap", "dayStats.deltaMap", "dayStats.saldoMap")
+            .isEqualTo(expected)
+        assertEquals(BigDecimal("99900.00"), actual.totalSaldo)
+        assertEquals(BigDecimal("99900.00"), actual.debitSaldo)
+        assertEquals(BigDecimal.ZERO, actual.reserveSaldo)
+        assertEquals(BigDecimal.ZERO, actual.creditSaldo)
+        assertEquals(BigDecimal.ZERO, actual.assetSaldo)
+        assertEquals(BigDecimal("100000.00"), actual.freeAmount)
+        actual.dayStats
+            .forEach {
+                when (it) {
+                    dayStatM1 -> {
+                        assertEquals(BigDecimal("99900.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("100000.00"), it.freeAmount)
+                    }
+                    dayStatP1 -> {
+                        assertEquals(BigDecimal("99800.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("100000.00"), it.freeAmount)
+                    }
+                    dayStatP2 -> {
+                        assertEquals(BigDecimal("99800.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("99900.00"), it.freeAmount)
+                    }
+                }
+            }
+    }
+
 }
