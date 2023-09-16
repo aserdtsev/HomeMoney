@@ -20,7 +20,7 @@ data class BsStat(
     val saldoMap = HashMap<AccountType, BigDecimal>()
 
     val freeAmount: BigDecimal
-        get() = debitSaldo - reserveSaldo + actualDebt - actualCreditCardDebt
+        get() = debitSaldo - reserveSaldo - actualCreditCardDebt
 
     val reserveSaldo: BigDecimal
         get() = saldoMap.getOrDefault(AccountType.reserve, BigDecimal.ZERO)

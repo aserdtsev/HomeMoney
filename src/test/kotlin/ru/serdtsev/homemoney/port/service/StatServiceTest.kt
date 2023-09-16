@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
+import ru.serdtsev.homemoney.domain.model.account.AnnuityPayment
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.balancesheet.BsDayStat
@@ -38,8 +39,8 @@ internal class StatServiceTest : SpringBootBaseTest() {
             domainEventPublisher.publish(this)
         }
         creditCard = run {
-            val credit = Credit(BigDecimal("400000.00"), 12, gracePeriodDays)
-            Balance(AccountType.debit, "Кредитная карта", credit = credit)
+            val creditParams = Credit(BigDecimal("400000.00"), 12, gracePeriodDays)
+            Balance(AccountType.debit, "Кредитная карта", credit = creditParams)
                 .apply { domainEventPublisher.publish(this) }
         }
     }
@@ -255,6 +256,62 @@ internal class StatServiceTest : SpringBootBaseTest() {
                     dayStatP3 -> {
                         assertEquals(BigDecimal("99600.00"), it.totalSaldo)
                         assertEquals(BigDecimal("99600.00"), it.freeAmount)
+                    }
+                }
+            }
+    }
+
+    @Test
+    internal fun `getBsStat by recurrence debt repayment`() {
+        val credit = run {
+            val annuityPayment = AnnuityPayment(BigDecimal("25000.00"))
+            val creditParams = Credit(annuityPayment = annuityPayment)
+            Balance(AccountType.credit, "Кредит", BigDecimal("-100000.00"), credit = creditParams)
+                .apply { domainEventPublisher.publish(this) }
+        }
+
+        val currentDate = LocalDate.now()
+        val interval = ChronoUnit.DAYS.between(currentDate, currentDate.plusMonths(1L))
+
+        val m1Date = currentDate.minusDays(1)
+        val p1Date = currentDate.plusDays(interval).minusDays(1L)
+        MoneyOper(MoneyOperStatus.doneNew, m1Date, period = Period.month)
+            .apply {
+                addItem(debitCard, BigDecimal("-25000.00"))
+                addItem(credit, BigDecimal("25000.00"))
+                complete()
+                RecurrenceOper.of(this)
+            }
+
+        val actual = statService.getBsStat(currentDate, interval)
+
+        val dayStatM1 = BsDayStat(m1Date)
+        val dayStatP1 = BsDayStat(p1Date)
+        val dayStats: List<BsDayStat> = listOf(dayStatM1, dayStatP1)
+
+        val expected = BsStat(currentDate.minusDays(interval), currentDate, dayStats = dayStats,
+            actualDebt = BigDecimal("-25000.00"))
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .ignoringFields("saldoMap", "dayStats.deltaMap", "dayStats.saldoMap")
+            .isEqualTo(expected)
+        assertEquals(BigDecimal("0.00"), actual.totalSaldo)
+        assertEquals(BigDecimal("75000.00"), actual.debitSaldo)
+        assertEquals(BigDecimal.ZERO, actual.reserveSaldo)
+        assertEquals(BigDecimal("-75000.00"), actual.creditSaldo)
+        assertEquals(BigDecimal.ZERO, actual.assetSaldo)
+        assertEquals(BigDecimal("75000.00"), actual.freeAmount)
+        actual.dayStats
+            .forEach {
+                when (it) {
+                    dayStatM1 -> {
+                        assertEquals(BigDecimal("0.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("75000.00"), it.freeAmount)
+                    }
+
+                    dayStatP1 -> {
+                        assertEquals(BigDecimal("0.00"), it.totalSaldo)
+                        assertEquals(BigDecimal("50000.00"), it.freeAmount)
                     }
                 }
             }
