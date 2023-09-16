@@ -14,6 +14,7 @@ import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import ru.serdtsev.homemoney.domain.repository.TagRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.config.CoroutineApiRequestContext
+import java.lang.IllegalArgumentException
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -187,12 +188,12 @@ class StatService(
         return map.keys.sortedByDescending { it.amount }
     }
 
-    private fun getRealTurnovers(status: MoneyOperStatus, fromDate: LocalDate, toDate: LocalDate, interval: Long): Collection<Turnover> {
-        log.info { "getRealTurnovers start by $status, ${fromDate.format(DateTimeFormatter.ISO_DATE)} - ${toDate.format(
+    private fun getRealTurnovers(status: MoneyOperStatus, fromDate: LocalDate, currentDate: LocalDate, interval: Long): Collection<Turnover> {
+        log.info { "getRealTurnovers start by $status, ${fromDate.format(DateTimeFormatter.ISO_DATE)} - ${currentDate.format(
             DateTimeFormatter.ISO_DATE)}" }
 
         val turnovers =
-            moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, toDate, status)
+            moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, currentDate, status)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .filter {
                 val item = it.first
@@ -206,8 +207,13 @@ class StatService(
                 val balance = item.balance
                 val turnoverType = TurnoverType.valueOf(balance.type)
                 val freeCorrection = if (item.dateWithGracePeriod > item.performed) item.value.negate() else BigDecimal.ZERO
-                Turnover(item.performed, turnoverType, item.value, freeCorrection, true).apply { itemTurnovers.add(this) }
-                if (item.dateWithGracePeriod > item.performed && item.dateWithGracePeriod <= toDate.plusDays(interval)) {
+                val operDate = when (status) {
+                    MoneyOperStatus.done -> item.performed
+                    MoneyOperStatus.pending -> currentDate
+                    else -> throw IllegalArgumentException(status.toString())
+                }
+                Turnover(operDate, turnoverType, item.value, freeCorrection, true).apply { itemTurnovers.add(this) }
+                if (item.dateWithGracePeriod > item.performed && item.dateWithGracePeriod <= currentDate.plusDays(interval)) {
                     // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
                     // экземпляр BsDayStat.
                     Turnover(item.dateWithGracePeriod, turnoverType, BigDecimal("0.00"), freeCorrection.negate(), false)
