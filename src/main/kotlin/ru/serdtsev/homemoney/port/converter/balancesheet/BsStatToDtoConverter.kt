@@ -9,6 +9,7 @@ import ru.serdtsev.homemoney.domain.model.balancesheet.CategoryStat
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsDayStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.CategoryStatDto
+import java.time.ZoneOffset
 
 class BsStatToDtoConverter(private val applicationContext: ApplicationContext) : Converter<BsStat, BsStatDto> {
     private val conversionService: ConversionService
@@ -33,6 +34,7 @@ class CategoryStatToDtoConverter : Converter<CategoryStat, CategoryStatDto> {
 class BsDayStatToDtoConverter : Converter<BsDayStat, BsDayStatDto> {
     override fun convert(source: BsDayStat): BsDayStatDto {
         return with (source) {
+            val date = localDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli() - 1
             BsDayStatDto(date, totalSaldo, freeAmount, incomeAmount, chargeAmount, debt)
         }
     }

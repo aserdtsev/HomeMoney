@@ -1,15 +1,12 @@
 package ru.serdtsev.homemoney.domain.model.balancesheet
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.fasterxml.jackson.annotation.JsonProperty
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.ZoneOffset
-import java.util.HashMap
 
 data class BsDayStat(
-    @JsonIgnore val localDate: LocalDate,
+    val localDate: LocalDate,
     /** Сумма дохода за день (см. StatService#fillBsDayStatMap) */
     var incomeAmount: BigDecimal = BigDecimal.ZERO,
     /** Сумма расходов за день (см. StatService#fillBsDayStatMap) */
@@ -24,11 +21,6 @@ data class BsDayStat(
     /** Ассоциативный массив сальдо типов счетов на дату объекта */
     @JsonIgnore
     private val saldoMap = HashMap<AccountType, BigDecimal>()
-
-    // Unix-дата и время конца дня в UTC. Так нужно для визуального компонента.
-    val date: Long
-        @JsonProperty("date")
-        get() = localDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli() - 1
 
     val totalSaldo: BigDecimal
         get() = getSaldo(AccountType.debit).add(getSaldo(AccountType.credit)).add(getSaldo(AccountType.asset))
