@@ -6,6 +6,9 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.support.ConversionServiceFactoryBean
 import ru.serdtsev.homemoney.port.converter.account.*
+import ru.serdtsev.homemoney.port.converter.balancesheet.BsDayStatToDtoConverter
+import ru.serdtsev.homemoney.port.converter.balancesheet.BsStatToDtoConverter
+import ru.serdtsev.homemoney.port.converter.balancesheet.CategoryStatToDtoConverter
 import ru.serdtsev.homemoney.port.converter.moneyoper.*
 
 @Configuration
@@ -26,7 +29,10 @@ class ConverterConfiguration : ApplicationContextAware {
             RecurrenceOperToDtoConverter(applicationContext),
             RecurrenceOperToModelConverter(applicationContext),
             TagToTagDtoConverter(),
-            TagDtoToModelConverter()
+            TagDtoToModelConverter(),
+            BsStatToDtoConverter(applicationContext),
+            CategoryStatToDtoConverter(),
+            BsDayStatToDtoConverter()
         )
         setConverters(converters)
     }

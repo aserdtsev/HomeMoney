@@ -32,6 +32,7 @@ class StatService(
 ) {
     private val log = KotlinLogging.logger {  }
 
+    @Transactional(readOnly = true)
     fun getBsStat(currentDate: LocalDate, interval: Long): BsStat {
         return runBlocking(Dispatchers.Default + CoroutineApiRequestContext()) {
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
