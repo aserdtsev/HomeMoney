@@ -45,14 +45,14 @@ class StatService(
             bsStat.actualCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
 
             val map = TreeMap<LocalDate, BsDayStat>()
-            fillBsDayStatMap(map, getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval))
+            fillDayStatMap(map, getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval))
 
             val trendMap = TreeMap<LocalDate, BsDayStat>()
-            fillBsDayStatMap(trendMap, getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
-            fillBsDayStatMap(trendMap,
+            fillDayStatMap(trendMap, getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
+            fillDayStatMap(trendMap,
                 getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval))
-            fillBsDayStatMap(trendMap, getRecurrenceTurnovers(currentDate, currentDate.plusDays(interval)))
-            fillBsDayStatMap(trendMap, getTrendTurnovers(currentDate, interval))
+            fillDayStatMap(trendMap, getRecurrenceTurnovers(currentDate, currentDate.plusDays(interval)))
+            fillDayStatMap(trendMap, getTrendTurnovers(currentDate, interval))
 
             trendMap.forEach { (k, v) ->
                 map.merge(k, v) { dayStat1, dayStat2 ->
@@ -61,68 +61,75 @@ class StatService(
                 }
             }
 
-            run {
-                var isFirst = true
-                var prev: BsDayStat? = null
-                var prevFreeCorrectionDelta = BigDecimal("0.00")
-                val cursorSaldoMap = bsStat.saldoMap
-                    .map { (type, value) -> type to value }
-                    .toMap()
-                    .toMutableMap()
-                map.values
-                    .filter { it.localDate <= currentDate }
-                    .sortedByDescending { it.localDate }
-                    .forEach { dayStat ->
-                        AccountType.values().forEach { type ->
-                            val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO) - (prev?.getDelta(type) ?: BigDecimal.ZERO)
-                            dayStat.setSaldo(type, saldo)
-                            cursorSaldoMap[type] = saldo
-                        }
-                        bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
-                        bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
-
-                        val tmpPrevFreeCorrectionDelta = dayStat.freeCorrection
-                        if (isFirst) {
-                            dayStat.freeCorrection = -bsStat.actualCreditCardDebt
-                        } else {
-                            dayStat.freeCorrection = prev!!.freeCorrection - prevFreeCorrectionDelta
-                        }
-                        isFirst = false
-                        prevFreeCorrectionDelta = tmpPrevFreeCorrectionDelta
-                        prev = dayStat
-                    }
-            }
-            run {
-                var isFirst = true
-                var prev: BsDayStat? = null
-                val cursorSaldoMap = bsStat.saldoMap
-                    .map { (type, value) -> type to value }
-                    .toMap()
-                    .toMutableMap()
-                map.values
-                    .filter { it.localDate > currentDate }
-                    .sortedBy { it.localDate }
-                    .forEach { dayStat ->
-                        AccountType.values().forEach { type ->
-                            val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO) + dayStat.getDelta(type)
-                            cursorSaldoMap[type] = saldo
-                            dayStat.setSaldo(type, saldo)
-                        }
-                        if (isFirst) {
-                            dayStat.freeCorrection = -bsStat.actualCreditCardDebt + dayStat.freeCorrection
-                        } else {
-                            dayStat.freeCorrection = prev!!.freeCorrection + dayStat.freeCorrection
-                        }
-                        isFirst = false
-                        prev = dayStat
-                    }
-            }
+            correctBsStatInPast(bsStat, map, currentDate)
+            correctBsStatInFuture(bsStat, map, currentDate)
 
             bsStat.dayStats += map.values
             bsStat.categories += getCategories(fromDate, currentDate)
 
             bsStat
         }
+    }
+
+    private fun correctBsStatInFuture(bsStat: BsStat,
+        map: TreeMap<LocalDate, BsDayStat>,
+        currentDate: LocalDate) {
+        var isFirst = true
+        var prev: BsDayStat? = null
+        val cursorSaldoMap = bsStat.saldoMap
+            .map { (type, value) -> type to value }
+            .toMap()
+            .toMutableMap()
+        map.values
+            .filter { it.localDate > currentDate }
+            .sortedBy { it.localDate }
+            .forEach { dayStat ->
+                AccountType.values().forEach { type ->
+                    val saldo = cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO) + dayStat.getDelta(type)
+                    cursorSaldoMap[type] = saldo
+                    dayStat.setSaldo(type, saldo)
+                }
+                if (isFirst) {
+                    dayStat.freeCorrection = -bsStat.actualCreditCardDebt + dayStat.freeCorrection
+                } else {
+                    dayStat.freeCorrection = prev!!.freeCorrection + dayStat.freeCorrection
+                }
+                isFirst = false
+                prev = dayStat
+            }
+    }
+
+    private fun correctBsStatInPast(bsStat: BsStat, map: Map<LocalDate, BsDayStat>, currentDate: LocalDate) {
+        var isFirst = true
+        var prev: BsDayStat? = null
+        var prevFreeCorrectionDelta = BigDecimal("0.00")
+        val cursorSaldoMap = bsStat.saldoMap
+            .map { (type, value) -> type to value }
+            .toMap()
+            .toMutableMap()
+        map.values
+            .filter { it.localDate <= currentDate }
+            .sortedByDescending { it.localDate }
+            .forEach { dayStat ->
+                AccountType.values().forEach { type ->
+                    val saldo =
+                        cursorSaldoMap.getOrDefault(type, BigDecimal.ZERO) - (prev?.getDelta(type) ?: BigDecimal.ZERO)
+                    dayStat.setSaldo(type, saldo)
+                    cursorSaldoMap[type] = saldo
+                }
+                bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
+                bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
+
+                val tmpPrevFreeCorrectionDelta = dayStat.freeCorrection
+                if (isFirst) {
+                    dayStat.freeCorrection = -bsStat.actualCreditCardDebt
+                } else {
+                    dayStat.freeCorrection = prev!!.freeCorrection - prevFreeCorrectionDelta
+                }
+                isFirst = false
+                prevFreeCorrectionDelta = tmpPrevFreeCorrectionDelta
+                prev = dayStat
+            }
     }
 
     /**
@@ -136,7 +143,7 @@ class StatService(
     /**
      * Создает ассоциированный массив экземпляров BsDayStat и наполняет их суммами из оборотов.
      */
-    private fun fillBsDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
+    private fun fillDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
         turnovers.forEach { (date, turnoverType, amount, freeCorrection) ->
             val dayStat = map.computeIfAbsent(date) {
                 BsDayStat(date)
@@ -343,7 +350,6 @@ class StatService(
                 }
                 .flatMap {
                     val item = it.first
-                    val moneyOper = it.second
                     val itemTurnovers = ArrayList<Turnover>()
                     val balance = item.balance
                     val turnoverType = TurnoverType.valueOf(balance.type)
