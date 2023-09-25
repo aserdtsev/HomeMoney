@@ -24,10 +24,8 @@ interface MoneyOperRepository {
         pageable: Pageable): Page<MoneyOper>
     fun findByPerformedBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
         status: MoneyOperStatus): List<MoneyOper>
-    /** Возвращает расходные операции по кредитным картам */
-    // todo Переименовать
-    fun findByCreditCardAndDateBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
-        status: MoneyOperStatus): List<MoneyOper>
+    /** Возвращает расходные операции по кредитным картам, которые не входят в период, но влияют на него */
+    fun findByCreditCardChargesThatAffectPeriod(startDate: LocalDate, finishDate: LocalDate): List<MoneyOper>
     fun getCurrentCreditCardDebt(currentDate: LocalDate): BigDecimal
     fun existsByBalance(balance: Balance): Boolean
 }

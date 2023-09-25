@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 import java.util.Collections;
 
 @TestConfiguration
-public class PostgreSqlConfiguration {
+public class PostgreSqlConfig {
     @Bean(destroyMethod = "stop")
     public PostgreSQLContainer<?> postgreSQLContainer() {
         PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer<>("postgres:14.7-alpine")

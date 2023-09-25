@@ -9,16 +9,19 @@ import ru.serdtsev.homemoney.port.common.HmResponse
 import ru.serdtsev.homemoney.port.common.HmResponse.Companion.getOk
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsStatDto
 import ru.serdtsev.homemoney.port.service.StatService
+import java.time.Clock
 import java.time.LocalDate
 
 @RestController
 class BalanceSheetController(
     private val statService: StatService,
-    @Qualifier("conversionService") private val conversionService: ConversionService
+    @Qualifier("conversionService")
+    private val conversionService: ConversionService,
+    private val clock: Clock
 ) {
     @RequestMapping("/api/bs-stat")
     fun getBalanceSheetInfo(@RequestParam(defaultValue = "30") interval: Long): HmResponse {
-        val model = statService.getBsStat(LocalDate.now(), interval)
+        val model = statService.getBsStat(LocalDate.now(clock), interval)
         val dto = conversionService.convert(model, BsStatDto::class.java)
         return getOk(dto)
     }

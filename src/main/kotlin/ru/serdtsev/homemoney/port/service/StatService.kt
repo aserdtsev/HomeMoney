@@ -14,7 +14,6 @@ import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import ru.serdtsev.homemoney.domain.repository.TagRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.config.CoroutineApiRequestContext
-import java.lang.IllegalArgumentException
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -45,18 +44,15 @@ class StatService(
             bsStat.actualDebt = balanceSheetRepository.getActualDebt(balanceSheet.id)
             bsStat.actualCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
 
-            val realTurnovers = getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval)
-            val pendingTurnovers = getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval)
-            val recurrenceTurnovers = getRecurrenceTurnovers(currentDate, currentDate.plusDays(interval))
-            val trendTurnovers = getTrendTurnovers(currentDate, interval)
-
             val map = TreeMap<LocalDate, BsDayStat>()
-            fillBsDayStatMap(map, realTurnovers)
+            fillBsDayStatMap(map, getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval))
 
             val trendMap = TreeMap<LocalDate, BsDayStat>()
-            fillBsDayStatMap(trendMap, pendingTurnovers)
-            fillBsDayStatMap(trendMap, recurrenceTurnovers)
-            fillBsDayStatMap(trendMap, trendTurnovers)
+            fillBsDayStatMap(trendMap, getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
+            fillBsDayStatMap(trendMap,
+                getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval))
+            fillBsDayStatMap(trendMap, getRecurrenceTurnovers(currentDate, currentDate.plusDays(interval)))
+            fillBsDayStatMap(trendMap, getTrendTurnovers(currentDate, interval))
 
             trendMap.forEach { (k, v) ->
                 map.merge(k, v) { dayStat1, dayStat2 ->
@@ -337,4 +333,30 @@ class StatService(
             ?: turnovers.add(turnover)
     }
 
+    private fun getCreditCardChargesThatAffectPeriodTurnovers(fromDate: LocalDate, toDate: LocalDate): Collection<Turnover> {
+        val turnovers =
+            moneyOperRepository.findByCreditCardChargesThatAffectPeriod(fromDate, toDate)
+                .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
+                .filter {
+                    val item = it.first
+                    item.balance.type.isBalance &&item.dateWithGracePeriod > item.performed
+                }
+                .flatMap {
+                    val item = it.first
+                    val moneyOper = it.second
+                    val itemTurnovers = ArrayList<Turnover>()
+                    val balance = item.balance
+                    val turnoverType = TurnoverType.valueOf(balance.type)
+                    val freeCorrection = item.value.negate()
+                    Turnover(item.dateWithGracePeriod, turnoverType, BigDecimal("0.00"), freeCorrection.negate(), false)
+                        .apply { itemTurnovers.add(this) }
+                    itemTurnovers
+                }
+                .groupBy { Turnover(it.operDate, it.turnoverType, isReal = it.isReal) }
+
+        turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
+            dayAndTypeTurnovers.forEach { turnover.plus(it) } }
+
+        return turnovers.keys
+    }
 }

@@ -97,7 +97,7 @@ data class RepaymentScheduleItem(
                 date.minusDays(date.dayOfMonth - estimatedDay - 1)
                 else date.plusDays(estimatedDay - date.dayOfMonth + 1).minusMonths(1)
             val startDate = gracePeriodStartedAt.plusMonths(1)
-            val endDate = gracePeriodStartedAt.plusDays(gracePeriod - 1)
+            val endDate = gracePeriodStartedAt.plusDays(gracePeriod)
             val totalAmount = mainDebtAmount + interestAmount
             return RepaymentScheduleItem(startDate, endDate, totalAmount, mainDebtAmount, interestAmount)
         }

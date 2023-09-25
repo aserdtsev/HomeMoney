@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import javax.sql.DataSource;
 
 @TestConfiguration
-public class FlywayConfiguration {
+public class FlywayConfig {
     @Bean(name = "flyway", initMethod = "migrate")
     public Flyway flyway(@Qualifier("dataSource") DataSource dataSource) {
         return Flyway.configure()

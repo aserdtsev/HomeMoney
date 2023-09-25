@@ -1,8 +1,6 @@
 package ru.serdtsev.homemoney
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fatboyindustrial.gsonjavatime.Converters
-import com.google.gson.GsonBuilder
 import jakarta.annotation.PostConstruct
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -11,11 +9,18 @@ import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.repository.RepositoryRegistry
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
-import ru.serdtsev.homemoney.infra.config.FlywayConfiguration
-import ru.serdtsev.homemoney.infra.config.PostgreSqlConfiguration
+import ru.serdtsev.homemoney.infra.config.ClockTestConfig
+import ru.serdtsev.homemoney.infra.config.FlywayConfig
+import ru.serdtsev.homemoney.infra.config.PostgreSqlConfig
 import ru.serdtsev.homemoney.infra.dao.BalanceSheetDao
+import java.time.Clock
 
-@SpringBootTest(classes = [Main::class, PostgreSqlConfiguration::class, FlywayConfiguration::class])
+@SpringBootTest(classes = [
+    MainTest::class,
+    ClockTestConfig::class,
+    PostgreSqlConfig::class,
+    FlywayConfig::class]
+)
 @Testcontainers
 abstract class SpringBootBaseTest {
     protected val objectMapper = ObjectMapper()
@@ -24,6 +29,8 @@ abstract class SpringBootBaseTest {
     protected lateinit var domainEventPublisher: DomainEventPublisher
     @Autowired
     protected lateinit var repositoryRegistry: RepositoryRegistry
+    @Autowired
+    protected lateinit var clock: Clock
     @Autowired
     protected lateinit var balanceSheetDao: BalanceSheetDao
 

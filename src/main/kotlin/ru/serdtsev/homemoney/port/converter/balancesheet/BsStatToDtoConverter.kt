@@ -6,6 +6,7 @@ import org.springframework.core.convert.converter.Converter
 import ru.serdtsev.homemoney.domain.model.balancesheet.BsDayStat
 import ru.serdtsev.homemoney.domain.model.balancesheet.BsStat
 import ru.serdtsev.homemoney.domain.model.balancesheet.CategoryStat
+import ru.serdtsev.homemoney.port.common.moneyScale
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsDayStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.CategoryStatDto
@@ -20,8 +21,9 @@ class BsStatToDtoConverter(private val applicationContext: ApplicationContext) :
             .map { requireNotNull(conversionService.convert(it, CategoryStatDto::class.java)) }
         val dayStats = source.dayStats
             .map { requireNotNull(conversionService.convert(it, BsDayStatDto::class.java)) }
-        BsStatDto(fromDate, toDate, debitSaldo, creditSaldo, assetSaldo, totalSaldo, reserveSaldo, freeAmount,
-            actualDebt, actualCreditCardDebt, incomeAmount, chargesAmount, categories, dayStats)
+        BsStatDto(fromDate, toDate, moneyScale(debitSaldo), moneyScale(creditSaldo), moneyScale(assetSaldo),
+            moneyScale(totalSaldo), moneyScale(reserveSaldo), moneyScale(freeAmount), moneyScale(actualDebt),
+            moneyScale(actualCreditCardDebt), moneyScale(incomeAmount), moneyScale(chargesAmount), categories, dayStats)
     }
 }
 
@@ -35,7 +37,8 @@ class BsDayStatToDtoConverter : Converter<BsDayStat, BsDayStatDto> {
     override fun convert(source: BsDayStat): BsDayStatDto {
         return with (source) {
             val date = localDate.plusDays(1).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli() - 1
-            BsDayStatDto(date, totalSaldo, freeAmount, incomeAmount, chargeAmount, debt)
+            BsDayStatDto(date, moneyScale(totalSaldo), moneyScale(freeAmount), moneyScale(incomeAmount),
+                moneyScale(chargeAmount), moneyScale(debt))
         }
     }
 }

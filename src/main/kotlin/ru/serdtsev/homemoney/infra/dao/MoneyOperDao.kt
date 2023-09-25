@@ -197,22 +197,19 @@ class MoneyOperDao(
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
-    override fun findByCreditCardAndDateBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
-            status: MoneyOperStatus): List<MoneyOper> {
+    override fun findByCreditCardChargesThatAffectPeriod(startDate: LocalDate, finishDate: LocalDate): List<MoneyOper> {
         val sql = """
             select o.* 
             from money_oper o
             join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
-                and o.status = :status
+                and o.status = 'done'
+                and i.performed < :startDate 
                 and i.repayment_schedule is not null    
-                and (i.performed between :startDate and :finishDate 
-                    or (i.repayment_schedule -> 0 ->> 'endDate')::date between :startDate and :finishDate)
-                and (i.repayment_schedule -> 0 ->> 'endDate')::date > i.performed     
+                and (i.repayment_schedule -> 0 ->> 'endDate')::date between :startDate and :finishDate
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
-        val paramMap = mapOf("bsId" to bsId,
-            "startDate" to startDate, "finishDate" to finishDate, "status" to status.toString())
+        val paramMap = mapOf("bsId" to bsId, "startDate" to startDate, "finishDate" to finishDate)
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
