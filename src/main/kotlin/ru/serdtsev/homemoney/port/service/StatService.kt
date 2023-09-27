@@ -34,40 +34,65 @@ class StatService(
     @Transactional(readOnly = true)
     fun getBsStat(currentDate: LocalDate, interval: Long): BsStat {
         return runBlocking(Dispatchers.Default + CoroutineApiRequestContext()) {
-            val balanceSheet = apiRequestContextHolder.getBalanceSheet()
+            val bsId = apiRequestContextHolder.getBsId()
 
             val fromDate = currentDate.minusDays(interval)
-            val toDate = currentDate.plusDays(interval)
 
-            val bsStat = BsStat(fromDate, currentDate)
-            calcCurrentSaldo(bsStat)
-            bsStat.actualDebt = balanceSheetRepository.getActualDebt(balanceSheet.id)
-            bsStat.actualCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
+            val categories = getCategories(fromDate, currentDate)
+            val actualDebt = balanceSheetRepository.getActualDebt(bsId)
+            val actualCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
+            val bsStat = BsStat(fromDate, currentDate, categories = categories, actualDebt = actualDebt,
+                actualCreditCardDebt = actualCreditCardDebt)
+            balanceSheetRepository.getAggregateAccountSaldoList(bsId).forEach { bsStat.saldoMap[it.first] = it.second }
 
-            val turnovers = getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval)
-                .plus(getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
-                .plus(getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval))
-                .plus(getRecurrenceTurnovers(currentDate, currentDate.plusDays(interval)))
-                .plus(getTrendTurnovers(currentDate, interval))
-            val dayStatMap: Map<LocalDate, BsDayStat> = getDayStatMap(turnovers)
-
-            correctBsStatInPast(bsStat, dayStatMap, currentDate)
-            correctBsStatInFuture(bsStat, dayStatMap, currentDate)
-
-            bsStat.dayStats += dayStatMap.values
-            bsStat.categories += getCategories(fromDate, currentDate)
+            val dayStatMap: Map<LocalDate, BsDayStat> = getDayStatMap(currentDate, interval)
+            correctBsStatInPast(bsStat, dayStatMap)
+            correctBsStatInFuture(bsStat, dayStatMap)
+            bsStat.dayStats = dayStatMap.values.toList()
 
             bsStat
         }
     }
 
-    private fun correctBsStatInFuture(bsStat: BsStat, map: Map<LocalDate, BsDayStat>, currentDate: LocalDate) {
+    private fun getDayStatMap(currentDate: LocalDate, interval: Long):
+            Map<LocalDate, BsDayStat> {
+        val fromDate = currentDate.minusDays(interval)
+        val toDate = currentDate.plusDays(interval)
+        val turnovers = getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval)
+            .plus(getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
+            .plus(getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval))
+            .plus(getRecurrenceTurnovers(currentDate, toDate))
+            .plus(getTrendTurnovers(currentDate, interval))
+        val map = TreeMap<LocalDate, BsDayStat>()
+        turnovers.forEach { (date, turnoverType, amount, freeCorrection) ->
+            val dayStat = map.computeIfAbsent(date) {
+                BsDayStat(date)
+            }
+            when (turnoverType) {
+                TurnoverType.income ->
+                    dayStat.incomeAmount = dayStat.incomeAmount + amount
+
+                TurnoverType.expense ->
+                    dayStat.chargeAmount = dayStat.chargeAmount + amount
+
+                else -> {
+                    val accountType = AccountType.valueOf(turnoverType.name)
+                    dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
+                    dayStat.freeCorrection += freeCorrection
+                }
+            }
+        }
+        return map
+    }
+
+    private fun correctBsStatInFuture(bsStat: BsStat, map: Map<LocalDate, BsDayStat>) {
         var isFirst = true
         var prev: BsDayStat? = null
         val cursorSaldoMap = bsStat.saldoMap
             .map { (type, value) -> type to value }
             .toMap()
             .toMutableMap()
+        val currentDate = bsStat.toDate
         map.values
             .filter { it.localDate > currentDate }
             .sortedBy { it.localDate }
@@ -87,7 +112,7 @@ class StatService(
             }
     }
 
-    private fun correctBsStatInPast(bsStat: BsStat, dayStatMap: Map<LocalDate, BsDayStat>, currentDate: LocalDate) {
+    private fun correctBsStatInPast(bsStat: BsStat, dayStatMap: Map<LocalDate, BsDayStat>) {
         var isFirst = true
         var prev: BsDayStat? = null
         var prevFreeCorrectionDelta = BigDecimal("0.00")
@@ -95,6 +120,7 @@ class StatService(
             .map { (type, value) -> type to value }
             .toMap()
             .toMutableMap()
+        val currentDate = bsStat.toDate
         dayStatMap.values
             .filter { it.localDate <= currentDate }
             .sortedByDescending { it.localDate }
@@ -118,38 +144,6 @@ class StatService(
                 prevFreeCorrectionDelta = tmpPrevFreeCorrectionDelta
                 prev = dayStat
             }
-    }
-
-    /**
-     * Вычисляет текущие балансы счетов и резервов.
-     */
-    private fun calcCurrentSaldo(bsStat: BsStat) {
-        val bsId = apiRequestContextHolder.getBsId()
-        balanceSheetRepository.getAggregateAccountSaldoList(bsId).forEach { bsStat.saldoMap[it.first] = it.second }
-    }
-
-    /**
-     * Возвращает ассоциированный массив экземпляров BsDayStat с суммами из оборотов.
-     */
-    private fun getDayStatMap(turnovers: Collection<Turnover>): Map<LocalDate, BsDayStat> {
-        val map = TreeMap<LocalDate, BsDayStat>()
-        turnovers.forEach { (date, turnoverType, amount, freeCorrection) ->
-            val dayStat = map.computeIfAbsent(date) {
-                BsDayStat(date)
-            }
-            when (turnoverType) {
-                TurnoverType.income ->
-                    dayStat.incomeAmount = dayStat.incomeAmount + amount
-                TurnoverType.expense ->
-                    dayStat.chargeAmount = dayStat.chargeAmount + amount
-                else -> {
-                    val accountType = AccountType.valueOf(turnoverType.name)
-                    dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
-                    dayStat.freeCorrection += freeCorrection
-                }
-            }
-        }
-        return map
     }
 
     private fun getCategories(fromDate: LocalDate, toDate: LocalDate): List<CategoryStat> {

@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.domain.model.balancesheet
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -9,14 +8,13 @@ import java.util.*
 data class BsStat(
     val fromDate: LocalDate,
     val toDate: LocalDate,
-    var incomeAmount: BigDecimal = BigDecimal("0.00"),
-    var chargesAmount: BigDecimal = BigDecimal("0.00"),
-    var dayStats: List<BsDayStat> = mutableListOf(),
-    var categories: List<CategoryStat> = mutableListOf(),
-    var actualDebt: BigDecimal = BigDecimal.ZERO,
-    var actualCreditCardDebt: BigDecimal = BigDecimal("0.00")
+    var incomeAmount: BigDecimal = BigDecimal.ZERO,
+    var chargesAmount: BigDecimal = BigDecimal.ZERO,
+    val categories: List<CategoryStat> = listOf(),
+    val actualDebt: BigDecimal = BigDecimal.ZERO,
+    val actualCreditCardDebt: BigDecimal = BigDecimal.ZERO,
+    var dayStats: List<BsDayStat> = listOf()
 ) {
-    @JsonIgnore
     val saldoMap = HashMap<AccountType, BigDecimal>()
 
     val freeAmount: BigDecimal
