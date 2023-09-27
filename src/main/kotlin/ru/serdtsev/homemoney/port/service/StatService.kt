@@ -44,36 +44,24 @@ class StatService(
             bsStat.actualDebt = balanceSheetRepository.getActualDebt(balanceSheet.id)
             bsStat.actualCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
 
-            val map = TreeMap<LocalDate, BsDayStat>()
-            fillDayStatMap(map, getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval))
+            val turnovers = getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval)
+                .plus(getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
+                .plus(getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval))
+                .plus(getRecurrenceTurnovers(currentDate, currentDate.plusDays(interval)))
+                .plus(getTrendTurnovers(currentDate, interval))
+            val dayStatMap: Map<LocalDate, BsDayStat> = getDayStatMap(turnovers)
 
-            val trendMap = TreeMap<LocalDate, BsDayStat>()
-            fillDayStatMap(trendMap, getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
-            fillDayStatMap(trendMap,
-                getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval))
-            fillDayStatMap(trendMap, getRecurrenceTurnovers(currentDate, currentDate.plusDays(interval)))
-            fillDayStatMap(trendMap, getTrendTurnovers(currentDate, interval))
+            correctBsStatInPast(bsStat, dayStatMap, currentDate)
+            correctBsStatInFuture(bsStat, dayStatMap, currentDate)
 
-            trendMap.forEach { (k, v) ->
-                map.merge(k, v) { dayStat1, dayStat2 ->
-                    dayStat1.freeCorrection += dayStat2.freeCorrection
-                    dayStat1
-                }
-            }
-
-            correctBsStatInPast(bsStat, map, currentDate)
-            correctBsStatInFuture(bsStat, map, currentDate)
-
-            bsStat.dayStats += map.values
+            bsStat.dayStats += dayStatMap.values
             bsStat.categories += getCategories(fromDate, currentDate)
 
             bsStat
         }
     }
 
-    private fun correctBsStatInFuture(bsStat: BsStat,
-        map: TreeMap<LocalDate, BsDayStat>,
-        currentDate: LocalDate) {
+    private fun correctBsStatInFuture(bsStat: BsStat, map: Map<LocalDate, BsDayStat>, currentDate: LocalDate) {
         var isFirst = true
         var prev: BsDayStat? = null
         val cursorSaldoMap = bsStat.saldoMap
@@ -99,7 +87,7 @@ class StatService(
             }
     }
 
-    private fun correctBsStatInPast(bsStat: BsStat, map: Map<LocalDate, BsDayStat>, currentDate: LocalDate) {
+    private fun correctBsStatInPast(bsStat: BsStat, dayStatMap: Map<LocalDate, BsDayStat>, currentDate: LocalDate) {
         var isFirst = true
         var prev: BsDayStat? = null
         var prevFreeCorrectionDelta = BigDecimal("0.00")
@@ -107,7 +95,7 @@ class StatService(
             .map { (type, value) -> type to value }
             .toMap()
             .toMutableMap()
-        map.values
+        dayStatMap.values
             .filter { it.localDate <= currentDate }
             .sortedByDescending { it.localDate }
             .forEach { dayStat ->
@@ -141,9 +129,10 @@ class StatService(
     }
 
     /**
-     * Создает ассоциированный массив экземпляров BsDayStat и наполняет их суммами из оборотов.
+     * Возвращает ассоциированный массив экземпляров BsDayStat с суммами из оборотов.
      */
-    private fun fillDayStatMap(map: MutableMap<LocalDate, BsDayStat>, turnovers: Collection<Turnover>) {
+    private fun getDayStatMap(turnovers: Collection<Turnover>): Map<LocalDate, BsDayStat> {
+        val map = TreeMap<LocalDate, BsDayStat>()
         turnovers.forEach { (date, turnoverType, amount, freeCorrection) ->
             val dayStat = map.computeIfAbsent(date) {
                 BsDayStat(date)
@@ -160,6 +149,7 @@ class StatService(
                 }
             }
         }
+        return map
     }
 
     private fun getCategories(fromDate: LocalDate, toDate: LocalDate): List<CategoryStat> {
