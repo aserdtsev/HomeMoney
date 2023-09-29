@@ -69,12 +69,8 @@ class StatService(
                 BsDayStat(date)
             }
             when (turnoverType) {
-                TurnoverType.income ->
-                    dayStat.incomeAmount = dayStat.incomeAmount + amount
-
-                TurnoverType.expense ->
-                    dayStat.chargeAmount = dayStat.chargeAmount + amount
-
+                TurnoverType.income -> dayStat.incomeAmount += amount
+                TurnoverType.expense -> dayStat.chargeAmount += amount
                 else -> {
                     val accountType = AccountType.valueOf(turnoverType.name)
                     dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
@@ -287,7 +283,7 @@ class StatService(
         recurrenceOpers
             .forEach {
                 var roNextDate = it.nextDate
-                while (roNextDate.isBefore(toDate)) {
+                while (roNextDate <= toDate) {
                     // Если дата повторяющейся операции раньше или равна текущему дню, то считаем, что она будет
                     // выполнена завтра, а не сегодня. Чтобы в графике не искажать баланс текущего дня операциями,
                     // которые, возможно, сегодня не будут выполнены.

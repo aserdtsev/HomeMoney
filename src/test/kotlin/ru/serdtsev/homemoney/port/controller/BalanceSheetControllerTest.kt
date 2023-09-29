@@ -25,8 +25,7 @@ import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 internal class BalanceSheetControllerTest : SpringBootBaseTest() {
-    @Autowired
-    @Qualifier("conversionService")
+    @Autowired @Qualifier("conversionService")
     private lateinit var conversionService: ConversionService
     @Autowired
     private lateinit var balanceSheetController: BalanceSheetController
@@ -62,7 +61,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val interval = 1L
 
         val m1Date = currentDate.minusDays(1)
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
+        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(salaryTag), period = Period.single)
             .apply {
                 addItem(debitCard, BigDecimal("100.00"))
                 complete()
@@ -351,6 +350,55 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             chargesAmount = BigDecimal("100.00"),
             categories = categories,
             actualCreditCardDebt = BigDecimal("-100.00"),
+            dayStats = dayStats)
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .isEqualTo(expected)
+    }
+
+    @Test
+    internal fun `getBsStat by several operations`() {
+        val currentDate = LocalDate.now(clock)
+        val interval = 1L
+
+        val m1Date = currentDate.minusDays(1)
+        val p1Date = currentDate.plusDays(1)
+        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(salaryTag), period = Period.single)
+            .apply {
+                addItem(debitCard, BigDecimal("100.00"))
+                complete()
+            }
+        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+            .apply {
+                addItem(debitCard, BigDecimal("-100.00"))
+                complete()
+            }
+        MoneyOper(MoneyOperStatus.pending, p1Date, mutableListOf(foodstuffsTag), period = Period.single)
+            .apply {
+                addItem(debitCard, BigDecimal("-100.00"))
+                domainEventPublisher.publish(this)
+            }
+        val categories = run {
+            val foodstuffsCategoryStatDto = requireNotNull(conversionService.convert(CategoryStat.of(foodstuffsTag,
+                BigDecimal("100.00")), CategoryStatDto::class.java))
+            listOf(foodstuffsCategoryStatDto)
+        }
+
+        val actual = balanceSheetController.getBalanceSheetInfo(interval).data
+
+        val dayStatM1 = BsDayStatDto(localDateToLong(m1Date), BigDecimal("100000.00"), BigDecimal("100000.00"),
+            BigDecimal("100.00"), BigDecimal("100.00"))
+        val dayStatP1 = BsDayStatDto(localDateToLong(p1Date), BigDecimal("99800.00"), BigDecimal("99800.00"),
+            BigDecimal("0.00"), BigDecimal("200.00"))
+        val dayStats = listOf(dayStatM1, dayStatP1)
+
+        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+            debitSaldo = BigDecimal("100000.00"),
+            totalSaldo = BigDecimal("100000.00"),
+            freeAmount = BigDecimal("100000.00"),
+            incomeAmount = BigDecimal("100.00"),
+            chargesAmount = BigDecimal("100.00"),
+            categories = categories,
             dayStats = dayStats)
         assertThat(actual)
             .usingRecursiveComparison()
