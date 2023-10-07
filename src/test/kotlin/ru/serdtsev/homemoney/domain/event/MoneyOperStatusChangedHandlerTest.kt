@@ -1,14 +1,14 @@
 package ru.serdtsev.homemoney.domain.event
 
 import com.nhaarman.mockito_kotlin.doAnswer
+import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.*
 import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
@@ -16,11 +16,13 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
+import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 import java.util.stream.Stream
 
 internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
-    private val moneyOperStatusChangedHandler = MoneyOperStatusChangedHandler()
+    private val moneyOperRepository: MoneyOperRepository = mock { }
+    private val moneyOperStatusChangedHandler = MoneyOperStatusChangedHandler(moneyOperRepository)
 
     @ParameterizedTest
     @MethodSource("paramsFor_handler_balanceIsChanged")

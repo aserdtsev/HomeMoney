@@ -4,10 +4,11 @@ import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
+import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 
 @Service
-class MoneyOperStatusChangedHandler {
+class MoneyOperStatusChangedHandler(val moneyOperRepository: MoneyOperRepository) {
     @EventListener
     fun handler(event: MoneyOperStatusChanged) {
         assert(event.afterStatus == event.moneyOper.status) { event.moneyOper }
@@ -21,8 +22,18 @@ class MoneyOperStatusChangedHandler {
         val revert = beforeStatus == done && afterStatus != done
         val factor = BigDecimal.ONE.let { if (revert) it.negate() else it }
         val moneyOper = event.moneyOper
-        moneyOper.items.forEach {
-            it.balance.changeValue(it.value * factor, moneyOper.id)
+        moneyOper.items.forEach { repaymentDebtOperItem ->
+            repaymentDebtOperItem.balance.changeValue(repaymentDebtOperItem.value * factor, moneyOper.id)
+            if (repaymentDebtOperItem.isDebtRepayment) {
+                moneyOperRepository.findByCreditCardChargesForEarlyRepyamentDebt(repaymentDebtOperItem.balanceId, moneyOper.performed)
+                    .forEach { oper ->
+                        oper.items
+                        .filter { item -> item.balanceId == repaymentDebtOperItem.balanceId }
+                        .forEach { item -> item.repaymentSchedule?.get(0)?.let { it.debtRepaidAt = moneyOper.performed } }
+                        DomainEventPublisher.instance.publish(oper)
+                    }
+            }
         }
     }
+
 }

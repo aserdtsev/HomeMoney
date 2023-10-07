@@ -9,7 +9,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
 
-class MoneyOperItem private constructor (
+class MoneyOperItem (
     val id: UUID,
     val moneyOperId: UUID,
     var balanceId: UUID,
@@ -22,7 +22,10 @@ class MoneyOperItem private constructor (
         get() = requireNotNull(RepositoryRegistry.instance.balanceRepository.findById(balanceId))
 
     val dateWithGracePeriod: LocalDate
-        get() = repaymentSchedule?.first()?.endDate ?: performed
+        get() = repaymentSchedule?.first()?.let { it.debtRepaidAt ?: it.endDate } ?: performed
+
+    val isDebtRepayment: Boolean
+        get() = balance.isCreditCard && value > BigDecimal.ZERO
 
     override fun toString(): String {
         return "MoneyOperItem{id=$id, moneyOperId=$moneyOperId, balanceId=$balanceId, value=$value, " +
@@ -82,7 +85,8 @@ data class RepaymentScheduleItem(
     var endDate: LocalDate,
     var totalAmount: BigDecimal,
     var mainDebtAmount: BigDecimal,
-    var interestAmount: BigDecimal
+    var interestAmount: BigDecimal,
+    var debtRepaidAt: LocalDate?
 ) {
     companion object {
         fun of(date: LocalDate, credit: Credit, mainDebtAmount: BigDecimal,
@@ -99,7 +103,7 @@ data class RepaymentScheduleItem(
             val startDate = gracePeriodStartedAt.plusMonths(1)
             val endDate = gracePeriodStartedAt.plusDays(gracePeriod)
             val totalAmount = mainDebtAmount + interestAmount
-            return RepaymentScheduleItem(startDate, endDate, totalAmount, mainDebtAmount, interestAmount)
+            return RepaymentScheduleItem(startDate, endDate, totalAmount, mainDebtAmount, interestAmount, null)
         }
     }
 }

@@ -269,6 +269,60 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     }
 
     @Test
+    internal fun `getBsStat by early repayment of credit card debt`() {
+        val currentDate = LocalDate.parse("2023-09-02")
+        val zoneId = ZoneId.systemDefault()
+        clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
+        ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
+
+        val m1Date = currentDate.minusDays(1)
+
+        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
+            .apply {
+                addItem(creditCard, BigDecimal("-100.00"))
+                complete()
+            }
+        val p3Date = moneyOper.items[0].dateWithGracePeriod
+        val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
+
+        MoneyOper(MoneyOperStatus.doneNew, currentDate, period = Period.single)
+            .apply {
+                addItem(debitCard, BigDecimal("-100.00"))
+                addItem(creditCard, BigDecimal("100.00"))
+                complete()
+            }
+
+        val actual = balanceSheetController.getBalanceSheetInfo(interval).data
+
+        val dayStatM2 = BsDayStatDto(localDateToLong(m1Date),
+            totalSaldo = BigDecimal("99900.00"),
+            freeAmount = BigDecimal("100000.00"),
+            chargeAmount = BigDecimal("100.00"))
+        val dayStatM1 = BsDayStatDto(localDateToLong(currentDate),
+            totalSaldo = BigDecimal("99900.00"),
+            freeAmount = BigDecimal("99900.00"))
+
+        val dayStats = listOf(dayStatM2, dayStatM1)
+
+        val categories = run {
+            val foodstuffsCategoryStat = requireNotNull(conversionService.convert(CategoryStat.of(foodstuffsTag,
+                BigDecimal("100.00")), CategoryStatDto::class.java))
+            listOf(foodstuffsCategoryStat)
+        }
+        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+            debitSaldo = BigDecimal("99900.00"),
+            totalSaldo = BigDecimal("99900.00"),
+            chargesAmount = BigDecimal("100.00"),
+            freeAmount = BigDecimal("99900.00"),
+            actualCreditCardDebt = BigDecimal("0.00"),
+            categories = categories,
+            dayStats = dayStats)
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .isEqualTo(expected)
+    }
+
+    @Test
     internal fun `getBsStat by recurrence debt repayment from debit card`() {
         val credit = run {
             val annuityPayment = AnnuityPayment(BigDecimal("25000.00"))

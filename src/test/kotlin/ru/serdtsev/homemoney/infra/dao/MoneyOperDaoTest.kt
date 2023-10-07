@@ -20,8 +20,6 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
     @Autowired
     lateinit var balanceDao: BalanceDao
     @Autowired
-    lateinit var tagDao: TagDao
-    @Autowired
     lateinit var moneyOperDao: MoneyOperDao
 
     lateinit var balanceA: Balance
@@ -43,7 +41,7 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun crud() {
-        val value = BigDecimal("1.00")
+        val value = BigDecimal("-1.00")
         val moneyOper = MoneyOper(MoneyOperStatus.done, tags = listOf(tagA), comment = "comment")
             .apply {
                 addItem(balanceA, value)
@@ -56,6 +54,8 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
         with(moneyOper) {
             comment = "new comment"
+            items[0].repaymentSchedule!![0].debtRepaidAt = LocalDate.now()
+
         }
         moneyOperDao.save(moneyOper)
 

@@ -1,6 +1,5 @@
 package ru.serdtsev.homemoney.domain.model.balancesheet
 
-import com.fasterxml.jackson.annotation.JsonIgnore
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -13,20 +12,19 @@ data class BsDayStat(
     var chargeAmount: BigDecimal = BigDecimal.ZERO,
     /** Текущая задолженность */
     var debt: BigDecimal = BigDecimal("0.00"),
-    var freeCorrection: BigDecimal = BigDecimal("0.00")
+    var creditCardDebt: BigDecimal = BigDecimal("0.00"),
+    var creditCardDebtDelta: BigDecimal = BigDecimal.ZERO
 ) {
     /** Ассоциативный массив разницы сумм типов за день (см. StatService#fillBsDayStatMap) */
-    @JsonIgnore
     private val deltaMap = HashMap<AccountType, BigDecimal>()
     /** Ассоциативный массив сальдо типов счетов на дату объекта */
-    @JsonIgnore
     private val saldoMap = HashMap<AccountType, BigDecimal>()
 
     val totalSaldo: BigDecimal
         get() = getSaldo(AccountType.debit).add(getSaldo(AccountType.credit)).add(getSaldo(AccountType.asset))
 
     val freeAmount: BigDecimal
-        get() = getSaldo(AccountType.debit) - reserveSaldo + debt + freeCorrection
+        get() = getSaldo(AccountType.debit) - reserveSaldo + debt + creditCardDebt
 
     private val reserveSaldo: BigDecimal
         get() = getSaldo(AccountType.reserve)

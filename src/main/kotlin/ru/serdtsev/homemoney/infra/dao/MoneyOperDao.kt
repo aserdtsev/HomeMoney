@@ -10,10 +10,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
-import ru.serdtsev.homemoney.domain.model.moneyoper.Period
+import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.utils.toJsonb
@@ -26,8 +23,7 @@ import java.util.*
 @Repository
 class MoneyOperDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
-    private val tagDao: TagDao,
-    private val balanceDao: BalanceDao
+    private val tagDao: TagDao
 ) : DomainModelDao<MoneyOper>, MoneyOperRepository {
     private val gson = Converters.registerAll(GsonBuilder()).create()
 
@@ -205,11 +201,33 @@ class MoneyOperDao(
             where o.balance_sheet_id = :bsId 
                 and o.status = 'done'
                 and i.performed < :startDate 
-                and i.repayment_schedule is not null    
                 and (i.repayment_schedule -> 0 ->> 'endDate')::date between :startDate and :finishDate
+                and (i.repayment_schedule -> 0 ->> 'debtRepaidAt') is null
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf("bsId" to bsId, "startDate" to startDate, "finishDate" to finishDate)
+        return jdbcTemplate.query(sql, paramMap, rowMapper)
+    }
+
+    override fun findByCreditCardChargesForEarlyRepyamentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper> {
+        val sql = """
+            select o.* 
+            from money_oper o
+            join money_oper_item i on i.oper_id = o.id
+            where o.balance_sheet_id = :bsId 
+                and o.status = 'done'
+                and i.balance_id = :balanceId
+                and i.performed <= :operDate 
+                and i.repayment_schedule is not null
+                and :operDate between i.performed and (i.repayment_schedule -> 0 ->> 'endDate')::date
+                and (i.repayment_schedule -> 0 ->> 'debtRepaidAt') is null
+            order by i.performed
+        """.trimIndent()
+        val bsId = ApiRequestContextHolder.balanceSheet.id
+        val paramMap = mapOf(
+            "bsId" to bsId,
+            "balanceId" to balanceId,
+            "operDate" to operDate)
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
@@ -220,8 +238,8 @@ class MoneyOperDao(
                 join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
                 and o.status = 'done'
-                and i.repayment_schedule is not null    
                 and (i.repayment_schedule -> 0 ->> 'endDate')::date > :currentDate
+                and (i.repayment_schedule -> 0 ->> 'debtRepaidAt') is null
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf("bsId" to bsId, "currentDate" to currentDate)
@@ -262,10 +280,11 @@ class MoneyOperDao(
     private val itemRowMapper: (rs: ResultSet, rowNum: Int) -> MoneyOperItem = { rs, _ ->
         val id = UUID.fromString(rs.getString("id"))
         val moneyOperId = UUID.fromString(rs.getString("oper_id"))
-        val balance = UUID.fromString(rs.getString("balance_id")).let { balanceDao.findById(it) }
+        val balanceId = UUID.fromString(rs.getString("balance_id"))
         val value = rs.getBigDecimal("value")
         val performed = rs.getDate("performed").toLocalDate()
         val index = rs.getInt("index")
-        MoneyOperItem.of(moneyOperId, balance, value, performed, index, id)
+        val repaymentSchedule = gson.fromJson(rs.getString("repayment_schedule"), RepaymentSchedule::class.java)
+        MoneyOperItem(id, moneyOperId, balanceId, value, performed, index, repaymentSchedule)
     }
 }

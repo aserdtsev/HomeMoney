@@ -28,4 +28,9 @@ interface MoneyOperRepository {
     fun findByCreditCardChargesThatAffectPeriod(startDate: LocalDate, finishDate: LocalDate): List<MoneyOper>
     fun getCurrentCreditCardDebt(currentDate: LocalDate): BigDecimal
     fun existsByBalance(balance: Balance): Boolean
+
+    /**
+     * Возвращает расходные операции по кредитной карте для досрочного гашения задолженности
+     */
+    fun findByCreditCardChargesForEarlyRepyamentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper>
 }

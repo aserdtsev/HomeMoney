@@ -11,13 +11,12 @@ data class Turnover(
     val turnoverType: TurnoverType,
     /** Сумма оборота со знаком */
     var amount: BigDecimal = BigDecimal.ZERO,
-    /** Корректировка свободных средств */
-    var freeCorrection: BigDecimal = BigDecimal.ZERO,
-    val isReal: Boolean
+    /** Изменение задолженности по кредитным картам */
+    var creditCardDebtDelta: BigDecimal = BigDecimal.ZERO
 ) {
     operator fun plus(other: Turnover) {
         amount += other.amount
-        freeCorrection += other.freeCorrection
+        creditCardDebtDelta += other.creditCardDebtDelta
     }
 
     override fun equals(other: Any?): Boolean {
@@ -28,7 +27,6 @@ data class Turnover(
 
         if (operDate != other.operDate) return false
         if (turnoverType != other.turnoverType) return false
-        if (isReal != other.isReal) return false
 
         return true
     }
@@ -36,7 +34,6 @@ data class Turnover(
     override fun hashCode(): Int {
         var result = operDate.hashCode()
         result = 31 * result + turnoverType.hashCode()
-        result = 31 * result + isReal.hashCode()
         return result
     }
 }

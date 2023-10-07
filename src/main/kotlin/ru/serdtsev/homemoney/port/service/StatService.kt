@@ -74,7 +74,7 @@ class StatService(
                 else -> {
                     val accountType = AccountType.valueOf(turnoverType.name)
                     dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
-                    dayStat.freeCorrection += freeCorrection
+                    dayStat.creditCardDebtDelta += freeCorrection
                 }
             }
         }
@@ -82,7 +82,6 @@ class StatService(
     }
 
     private fun correctBsStatInFuture(bsStat: BsStat, map: Map<LocalDate, BsDayStat>) {
-        var isFirst = true
         var prev: BsDayStat? = null
         val cursorSaldoMap = bsStat.saldoMap
             .map { (type, value) -> type to value }
@@ -98,20 +97,14 @@ class StatService(
                     cursorSaldoMap[type] = saldo
                     dayStat.setSaldo(type, saldo)
                 }
-                if (isFirst) {
-                    dayStat.freeCorrection = -bsStat.actualCreditCardDebt + dayStat.freeCorrection
-                } else {
-                    dayStat.freeCorrection = prev!!.freeCorrection + dayStat.freeCorrection
-                }
-                isFirst = false
+                dayStat.creditCardDebt = prev?.let { it.creditCardDebt + dayStat.creditCardDebtDelta }
+                    ?: (-bsStat.actualCreditCardDebt + dayStat.creditCardDebtDelta)
                 prev = dayStat
             }
     }
 
     private fun correctBsStatInPast(bsStat: BsStat, dayStatMap: Map<LocalDate, BsDayStat>) {
-        var isFirst = true
         var prev: BsDayStat? = null
-        var prevFreeCorrectionDelta = BigDecimal("0.00")
         val cursorSaldoMap = bsStat.saldoMap
             .map { (type, value) -> type to value }
             .toMap()
@@ -127,17 +120,11 @@ class StatService(
                     dayStat.setSaldo(type, saldo)
                     cursorSaldoMap[type] = saldo
                 }
-                bsStat.incomeAmount = bsStat.incomeAmount + dayStat.incomeAmount
-                bsStat.chargesAmount = bsStat.chargesAmount + dayStat.chargeAmount
+                bsStat.incomeAmount += dayStat.incomeAmount
+                bsStat.chargesAmount += dayStat.chargeAmount
 
-                val tmpPrevFreeCorrectionDelta = dayStat.freeCorrection
-                if (isFirst) {
-                    dayStat.freeCorrection = -bsStat.actualCreditCardDebt
-                } else {
-                    dayStat.freeCorrection = prev!!.freeCorrection - prevFreeCorrectionDelta
-                }
-                isFirst = false
-                prevFreeCorrectionDelta = tmpPrevFreeCorrectionDelta
+                dayStat.creditCardDebt = prev?.let { it.creditCardDebt - it.creditCardDebtDelta }
+                    ?: -bsStat.actualCreditCardDebt
                 prev = dayStat
             }
     }
@@ -190,29 +177,30 @@ class StatService(
                 val itemTurnovers = ArrayList<Turnover>()
                 val balance = item.balance
                 val turnoverType = TurnoverType.valueOf(balance.type)
-                val freeCorrection = if (item.dateWithGracePeriod > item.performed) item.value.negate() else BigDecimal.ZERO
+                val creditCardDebtDelta = if (item.dateWithGracePeriod > item.performed) item.value.negate() else BigDecimal.ZERO
                 val operDate = when (status) {
                     MoneyOperStatus.done -> item.performed
                     MoneyOperStatus.pending -> currentDate
                     else -> throw IllegalArgumentException(status.toString())
                 }
-                Turnover(operDate, turnoverType, item.value, freeCorrection, true).apply { itemTurnovers.add(this) }
-                if (item.dateWithGracePeriod > item.performed && item.dateWithGracePeriod <= currentDate.plusDays(interval)) {
-                    // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
-                    // экземпляр BsDayStat.
-                    Turnover(item.dateWithGracePeriod, turnoverType, BigDecimal("0.00"), freeCorrection.negate(), false)
+                Turnover(operDate, turnoverType, item.value, creditCardDebtDelta).apply { itemTurnovers.add(this) }
+                if (creditCardDebtDelta > BigDecimal.ZERO && item.dateWithGracePeriod <= currentDate.plusDays(interval)) {
+                    // Добавим день гашения задолженности по кредитке с изменением задолженности по кредитным картам.
+                    Turnover(item.dateWithGracePeriod, turnoverType, creditCardDebtDelta = -creditCardDebtDelta)
                         .apply { itemTurnovers.add(this) }
                 }
                 moneyOper.tags
                     .firstOrNull()?.let {
                         if (balance.type == AccountType.debit) {
                             val categoryType = if (item.value.signum() < 0) CategoryType.expense else CategoryType.income
-                            itemTurnovers.add(Turnover(item.performed, TurnoverType.valueOf(categoryType), item.value.abs(), isReal = true))
+                            itemTurnovers.add(Turnover(item.performed,
+                                TurnoverType.valueOf(categoryType),
+                                item.value.abs()))
                         }
                     }
                 itemTurnovers
             }
-            .groupBy { Turnover(it.operDate, it.turnoverType, isReal = it.isReal) }
+            .groupBy { Turnover(it.operDate, it.turnoverType) }
 
         turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
             dayAndTypeTurnovers.forEach { turnover.plus(it) } }
@@ -248,22 +236,22 @@ class StatService(
                     if (repaymentScheduleItem.endDate > trendDate) repaymentScheduleItem.mainDebtAmount.negate()
                     else null
                 } ?: BigDecimal.ZERO
-                Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value, freeCorrection, false)
+                Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value, freeCorrection)
                     .apply { moneyOperItemsTurnovers.add(this) }
                 repaymentScheduleItem?.apply {
                     if (endDate > trendDate && endDate <= currentDate.plusDays(interval)) {
                         // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
                         // экземпляр BsDayStat.
                         Turnover(item.dateWithGracePeriod, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"),
-                            freeCorrection.negate(), false)
+                            freeCorrection.negate())
                             .apply { moneyOperItemsTurnovers.add(this) }
                     }
                 }
-                Turnover(trendDate, TurnoverType.valueOf(moneyOper.type.name), item.value.abs(), isReal = false)
+                Turnover(trendDate, TurnoverType.valueOf(moneyOper.type.name), item.value.abs())
                     .apply { moneyOperItemsTurnovers.add(this) }
                 moneyOperItemsTurnovers
             }
-            .groupBy { Turnover(it.operDate, it.turnoverType, isReal = it.isReal) }
+            .groupBy { Turnover(it.operDate, it.turnoverType) }
 
         turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
             dayAndTypeTurnovers.forEach { turnover.plus(it) } }
@@ -315,7 +303,7 @@ class StatService(
 
     private fun putRecurrenceTurnover(turnovers: MutableSet<Turnover>, amount: BigDecimal, turnoverType: TurnoverType,
         nextDate: LocalDate, freeCorrection: BigDecimal = BigDecimal("0.00")) {
-        val turnover = Turnover(nextDate, turnoverType, amount, freeCorrection, isReal = false)
+        val turnover = Turnover(nextDate, turnoverType, amount, freeCorrection)
         turnovers.firstOrNull { it == turnover }?.let { it.amount += amount }
             ?: turnovers.add(turnover)
     }
@@ -334,11 +322,11 @@ class StatService(
                     val balance = item.balance
                     val turnoverType = TurnoverType.valueOf(balance.type)
                     val freeCorrection = item.value.negate()
-                    Turnover(item.dateWithGracePeriod, turnoverType, BigDecimal("0.00"), freeCorrection.negate(), false)
+                    Turnover(item.dateWithGracePeriod, turnoverType, BigDecimal("0.00"), freeCorrection.negate())
                         .apply { itemTurnovers.add(this) }
                     itemTurnovers
                 }
-                .groupBy { Turnover(it.operDate, it.turnoverType, isReal = it.isReal) }
+                .groupBy { Turnover(it.operDate, it.turnoverType) }
 
         turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
             dayAndTypeTurnovers.forEach { turnover.plus(it) } }

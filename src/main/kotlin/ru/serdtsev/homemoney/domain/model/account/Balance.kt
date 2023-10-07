@@ -62,6 +62,9 @@ open class Balance(
     open val freeFunds: BigDecimal
         get() = value + (credit?.creditLimit ?: BigDecimal.ZERO) - minValue
 
+    val isCreditCard: Boolean
+        get() = (credit?.creditLimit ?: 0.toBigDecimal()) > BigDecimal.ZERO
+
     override fun toString(): String {
         return "Balance(id=$id, type=$type, name='$name', createdDate=$createdDate, isArc=$isArc, " +
                 "currencyCode='$currencyCode', " + "value=$value, minValue=$minValue, credit=$credit, num=$num, " +
