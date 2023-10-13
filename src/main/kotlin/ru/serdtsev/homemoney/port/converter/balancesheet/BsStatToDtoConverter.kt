@@ -22,8 +22,8 @@ class BsStatToDtoConverter(private val applicationContext: ApplicationContext) :
         val dayStats = source.dayStats
             .map { requireNotNull(conversionService.convert(it, BsDayStatDto::class.java)) }
         BsStatDto(fromDate, toDate, moneyScale(debitSaldo), moneyScale(creditSaldo), moneyScale(assetSaldo),
-            moneyScale(totalSaldo), moneyScale(reserveSaldo), moneyScale(freeAmount), moneyScale(actualDebt),
-            moneyScale(actualCreditCardDebt), moneyScale(incomeAmount), moneyScale(chargesAmount), categories, dayStats)
+            moneyScale(totalSaldo), moneyScale(reserveSaldo), moneyScale(freeAmount), moneyScale(currentDebt),
+            moneyScale(currentCreditCardDebt), moneyScale(incomeAmount), moneyScale(chargesAmount), categories, dayStats)
     }
 }
 

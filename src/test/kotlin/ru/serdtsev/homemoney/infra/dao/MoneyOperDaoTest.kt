@@ -31,7 +31,7 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
     internal fun setUp() {
         balanceA = run {
             val annuityPayment = AnnuityPayment(BigDecimal("1000.00"))
-            val credit = Credit(BigDecimal("400000.00"), 14, 55, annuityPayment = annuityPayment)
+            val credit = Credit(BigDecimal("400000.00"), 12, 6, annuityPayment = annuityPayment)
             Balance(AccountType.debit, "a", credit = credit).apply { balanceDao.save(this) }
         }
         balanceB = Balance(AccountType.debit, "b").apply { balanceDao.save(this) }
@@ -52,10 +52,9 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
             .usingRecursiveAssertion()
             .isEqualTo(moneyOper)
 
-        with(moneyOper) {
+        with (moneyOper) {
             comment = "new comment"
-            items[0].repaymentSchedule!![0].debtRepaidAt = LocalDate.now()
-
+            items[0].repaymentSchedule!![0].endDate = LocalDate.now()
         }
         moneyOperDao.save(moneyOper)
 

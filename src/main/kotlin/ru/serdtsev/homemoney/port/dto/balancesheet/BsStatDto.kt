@@ -14,7 +14,7 @@ data class BsStatDto(
     val reserveSaldo: BigDecimal = moneyScale(BigDecimal.ZERO),
     val freeAmount: BigDecimal = moneyScale(BigDecimal.ZERO),
     val actualDebt: BigDecimal = moneyScale(BigDecimal.ZERO),
-    val actualCreditCardDebt: BigDecimal = moneyScale(BigDecimal.ZERO),
+    val currentCreditCardDebt: BigDecimal = moneyScale(BigDecimal.ZERO),
     val incomeAmount: BigDecimal = moneyScale(BigDecimal.ZERO),
     val chargesAmount: BigDecimal = moneyScale(BigDecimal.ZERO),
     val categories: List<CategoryStatDto> = mutableListOf(),

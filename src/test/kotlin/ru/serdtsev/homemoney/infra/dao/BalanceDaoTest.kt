@@ -23,7 +23,7 @@ internal class BalanceDaoTest: SpringBootBaseTest() {
 
         val balance = run {
             val annuityPayment = AnnuityPayment(BigDecimal("1000.00"))
-            val credit = Credit(BigDecimal("400000.00"), 14, 55, annuityPayment = annuityPayment)
+            val credit = Credit(BigDecimal("400000.00"), 12, 6, annuityPayment = annuityPayment)
             Balance(AccountType.debit, "name", credit = credit).apply { balanceDao.save(this) }
         }
 
@@ -36,7 +36,7 @@ internal class BalanceDaoTest: SpringBootBaseTest() {
         with (balance) {
             value = value.plus(BigDecimal.ONE)
             minValue = minValue.plus(BigDecimal.ONE)
-            this.credit = Credit(BigDecimal("500000.00"), 15, 60,
+            this.credit = Credit(BigDecimal("500000.00"), 13, 7,
                 AnnuityPayment(BigDecimal("2000.00")))
             num = 1
             isArc = true

@@ -11,14 +11,14 @@ data class BsStat(
     var incomeAmount: BigDecimal = BigDecimal.ZERO,
     var chargesAmount: BigDecimal = BigDecimal.ZERO,
     val categories: List<CategoryStat> = listOf(),
-    val actualDebt: BigDecimal = BigDecimal.ZERO,
-    val actualCreditCardDebt: BigDecimal = BigDecimal.ZERO,
+    val currentDebt: BigDecimal = BigDecimal.ZERO,
+    val currentCreditCardDebt: BigDecimal = BigDecimal.ZERO,
     var dayStats: List<BsDayStat> = listOf()
 ) {
     val saldoMap = HashMap<AccountType, BigDecimal>()
 
     val freeAmount: BigDecimal
-        get() = debitSaldo - reserveSaldo - actualCreditCardDebt
+        get() = debitSaldo - reserveSaldo + currentCreditCardDebt
 
     val reserveSaldo: BigDecimal
         get() = saldoMap.getOrDefault(AccountType.reserve, BigDecimal.ZERO)

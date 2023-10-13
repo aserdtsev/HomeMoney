@@ -97,12 +97,17 @@ open class Balance(
 }
 
 data class Credit(
+    /** Лимит кредита */
     var creditLimit: BigDecimal? = null,
     /** Расчетный день месяца */
     var estimatedDay: Int? = null,
-    /** Льготный период, дни */
-    var gracePeriodDays: Int? = null,
+    /** Последний день гашения задолженности */
+    var repaymentDay: Int? = null,
     var annuityPayment: AnnuityPayment? = null
-)
+) {
+    init {
+        repaymentDay?.apply { assert(this in 1..28) }
+    }
+}
 
 data class AnnuityPayment(var value: BigDecimal)

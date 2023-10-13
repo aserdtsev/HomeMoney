@@ -22,7 +22,7 @@ class MoneyOperItem (
         get() = requireNotNull(RepositoryRegistry.instance.balanceRepository.findById(balanceId))
 
     val dateWithGracePeriod: LocalDate
-        get() = repaymentSchedule?.first()?.let { it.debtRepaidAt ?: it.endDate } ?: performed
+        get() = repaymentSchedule?.first()?.endDate ?: performed
 
     val isDebtRepayment: Boolean
         get() = balance.isCreditCard && value > BigDecimal.ZERO
@@ -86,24 +86,26 @@ data class RepaymentScheduleItem(
     var totalAmount: BigDecimal,
     var mainDebtAmount: BigDecimal,
     var interestAmount: BigDecimal,
-    var debtRepaidAt: LocalDate?
+    /** ID операции гашения */
+    var repaymentDebtOperId: UUID? = null,
+    /** Сколько погашено */
+    var repaidDebtAmount: BigDecimal? = null
 ) {
     companion object {
         fun of(date: LocalDate, credit: Credit, mainDebtAmount: BigDecimal,
-                interestAmount: BigDecimal = BigDecimal("0.00")): RepaymentScheduleItem? {
-            val (estimatedDay, gracePeriod) = with (credit) {
-                if (this.estimatedDay == null || this.gracePeriodDays == null) {
+                interestAmount: BigDecimal = BigDecimal.ZERO): RepaymentScheduleItem? {
+            val (estimatedDay, repaymentDay) = with (credit) {
+                if (this.estimatedDay == null || this.repaymentDay == null) {
                     return null
                 }
-                requireNotNull(this.estimatedDay).toLong() to requireNotNull(this.gracePeriodDays).toLong()
+                requireNotNull(this.estimatedDay).toLong() to requireNotNull(this.repaymentDay)
             }
-            val gracePeriodStartedAt = if (date.dayOfMonth > estimatedDay)
-                date.minusDays(date.dayOfMonth - estimatedDay - 1)
-                else date.plusDays(estimatedDay - date.dayOfMonth + 1).minusMonths(1)
-            val startDate = gracePeriodStartedAt.plusMonths(1)
-            val endDate = gracePeriodStartedAt.plusDays(gracePeriod)
+            val startDate = if (date.dayOfMonth > estimatedDay)
+                date.minusDays(date.dayOfMonth - estimatedDay - 1).plusMonths(1)
+                else date.plusDays(estimatedDay - date.dayOfMonth + 1)
+            val endDate = startDate.withDayOfMonth(repaymentDay).plusMonths(1)
             val totalAmount = mainDebtAmount + interestAmount
-            return RepaymentScheduleItem(startDate, endDate, totalAmount, mainDebtAmount, interestAmount, null)
+            return RepaymentScheduleItem(startDate, endDate, totalAmount, mainDebtAmount, interestAmount)
         }
     }
 }

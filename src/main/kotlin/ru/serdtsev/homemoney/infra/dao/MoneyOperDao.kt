@@ -202,7 +202,6 @@ class MoneyOperDao(
                 and o.status = 'done'
                 and i.performed < :startDate 
                 and (i.repayment_schedule -> 0 ->> 'endDate')::date between :startDate and :finishDate
-                and (i.repayment_schedule -> 0 ->> 'debtRepaidAt') is null
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf("bsId" to bsId, "startDate" to startDate, "finishDate" to finishDate)
@@ -220,7 +219,6 @@ class MoneyOperDao(
                 and i.performed <= :operDate 
                 and i.repayment_schedule is not null
                 and :operDate between i.performed and (i.repayment_schedule -> 0 ->> 'endDate')::date
-                and (i.repayment_schedule -> 0 ->> 'debtRepaidAt') is null
             order by i.performed
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
@@ -233,13 +231,13 @@ class MoneyOperDao(
 
     override fun getCurrentCreditCardDebt(currentDate: LocalDate): BigDecimal {
         val sql = """
-            select sum(i.value) 
+            select 
+                sum((i.repayment_schedule -> 0 ->> 'totalAmount')::numeric - coalesce((i.repayment_schedule -> 0 ->> 'repaidDebtAmount'), '0')::numeric) 
             from money_oper o
                 join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
                 and o.status = 'done'
                 and (i.repayment_schedule -> 0 ->> 'endDate')::date > :currentDate
-                and (i.repayment_schedule -> 0 ->> 'debtRepaidAt') is null
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf("bsId" to bsId, "currentDate" to currentDate)

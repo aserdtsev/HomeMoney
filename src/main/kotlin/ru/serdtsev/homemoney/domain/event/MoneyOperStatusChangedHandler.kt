@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.domain.event
 
+import org.apache.commons.lang3.ObjectUtils.min
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
@@ -22,14 +23,26 @@ class MoneyOperStatusChangedHandler(val moneyOperRepository: MoneyOperRepository
         val revert = beforeStatus == done && afterStatus != done
         val factor = BigDecimal.ONE.let { if (revert) it.negate() else it }
         val moneyOper = event.moneyOper
-        moneyOper.items.forEach { repaymentDebtOperItem ->
-            repaymentDebtOperItem.balance.changeValue(repaymentDebtOperItem.value * factor, moneyOper.id)
-            if (repaymentDebtOperItem.isDebtRepayment) {
-                moneyOperRepository.findByCreditCardChargesForEarlyRepyamentDebt(repaymentDebtOperItem.balanceId, moneyOper.performed)
+        moneyOper.items.forEach { operItem ->
+            operItem.balance.changeValue(operItem.value * factor, moneyOper.id)
+            if (operItem.isDebtRepayment && !revert) {
+                var debtAmount = operItem.value
+                moneyOperRepository.findByCreditCardChargesForEarlyRepyamentDebt(operItem.balanceId, moneyOper.performed)
                     .forEach { oper ->
                         oper.items
-                        .filter { item -> item.balanceId == repaymentDebtOperItem.balanceId }
-                        .forEach { item -> item.repaymentSchedule?.get(0)?.let { it.debtRepaidAt = moneyOper.performed } }
+                            .filter { creditCardChargeItem -> creditCardChargeItem.balanceId == operItem.balanceId }
+                            .forEach { creditCardChargeItem ->
+                                // todo Учесть, что задолженность может гаситься несколькими операциями
+                                creditCardChargeItem.repaymentSchedule?.get(0)?.let {
+                                    it.repaymentDebtOperId = moneyOper.id
+                                    val repaymentDebtAmount = (it.repaidDebtAmount ?: BigDecimal.ZERO) + min(it.totalAmount, debtAmount)
+                                    it.repaidDebtAmount = repaymentDebtAmount
+                                    if (it.repaidDebtAmount == it.totalAmount) {
+                                        it.endDate = moneyOper.performed
+                                    }
+                                    debtAmount -= repaymentDebtAmount
+                                }
+                            }
                         DomainEventPublisher.instance.publish(oper)
                     }
             }

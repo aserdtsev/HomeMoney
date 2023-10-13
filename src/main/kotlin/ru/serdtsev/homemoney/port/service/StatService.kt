@@ -40,9 +40,9 @@ class StatService(
 
             val categories = getCategories(fromDate, currentDate)
             val actualDebt = balanceSheetRepository.getActualDebt(bsId)
-            val actualCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
-            val bsStat = BsStat(fromDate, currentDate, categories = categories, actualDebt = actualDebt,
-                actualCreditCardDebt = actualCreditCardDebt)
+            val currentCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
+            val bsStat = BsStat(fromDate, currentDate, categories = categories, currentDebt = actualDebt,
+                currentCreditCardDebt = currentCreditCardDebt)
             balanceSheetRepository.getAggregateAccountSaldoList(bsId).forEach { bsStat.saldoMap[it.first] = it.second }
 
             val dayStatMap: Map<LocalDate, BsDayStat> = getDayStatMap(currentDate, interval)
@@ -60,11 +60,11 @@ class StatService(
         val toDate = currentDate.plusDays(interval)
         val turnovers = getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval)
             .plus(getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
-            .plus(getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), toDate, interval))
+            .plus(getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), currentDate, interval))
             .plus(getRecurrenceTurnovers(currentDate, toDate))
             .plus(getTrendTurnovers(currentDate, interval))
         val map = TreeMap<LocalDate, BsDayStat>()
-        turnovers.forEach { (date, turnoverType, amount, freeCorrection) ->
+        turnovers.forEach { (date, turnoverType, amount, creditCardDebtDelta) ->
             val dayStat = map.computeIfAbsent(date) {
                 BsDayStat(date)
             }
@@ -74,7 +74,7 @@ class StatService(
                 else -> {
                     val accountType = AccountType.valueOf(turnoverType.name)
                     dayStat.setDelta(accountType, dayStat.getDelta(accountType) + amount)
-                    dayStat.creditCardDebtDelta += freeCorrection
+                    dayStat.creditCardDebtDelta += creditCardDebtDelta
                 }
             }
         }
@@ -98,7 +98,7 @@ class StatService(
                     dayStat.setSaldo(type, saldo)
                 }
                 dayStat.creditCardDebt = prev?.let { it.creditCardDebt + dayStat.creditCardDebtDelta }
-                    ?: (-bsStat.actualCreditCardDebt + dayStat.creditCardDebtDelta)
+                    ?: (bsStat.currentCreditCardDebt + dayStat.creditCardDebtDelta)
                 prev = dayStat
             }
     }
@@ -124,7 +124,7 @@ class StatService(
                 bsStat.chargesAmount += dayStat.chargeAmount
 
                 dayStat.creditCardDebt = prev?.let { it.creditCardDebt - it.creditCardDebtDelta }
-                    ?: -bsStat.actualCreditCardDebt
+                    ?: bsStat.currentCreditCardDebt
                 prev = dayStat
             }
     }
@@ -163,8 +163,9 @@ class StatService(
         log.info { "getRealTurnovers start by $status, ${fromDate.format(DateTimeFormatter.ISO_DATE)} - ${currentDate.format(
             DateTimeFormatter.ISO_DATE)}" }
 
+        val toDate = currentDate.plusDays(interval)
         val turnovers =
-            moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, currentDate, status)
+            moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, toDate, status)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .filter {
                 val item = it.first
@@ -178,11 +179,8 @@ class StatService(
                 val balance = item.balance
                 val turnoverType = TurnoverType.valueOf(balance.type)
                 val creditCardDebtDelta = if (item.dateWithGracePeriod > item.performed) item.value.negate() else BigDecimal.ZERO
-                val operDate = when (status) {
-                    MoneyOperStatus.done -> item.performed
-                    MoneyOperStatus.pending -> currentDate
-                    else -> throw IllegalArgumentException(status.toString())
-                }
+                val operDate = if (status == MoneyOperStatus.pending && item.performed < currentDate) currentDate
+                        else item.performed
                 Turnover(operDate, turnoverType, item.value, creditCardDebtDelta).apply { itemTurnovers.add(this) }
                 if (creditCardDebtDelta > BigDecimal.ZERO && item.dateWithGracePeriod <= currentDate.plusDays(interval)) {
                     // Добавим день гашения задолженности по кредитке с изменением задолженности по кредитным картам.
@@ -232,18 +230,18 @@ class StatService(
                 val trendDate = currentDate.plusDays(ChronoUnit.DAYS.between(item.performed, currentDate))
                 val repaymentScheduleItem = item.balance.credit
                     ?.let { credit -> RepaymentScheduleItem.of(trendDate, credit, item.value) }
-                val freeCorrection = repaymentScheduleItem?.let {
+                val creditCardDebtAmount = repaymentScheduleItem?.let {
                     if (repaymentScheduleItem.endDate > trendDate) repaymentScheduleItem.mainDebtAmount.negate()
                     else null
                 } ?: BigDecimal.ZERO
-                Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value, freeCorrection)
+                Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value, creditCardDebtAmount)
                     .apply { moneyOperItemsTurnovers.add(this) }
                 repaymentScheduleItem?.apply {
                     if (endDate > trendDate && endDate <= currentDate.plusDays(interval)) {
                         // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
                         // экземпляр BsDayStat.
                         Turnover(item.dateWithGracePeriod, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"),
-                            freeCorrection.negate())
+                            creditCardDebtAmount.negate())
                             .apply { moneyOperItemsTurnovers.add(this) }
                     }
                 }
@@ -279,12 +277,12 @@ class StatService(
                     it.template.items.forEach { item ->
                         val repaymentScheduleItem = item.balance.credit
                             ?.let { credit -> RepaymentScheduleItem.of(nextDate, credit, item.value) }
-                        val freeCorrection = repaymentScheduleItem?.let {
+                        val creditCardDebtAmount = repaymentScheduleItem?.let {
                             if (repaymentScheduleItem.endDate > nextDate) repaymentScheduleItem.mainDebtAmount.negate()
                             else null
                         } ?: BigDecimal.ZERO
                         putRecurrenceTurnover(turnovers, item.value, TurnoverType.valueOf(item.balance.type), nextDate,
-                            freeCorrection)
+                            creditCardDebtAmount)
                         val operType = it.template.type
                         if (operType != MoneyOperType.transfer) {
                             putRecurrenceTurnover(turnovers, item.value.abs(), TurnoverType.valueOf(operType.name), nextDate)
@@ -302,8 +300,8 @@ class StatService(
     }
 
     private fun putRecurrenceTurnover(turnovers: MutableSet<Turnover>, amount: BigDecimal, turnoverType: TurnoverType,
-        nextDate: LocalDate, freeCorrection: BigDecimal = BigDecimal("0.00")) {
-        val turnover = Turnover(nextDate, turnoverType, amount, freeCorrection)
+        nextDate: LocalDate, creditCardDebtAmount: BigDecimal = BigDecimal.ZERO) {
+        val turnover = Turnover(nextDate, turnoverType, amount, creditCardDebtAmount)
         turnovers.firstOrNull { it == turnover }?.let { it.amount += amount }
             ?: turnovers.add(turnover)
     }
@@ -321,8 +319,8 @@ class StatService(
                     val itemTurnovers = ArrayList<Turnover>()
                     val balance = item.balance
                     val turnoverType = TurnoverType.valueOf(balance.type)
-                    val freeCorrection = item.value.negate()
-                    Turnover(item.dateWithGracePeriod, turnoverType, BigDecimal("0.00"), freeCorrection.negate())
+                    val creditCardDebtAmount = -item.value
+                    Turnover(item.dateWithGracePeriod, turnoverType, creditCardDebtDelta = -creditCardDebtAmount)
                         .apply { itemTurnovers.add(this) }
                     itemTurnovers
                 }

@@ -27,7 +27,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     private val cashBalance = Balance(UUID.randomUUID(), AccountType.debit, "Наличные", now,
         false, balanceSheet.currencyCode, BigDecimal("100.00"))
     private val cardBalance = run {
-        val credit = Credit(BigDecimal("400000.00"), 12, 55)
+        val credit = Credit(BigDecimal("400000.00"), 12, 6)
         Balance(UUID.randomUUID(), AccountType.debit, "Карта", now,
             false, balanceSheet.currencyCode, BigDecimal("0.00"), credit = credit)
     }

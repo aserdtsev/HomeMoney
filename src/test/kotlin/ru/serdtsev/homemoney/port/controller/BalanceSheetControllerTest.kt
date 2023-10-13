@@ -36,8 +36,6 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     private lateinit var debitCard: Balance
     private lateinit var creditCard: Balance
 
-    private final val gracePeriodDays = 55
-
     @BeforeEach
     internal fun setUp() {
         ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
@@ -49,7 +47,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             domainEventPublisher.publish(this)
         }
         creditCard = run {
-            val creditParams = Credit(BigDecimal("400000.00"), 12, gracePeriodDays)
+            val creditParams = Credit(BigDecimal("400000.00"), 12, 6)
             Balance(AccountType.debit, "Кредитная карта", credit = creditParams)
                 .apply { domainEventPublisher.publish(this) }
         }
@@ -225,7 +223,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             totalSaldo = BigDecimal("99800.00"),
             chargesAmount = BigDecimal("200.00"),
             freeAmount = BigDecimal("100000.00"),
-            actualCreditCardDebt = BigDecimal("-200.00"),
+            currentCreditCardDebt = BigDecimal("200.00"),
             categories = categories,
             dayStats = dayStats)
         assertThat(actual)
@@ -261,7 +259,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             debitSaldo = BigDecimal("99900.00"),
             totalSaldo = BigDecimal("99900.00"),
             freeAmount = BigDecimal("100000.00"),
-            actualCreditCardDebt = BigDecimal("-100.00"),
+            currentCreditCardDebt = BigDecimal("100.00"),
             dayStats = dayStats)
         assertThat(actual)
             .usingRecursiveComparison()
@@ -314,7 +312,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             totalSaldo = BigDecimal("99900.00"),
             chargesAmount = BigDecimal("100.00"),
             freeAmount = BigDecimal("99900.00"),
-            actualCreditCardDebt = BigDecimal("0.00"),
+            currentCreditCardDebt = BigDecimal("0.00"),
             categories = categories,
             dayStats = dayStats)
         assertThat(actual)
@@ -403,7 +401,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             freeAmount = BigDecimal("100000.00"),
             chargesAmount = BigDecimal("100.00"),
             categories = categories,
-            actualCreditCardDebt = BigDecimal("-100.00"),
+            currentCreditCardDebt = BigDecimal("100.00"),
             dayStats = dayStats)
         assertThat(actual)
             .usingRecursiveComparison()
