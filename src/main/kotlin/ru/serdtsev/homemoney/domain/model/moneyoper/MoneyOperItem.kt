@@ -86,8 +86,8 @@ data class RepaymentScheduleItem(
     var totalAmount: BigDecimal,
     var mainDebtAmount: BigDecimal,
     var interestAmount: BigDecimal,
-    /** ID операции гашения */
-    var repaymentDebtOperId: UUID? = null,
+    /** ID элемента операции гашения */
+    var repaymentDebtOperItemId: UUID? = null,
     /** Сколько погашено */
     var repaidDebtAmount: BigDecimal? = null
 ) {

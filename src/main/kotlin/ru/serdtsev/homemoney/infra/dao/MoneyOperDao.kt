@@ -208,7 +208,7 @@ class MoneyOperDao(
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
-    override fun findByCreditCardChargesForEarlyRepyamentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper> {
+    override fun findByCreditCardChargesForEarlyRepaymentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper> {
         val sql = """
             select o.* 
             from money_oper o
@@ -226,6 +226,24 @@ class MoneyOperDao(
             "bsId" to bsId,
             "balanceId" to balanceId,
             "operDate" to operDate)
+        return jdbcTemplate.query(sql, paramMap, rowMapper)
+    }
+
+    override fun findByCreditCardChargesForRollbackEarlyRepaymentDebt(moneyOperItemId: UUID): List<MoneyOper> {
+        val sql = """
+            select o.* 
+            from money_oper o
+            join money_oper_item i on i.oper_id = o.id
+            where o.balance_sheet_id = :bsId 
+                and o.status = 'done'
+                and i.repayment_schedule is not null
+                and (i.repayment_schedule -> 0 ->> 'repaymentDebtOperItemId')::uuid = :moneyOperItemId
+            order by i.performed
+        """.trimIndent()
+        val bsId = ApiRequestContextHolder.balanceSheet.id
+        val paramMap = mapOf(
+            "bsId" to bsId,
+            "moneyOperItemId" to moneyOperItemId)
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 

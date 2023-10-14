@@ -32,5 +32,6 @@ interface MoneyOperRepository {
     /**
      * Возвращает расходные операции по кредитной карте для досрочного гашения задолженности
      */
-    fun findByCreditCardChargesForEarlyRepyamentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper>
+    fun findByCreditCardChargesForEarlyRepaymentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper>
+    fun findByCreditCardChargesForRollbackEarlyRepaymentDebt(moneyOperItemId: UUID): List<MoneyOper>
 }
