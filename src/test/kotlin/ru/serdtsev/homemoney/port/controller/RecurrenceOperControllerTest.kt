@@ -51,7 +51,7 @@ internal class RecurrenceOperControllerTest : SpringBootBaseTest() {
 
     @Test
     fun updateRecurrenceOper() {
-        val sample = MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1),
+        val sample = MoneyOper(MoneyOperStatus.Done, LocalDate.now().minusMonths(1),
             tags = mutableListOf(foodstuffsTag), comment = "comment", period = Period.month).apply {
             addItem(cashBalance, BigDecimal("-1.00"))
             domainEventPublisher.publish(this)

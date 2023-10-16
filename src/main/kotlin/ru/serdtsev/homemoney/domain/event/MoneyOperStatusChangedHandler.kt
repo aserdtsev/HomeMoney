@@ -15,14 +15,14 @@ class MoneyOperStatusChangedHandler(val moneyOperRepository: MoneyOperRepository
     @EventListener
     fun handler(event: MoneyOperStatusChanged) {
         assert(event.afterStatus == event.moneyOper.status) { event.moneyOper }
-        assert(event.afterStatus != new) { event.moneyOper }
+        assert(event.afterStatus != New) { event.moneyOper }
 
         val beforeStatus = event.beforeStatus
         val afterStatus = event.afterStatus
-        if (beforeStatus in listOf(new, pending, cancelled, recurrence) && afterStatus in listOf(pending, cancelled)) {
+        if (beforeStatus in listOf(New, Pending, Cancelled, Recurrence) && afterStatus in listOf(Pending, Cancelled)) {
             return
         }
-        val revert = beforeStatus == done && afterStatus != done
+        val revert = beforeStatus == Done && afterStatus != Done
         val factor = BigDecimal.ONE.let { if (revert) it.negate() else it }
         val moneyOper = event.moneyOper
         moneyOper.items.forEach { operItem ->

@@ -21,7 +21,7 @@ class CreateMoneyOperUseCase(
         val balanceSheet = ApiRequestContextHolder.balanceSheet
         createReserveMoneyOper(moneyOper)?.let { resultMoneyOpers.add(it) }
         moneyOper.recurrenceId?.also { skipRecurrenceOper(it) }
-        if ((moneyOper.status == MoneyOperStatus.done)
+        if ((moneyOper.status == MoneyOperStatus.Done)
             && !moneyOper.performed.isAfter(LocalDate.now())) {
             resultMoneyOpers.forEach {  it.newAndComplete() }
         } else {
@@ -46,7 +46,7 @@ class CreateMoneyOperUseCase(
         return if (oper.items.any { it.balance.reserve != null }) {
             val tags = oper.tags
             val dateNum = oper.dateNum
-            val reserveMoneyOper = MoneyOper(MoneyOperStatus.pending, oper.performed, tags, oper.comment, oper.period,
+            val reserveMoneyOper = MoneyOper(MoneyOperStatus.Pending, oper.performed, tags, oper.comment, oper.period,
                 dateNum = dateNum)
             oper.items
                 .filter { it.balance.reserve != null }

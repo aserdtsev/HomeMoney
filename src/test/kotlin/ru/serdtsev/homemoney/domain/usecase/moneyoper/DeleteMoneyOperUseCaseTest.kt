@@ -23,7 +23,7 @@ internal class DeleteMoneyOperUseCaseTest: DomainBaseTest() {
     fun run() {
         val balance = Balance(AccountType.debit, "Cash")
 
-        val origMoneyOper = MoneyOper(MoneyOperStatus.done).apply {
+        val origMoneyOper = MoneyOper(MoneyOperStatus.Done).apply {
             this.addItem(balance, BigDecimal("1.00"))
         }
 
@@ -33,14 +33,14 @@ internal class DeleteMoneyOperUseCaseTest: DomainBaseTest() {
             val actual = it.arguments[0] as MoneyOper
             assertThat(actual)
                 .extracting("status")
-                .isEqualTo(MoneyOperStatus.cancelled)
+                .isEqualTo(MoneyOperStatus.Cancelled)
         }.whenever(domainEventPublisher).publish(origMoneyOper)
 
         useCase.run(origMoneyOper.id)
 
         verify(domainEventPublisher).publish(origMoneyOper)
 
-        val moneyOperStatusChanged = MoneyOperStatusChanged(MoneyOperStatus.done, MoneyOperStatus.cancelled, origMoneyOper)
+        val moneyOperStatusChanged = MoneyOperStatusChanged(MoneyOperStatus.Done, MoneyOperStatus.Cancelled, origMoneyOper)
         verify(domainEventPublisher).publish(moneyOperStatusChanged)
     }
 }

@@ -28,25 +28,25 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
     fun run_done() {
         val balance = Balance(AccountType.debit, "Cash")
         whenever(balanceRepository.findById(balance.id)).thenReturn(balance)
-        val sample =  MoneyOper(done, LocalDate.now().minusMonths(1), period = Period.month)
+        val sample =  MoneyOper(Done, LocalDate.now().minusMonths(1), period = Period.month)
             .apply {this.addItem(balance, BigDecimal("1.00")) }
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
             val model = invocation.arguments[0]
-            if (model is MoneyOper && model.status == template) {
+            if (model is MoneyOper && model.status == Template) {
                 whenever(moneyOperRepository.findById(model.id)).thenReturn(model)
             }
         }
 
         val recurrenceOper = RecurrenceOper.of(sample)
-        val moneyOper = recurrenceOper.createNextMoneyOper().apply { this.status = done }
+        val moneyOper = recurrenceOper.createNextMoneyOper().apply { this.status = Done }
 
         whenever(recurrenceOperRepository.findById(recurrenceOper.id)).thenReturn(recurrenceOper)
 
-        val moneyOper0 = MoneyOper(done, dateNum = 0)
-        val moneyOper1 = MoneyOper(done, dateNum = 1)
-        whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(balanceSheet.id, done, moneyOper.performed))
+        val moneyOper0 = MoneyOper(Done, dateNum = 0)
+        val moneyOper1 = MoneyOper(Done, dateNum = 1)
+        whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(balanceSheet.id, Done, moneyOper.performed))
             .thenReturn(listOf(moneyOper, moneyOper0, moneyOper1))
 
         doAnswer {
@@ -58,7 +58,7 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
             val publishedMoneyOper = it.arguments[0] as MoneyOper
             assertThat(publishedMoneyOper)
                 .extracting("status")
-                .isEqualTo(done)
+                .isEqualTo(Done)
         }.whenever(domainEventPublisher).publish(moneyOper)
 
         val actual = useCase.run(moneyOper)
@@ -69,10 +69,10 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
             .hasSize(1)
             .first()
             .extracting("status", "dateNum")
-            .contains(done, 2)
+            .contains(Done, 2)
         verify(domainEventPublisher, atLeastOnce()).publish(moneyOper)
 
-        val moneyOperStatusChanged = MoneyOperStatusChanged(new, done, moneyOper)
+        val moneyOperStatusChanged = MoneyOperStatusChanged(New, Done, moneyOper)
         verify(domainEventPublisher).publish(moneyOperStatusChanged)
     }
 }

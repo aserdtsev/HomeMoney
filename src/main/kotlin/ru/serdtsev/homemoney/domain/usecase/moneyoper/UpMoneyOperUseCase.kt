@@ -2,7 +2,7 @@ package ru.serdtsev.homemoney.domain.usecase.moneyoper
 
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.done
+import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.Done
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.util.*
@@ -14,7 +14,7 @@ class UpMoneyOperUseCase(private val moneyOperRepository: MoneyOperRepository) {
         val bsId = ApiRequestContextHolder.bsId
         val moneyOper = moneyOperRepository.findById(moneyOperId)
         val moneyOpers = moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(bsId,
-            done, moneyOper.performed)
+            Done, moneyOper.performed)
             .sortedBy { it.dateNum }
             .toMutableList()
         val index = moneyOpers.indexOf(moneyOper)

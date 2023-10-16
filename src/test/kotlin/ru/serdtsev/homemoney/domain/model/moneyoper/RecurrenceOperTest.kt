@@ -4,7 +4,6 @@ import com.nhaarman.mockito_kotlin.*
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
@@ -19,7 +18,7 @@ internal class RecurrenceOperTest : DomainBaseTest() {
     fun createNextMoneyOper() {
         val balance = Balance(AccountType.debit, "Cash")
         whenever(repositoryRegistry.balanceRepository.findById(balance.id)).thenReturn(balance)
-        val sample = MoneyOper(MoneyOperStatus.template).apply {
+        val sample = MoneyOper(MoneyOperStatus.Template).apply {
             addItem(balance, BigDecimal("1.00"))
         }
         val nextDate = sample.performed.plusMonths(1)
@@ -27,7 +26,7 @@ internal class RecurrenceOperTest : DomainBaseTest() {
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
             val model = invocation.arguments[0]
-            if (model is MoneyOper && model.status == MoneyOperStatus.template) {
+            if (model is MoneyOper && model.status == MoneyOperStatus.Template) {
                 whenever(moneyOperRepository.findById(model.id)).thenReturn(model)
             }
         }
@@ -35,7 +34,7 @@ internal class RecurrenceOperTest : DomainBaseTest() {
 
         val actual = recurrenceOper.createNextMoneyOper()
 
-        val expected = MoneyOper(MoneyOperStatus.recurrence, nextDate, recurrenceId = recurrenceOper.id).apply {
+        val expected = MoneyOper(MoneyOperStatus.Recurrence, nextDate, recurrenceId = recurrenceOper.id).apply {
             addItem(balance, BigDecimal("1.00"))
         }
         assertThat(actual)
@@ -46,13 +45,13 @@ internal class RecurrenceOperTest : DomainBaseTest() {
 
     @Test
     fun skipNextDate() {
-        val sample = MoneyOper(MoneyOperStatus.done)
+        val sample = MoneyOper(MoneyOperStatus.Done)
         val nextDate = sample.performed.plusMonths(1)
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
             val model = invocation.arguments[0]
-            if (model is MoneyOper && model.status == MoneyOperStatus.template) {
+            if (model is MoneyOper && model.status == MoneyOperStatus.Template) {
                 whenever(moneyOperRepository.findById(model.id)).thenReturn(model)
             }
         }
@@ -68,13 +67,13 @@ internal class RecurrenceOperTest : DomainBaseTest() {
 
     @Test
     fun calcNextDate() {
-        val sample = MoneyOper(MoneyOperStatus.done)
+        val sample = MoneyOper(MoneyOperStatus.Done)
         val nextDate = sample.performed.plusMonths(1)
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
             val model = invocation.arguments[0]
-            if (model is MoneyOper && model.status == MoneyOperStatus.template) {
+            if (model is MoneyOper && model.status == MoneyOperStatus.Template) {
                 whenever(moneyOperRepository.findById(model.id)).thenReturn(model)
             }
         }
@@ -88,12 +87,12 @@ internal class RecurrenceOperTest : DomainBaseTest() {
 
     @Test
     fun arc() {
-        val sample = MoneyOper(MoneyOperStatus.done)
+        val sample = MoneyOper(MoneyOperStatus.Done)
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
             val model = invocation.arguments[0]
-            if (model is MoneyOper && model.status == MoneyOperStatus.template) {
+            if (model is MoneyOper && model.status == MoneyOperStatus.Template) {
                 whenever(moneyOperRepository.findById(model.id)).thenReturn(model)
             }
         }

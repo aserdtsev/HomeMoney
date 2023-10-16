@@ -2,7 +2,6 @@ package ru.serdtsev.homemoney.port.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperType
@@ -35,7 +34,7 @@ class TagService(
             } else {
                 // Найдем 10 наиболее часто используемых тегов-некатегорий за последние 30 дней.
                 val startDate = LocalDate.now().minusDays(30)
-                moneyOperRepository.findByBalanceSheetAndStatusAndPerformedGreaterThan(MoneyOperStatus.done, startDate)
+                moneyOperRepository.findByBalanceSheetAndStatusAndPerformedGreaterThan(MoneyOperStatus.Done, startDate)
                     .flatMap { it.tags }
                     .filter { !(it.arc) && !it.isCategory && !tags.contains(it.name) }
                     .groupingBy { it }.eachCount()

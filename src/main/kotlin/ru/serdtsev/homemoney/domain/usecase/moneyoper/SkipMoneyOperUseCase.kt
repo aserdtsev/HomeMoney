@@ -13,8 +13,8 @@ class SkipMoneyOperUseCase(
 ) {
     fun run(moneyOper: MoneyOper) {
         when (moneyOper.status) {
-            MoneyOperStatus.pending -> skipPendingMoneyOper(moneyOper)
-            MoneyOperStatus.recurrence -> skipRecurrenceMoneyOper(moneyOper)
+            MoneyOperStatus.Pending -> skipPendingMoneyOper(moneyOper)
+            MoneyOperStatus.Recurrence -> skipRecurrenceMoneyOper(moneyOper)
             else -> throw IllegalStateException("MoneyOper invalid status: $moneyOper")
         }
     }

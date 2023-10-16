@@ -31,10 +31,10 @@ class MoneyOperDao(
     override fun save(domainAggregate: MoneyOper) {
         val sql = """
             insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, status, recurrence_id)
-               values(:id, :bsId, :createdTs, :performed, :dateNum, :comment, :period, :status, :recurrenceId)
+               values(:id, :bsId, :createdTs, :performed, :dateNum, :comment, :period, :status::money_oper_status, :recurrenceId)
             on conflict(id) do update set 
                balance_sheet_id = :bsId, created_ts = :createdTs, trn_date = :performed, date_num = :dateNum,
-                comment = :comment, period = :period, status = :status, recurrence_id = :recurrenceId
+                comment = :comment, period = :period, status = :status::money_oper_status, recurrence_id = :recurrenceId
             
         """.trimIndent()
         val paramMap = with(domainAggregate) {
@@ -87,7 +87,7 @@ class MoneyOperDao(
     override fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
     override fun findByBalanceSheetAndStatus(balanceSheet: BalanceSheet, status: MoneyOperStatus, pageable: Pageable): Page<MoneyOper> {
-        val whereCondition = "balance_sheet_id = :bsId and status = :status"
+        val whereCondition = "balance_sheet_id = :bsId and status = :status::money_oper_status"
         val total = run {
             val sql = "select count(*) from money_oper where $whereCondition"
             val paramMap = mapOf("bsId" to balanceSheet.id, "status" to status.toString())
@@ -110,7 +110,7 @@ class MoneyOperDao(
 
     override fun findByBalanceSheetAndStatusAndPerformed(balanceSheet: BalanceSheet,
         status: MoneyOperStatus, performed: LocalDate, pageable: Pageable): Page<MoneyOper> {
-        val whereCondition = "balance_sheet_id = :bsId and status = :status and trn_date = :performed"
+        val whereCondition = "balance_sheet_id = :bsId and status = :status::money_oper_status and trn_date = :performed"
         val total = run {
             val sql = "select count(*) from money_oper where $whereCondition"
             val paramMap = mapOf("bsId" to balanceSheet.id, "status" to status.toString(), "performed" to performed)
@@ -126,7 +126,7 @@ class MoneyOperDao(
     override fun findByBalanceSheetAndStatusAndPerformed(bsId: UUID, status: MoneyOperStatus, performed: LocalDate): List<MoneyOper> {
         val sql = """
             select * from money_oper 
-            where balance_sheet_id = :bsId and status = :status and trn_date = :performed 
+            where balance_sheet_id = :bsId and status = :status::money_oper_status and trn_date = :performed 
             order by date_num 
         """.trimIndent()
         val paramMap =
@@ -138,7 +138,7 @@ class MoneyOperDao(
         performed: LocalDate): List<MoneyOper> {
         val sql = """
             select * from money_oper 
-            where balance_sheet_id = :bsId and status = :status and trn_date > :performed 
+            where balance_sheet_id = :bsId and status = :status::money_oper_status and trn_date > :performed 
             order by date_num 
         """.trimIndent()
         val paramMap = mapOf(
@@ -185,7 +185,7 @@ class MoneyOperDao(
             from money_oper o  
             where o.balance_sheet_id = :bsId 
                 and o.trn_date between :startDate and :finishDate
-                and o.status = :status
+                and o.status = :status::money_oper_status
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf("bsId" to bsId,
@@ -199,7 +199,7 @@ class MoneyOperDao(
             from money_oper o
             join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
-                and o.status = 'done'
+                and o.status = 'Done'::money_oper_status
                 and i.performed < :startDate 
                 and (i.repayment_schedule -> 0 ->> 'endDate')::date between :startDate and :finishDate
         """.trimIndent()
@@ -214,7 +214,7 @@ class MoneyOperDao(
             from money_oper o
             join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
-                and o.status = 'done'
+                and o.status = 'Done'::money_oper_status
                 and i.balance_id = :balanceId
                 and i.performed <= :operDate 
                 and i.repayment_schedule is not null
@@ -254,7 +254,7 @@ class MoneyOperDao(
             from money_oper o
                 join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
-                and o.status = 'done'
+                and o.status = 'Done'::money_oper_status
                 and (i.repayment_schedule -> 0 ->> 'endDate')::date > :currentDate
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id

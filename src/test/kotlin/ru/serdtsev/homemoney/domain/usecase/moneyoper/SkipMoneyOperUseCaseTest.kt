@@ -25,7 +25,7 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
     fun run_byPendingMoneyOper() {
         val balance = Balance(AccountType.debit, "Cash")
         whenever(balanceRepository.findById(balance.id)).thenReturn(balance)
-        val moneyOper = MoneyOper(MoneyOperStatus.pending).apply {
+        val moneyOper = MoneyOper(MoneyOperStatus.Pending).apply {
             this.addItem(balance, BigDecimal("1.00"))
         }
 
@@ -33,7 +33,7 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
             val actual = it.arguments[0] as MoneyOper
             assertThat(actual)
                 .extracting("status")
-                .isEqualTo(MoneyOperStatus.cancelled)
+                .isEqualTo(MoneyOperStatus.Cancelled)
         }.whenever(domainEventPublisher).publish(moneyOper)
 
         useCase.run(moneyOper)
@@ -45,7 +45,7 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
     fun run_byRecurrenceOper() {
         val balance = Balance(AccountType.debit, "Cash")
             .apply { whenever(balanceRepository.findById(id)).thenReturn(this) }
-        val sample =  MoneyOper(MoneyOperStatus.done, LocalDate.now().minusMonths(1)).apply {
+        val sample =  MoneyOper(MoneyOperStatus.Done, LocalDate.now().minusMonths(1)).apply {
             this.addItem(balance, BigDecimal("1.00"))
             this.period = Period.month
         }
@@ -54,13 +54,13 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
         whenever(repositoryRegistry.moneyOperRepository).thenReturn(moneyOperRepository)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
             val model = invocation.arguments[0]
-            if (model is MoneyOper && model.status == MoneyOperStatus.template) {
+            if (model is MoneyOper && model.status == MoneyOperStatus.Template) {
                 whenever(moneyOperRepository.findById(model.id)).thenReturn(model)
             }
         }
 
         val recurrenceOper = RecurrenceOper.of(sample)
-        val moneyOper = MoneyOper(MoneyOperStatus.recurrence, recurrenceId = recurrenceOper.id).apply {
+        val moneyOper = MoneyOper(MoneyOperStatus.Recurrence, recurrenceId = recurrenceOper.id).apply {
             this.addItem(balance, BigDecimal("1.00"))
         }
 

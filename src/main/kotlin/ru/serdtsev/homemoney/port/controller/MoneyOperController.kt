@@ -51,7 +51,7 @@ class MoneyOperController(
             val opers = ArrayList<MoneyOperDto>()
             val balanceSheet = apiRequestContextHolder.getBalanceSheet()
             if (offset == 0) {
-                val pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.pending, search, limit + 1, offset)
+                val pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.Pending, search, limit + 1, offset)
                         .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
                 opers.addAll(pendingOpers)
                 val beforeDate = LocalDate.now().plusDays(30)
@@ -60,7 +60,7 @@ class MoneyOperController(
                 opers.addAll(recurrenceOpers)
                 opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
             }
-            val doneOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.done, search, limit + 1, offset)
+            val doneOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.Done, search, limit + 1, offset)
                     .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
             val hasNext = doneOpers.size > limit
             opers.addAll(if (hasNext) doneOpers.subList(0, limit) else doneOpers)

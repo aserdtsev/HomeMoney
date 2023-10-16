@@ -99,7 +99,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.addToOpers = function(list) {
     let today = $scope.getToday();
     list.forEach(function(oper) {
-      let groupName = (oper.status === "done") ? oper.operDate : "Ближайшие";
+      let groupName = (oper.status === "Done") ? oper.operDate : "Ближайшие";
       let groupList = $scope.getGroupList(groupName);
       groupList.items = groupList.items.concat(oper);
       if (groupName === 'Ближайшие' && (new Date(oper.operDate) - today) === 0) {
@@ -260,7 +260,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       }
     }
     oper.isNew = true;
-    oper.status = 'done';
+    oper.status = 'Done';
     oper.operDate = performedAt;
     oper.isEdited = true;
     let groupList = $scope.getGroupList('Новые');
@@ -288,8 +288,8 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     if (oper.operDate > today) {
       oper.operDate = today;
     }
-    oper.isNew = oper.status === 'recurrence';
-    oper.status = 'done';
+    oper.isNew = oper.status === 'Recurrence';
+    oper.status = 'Done';
     oper.isEdited = true;
   }
 
@@ -306,7 +306,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       }
       item.performedAt = oper.operDate;
     }
-    if (oper.isNew || oper.status === 'recurrence') {
+    if (oper.isNew || oper.status === 'Recurrence') {
       $scope.createOper(oper);
     } else {
       $scope.updateOper(oper);

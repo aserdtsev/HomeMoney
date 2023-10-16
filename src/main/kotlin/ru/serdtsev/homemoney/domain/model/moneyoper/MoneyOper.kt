@@ -5,7 +5,6 @@ import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
-import ru.serdtsev.homemoney.domain.repository.RepositoryRegistry
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.io.Serializable
 import java.math.BigDecimal
@@ -85,7 +84,7 @@ class MoneyOper(
                 .reduce { acc, value -> acc.add(value) }
 
     fun new() {
-        status = new
+        status = New
     }
 
     fun newAndComplete() {
@@ -99,30 +98,30 @@ class MoneyOper(
     }
 
     fun complete() {
-        assert(status in listOf(new, pending, cancelled)) { status }
+        assert(status in listOf(New, Pending, Cancelled)) { status }
         assert(!performed.isAfter(LocalDate.now()))
         val beforeStatus = status
-        status = done
+        status = Done
         DomainEventPublisher.instance.publish(this)
         val statusChanged = MoneyOperStatusChanged(beforeStatus, status, this)
         DomainEventPublisher.instance.publish(statusChanged)
     }
 
     fun postpone() {
-        assert(status in listOf(done, pending)) { status }
+        assert(status in listOf(Done, Pending)) { status }
         val beforeStatus = status
-        status = pending
+        status = Pending
         DomainEventPublisher.instance.publish(this)
-        if (beforeStatus != pending) {
+        if (beforeStatus != Pending) {
             val statusChanged = MoneyOperStatusChanged(beforeStatus, status, this)
             DomainEventPublisher.instance.publish(statusChanged)
         }
     }
 
     fun cancel() {
-        assert(status in listOf(done,  pending, template))
+        assert(status in listOf(Done,  Pending, Template))
         val beforeStatus = status
-        status = cancelled
+        status = Cancelled
         DomainEventPublisher.instance.publish(this)
         val statusChanged = MoneyOperStatusChanged(beforeStatus, status, this)
         DomainEventPublisher.instance.publish(statusChanged)
@@ -134,7 +133,7 @@ class MoneyOper(
     }
 
     fun createTemplate(): MoneyOper {
-        val template = MoneyOper(template, performed, tags, comment, period, dateNum = 0)
+        val template = MoneyOper(Template, performed, tags, comment, period, dateNum = 0)
         items.forEach { template.addItem(it.balance, it.value, it.performed) }
         return template
     }
@@ -172,10 +171,10 @@ class MoneyOper(
         fun merge(from: MoneyOper, to: MoneyOper) {
             assert(from.id == to.id)
             val balanceEquals = balanceEquals(from, to)
-            if (to.status == done && !balanceEquals) {
+            if (to.status == Done && !balanceEquals) {
                 to.cancel()
             }
-            if (from.status == done && to.performed.isAfter(from.performed)) {
+            if (from.status == Done && to.performed.isAfter(from.performed)) {
                 to.postpone()
             }
 
@@ -186,7 +185,7 @@ class MoneyOper(
             to.period = from.period
             to.comment = from.comment
 
-            if (from.status == done && !balanceEquals || to.status == pending && from.status == done) {
+            if (from.status == Done && !balanceEquals || to.status == Pending && from.status == Done) {
                 to.complete()
             } else {
                 DomainEventPublisher.instance.publish(to)

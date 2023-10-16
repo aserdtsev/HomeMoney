@@ -42,7 +42,7 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
     @Test
     internal fun crud() {
         val value = BigDecimal("-1.00")
-        val moneyOper = MoneyOper(MoneyOperStatus.done, tags = listOf(tagA), comment = "comment")
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, tags = listOf(tagA), comment = "comment")
             .apply {
                 addItem(balanceA, value)
                 moneyOperDao.save(this)
@@ -67,17 +67,17 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
     @Test
     internal fun findByBalanceSheetAndValueOrderByPerformedDesc() {
         val value = BigDecimal("1.00")
-        val moneyOper1 = MoneyOper(MoneyOperStatus.done, dateNum = 0).apply {
+        val moneyOper1 = MoneyOper(MoneyOperStatus.Done, dateNum = 0).apply {
             addItem(balanceA, value.negate())
             addItem(balanceB, value)
             moneyOperDao.save(this)
         }
-        val moneyOper2 = MoneyOper(MoneyOperStatus.done, dateNum = 1).apply {
+        val moneyOper2 = MoneyOper(MoneyOperStatus.Done, dateNum = 1).apply {
             addItem(balanceB, value.negate())
             addItem(balanceA, value)
             moneyOperDao.save(this)
         }
-        MoneyOper(MoneyOperStatus.done, dateNum = 2).apply {
+        MoneyOper(MoneyOperStatus.Done, dateNum = 2).apply {
             addItem(balanceA, BigDecimal("-2.00"))
             moneyOperDao.save(this)
         }
@@ -107,10 +107,10 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
     @Test
     internal fun findByBalanceSheetAndPerformedBetweenAndMoneyOperStatus() {
-        val moneyOper = MoneyOper(MoneyOperStatus.done)
+        val moneyOper = MoneyOper(MoneyOperStatus.Done)
         moneyOperDao.save(moneyOper)
 
         moneyOperDao.findByPerformedBetweenAndMoneyOperStatus(LocalDate.now(), LocalDate.now(),
-            MoneyOperStatus.done).also { assertEquals(listOf(moneyOper), it) }
+            MoneyOperStatus.Done).also { assertEquals(listOf(moneyOper), it) }
     }
 }

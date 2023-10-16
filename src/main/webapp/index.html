@@ -113,7 +113,7 @@
       </div>
       <div ng-repeat="oper in groupList.items" ng-show="groupList.expanded" class="list-item-block">
         <div ng-show="!oper.isEdited">
-          <span ng-hide="oper.status == 'done'">{{oper.operDate}}</span>
+          <span ng-hide="oper.status == 'Done'">{{oper.operDate}}</span>
           <a href=""
              ng-click="oper.isEdited=true"
              ng-bind-html="getAmountAsHtml(oper)"
@@ -125,19 +125,19 @@
           <span class="tag" ng-repeat="tag in oper['tags']">{{tag}}</span>
           <span>
             <a href=""
-               ng-show="oper.status == 'done'"
+               ng-show="oper.status == 'Done'"
                ng-click="upOper(oper)">вверх</a>
             <a href=""
-               ng-show="oper.status == 'done' && oper.period != 'SINGLE'"
+               ng-show="oper.status == 'Done' && oper.period != 'SINGLE'"
                ng-click="createRecurrenceOperByOper(oper)">повторять</a>
             <a href=""
-               ng-show="oper.status == 'pending' || oper.status == 'recurrence'"
+               ng-show="oper.status == 'Pending' || oper.status == 'Recurrence'"
                ng-click="completeOper(oper)">выполнить</a>
             <a href=""
-               ng-hide="(oper.status == 'recurrence' || oper.status == 'pending') && oper.recurrenceId != null"
+               ng-hide="(oper.status == 'Recurrence' || oper.status == 'Pending') && oper.recurrenceId != null"
                ng-click="deleteOper(oper)">удалить</a>
             <a href=""
-               ng-show="(oper.status == 'recurrence' || oper.status == 'pending') && oper.recurrenceId != null"
+               ng-show="(oper.status == 'Recurrence' || oper.status == 'Pending') && oper.recurrenceId != null"
                ng-click="skipOper(oper)">пропустить</a>
           </span>
           <div ng-show="oper['comment'].length > 0">

@@ -62,22 +62,22 @@ internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
             val expected1 = BigDecimal("101.00")
             val expected2 = BigDecimal("99.00")
             return Stream.of(
-                arguments(pending, done, expected1),
-                arguments(cancelled, done, expected1),
-                arguments(new, done, expected1),
-                arguments(done, pending, expected2),
-                arguments(done, cancelled, expected2)
+                arguments(Pending, Done, expected1),
+                arguments(Cancelled, Done, expected1),
+                arguments(New, Done, expected1),
+                arguments(Done, Pending, expected2),
+                arguments(Done, Cancelled, expected2)
             )
         }
 
         @JvmStatic
         fun paramsFor_handler_balanceNotChanged(): Stream<Arguments>? {
             return Stream.of(
-                arguments(pending, cancelled),
-                arguments(cancelled, pending),
-                arguments(new, cancelled),
-                arguments(new, pending),
-                arguments(recurrence, pending)
+                arguments(Pending, Cancelled),
+                arguments(Cancelled, Pending),
+                arguments(New, Cancelled),
+                arguments(New, Pending),
+                arguments(Recurrence, Pending)
             )
         }
     }

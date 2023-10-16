@@ -33,13 +33,13 @@ internal class MoneyOperTest: DomainBaseTest() {
 
     @Test
     fun complete() {
-        val oper = createTransferFromCheckingAccountToCash(pending)
+        val oper = createTransferFromCheckingAccountToCash(Pending)
 
         oper.complete()
 
-        assertEquals(done, oper.status)
+        assertEquals(Done, oper.status)
         verify(domainEventPublisher).publish(oper)
-        checkPublishMoneyOperStatusChanged(pending, done, oper)
+        checkPublishMoneyOperStatusChanged(Pending, Done, oper)
     }
 
     @Test
@@ -50,33 +50,33 @@ internal class MoneyOperTest: DomainBaseTest() {
 
         oper.postpone()
 
-        assertEquals(pending, oper.status)
+        assertEquals(Pending, oper.status)
         verify(domainEventPublisher).publish(oper)
-        checkPublishMoneyOperStatusChanged(done, pending, oper)
+        checkPublishMoneyOperStatusChanged(Done, Pending, oper)
     }
 
     @Test
     fun cancel() {
-        val oper = createTransferFromCheckingAccountToCash(done)
+        val oper = createTransferFromCheckingAccountToCash(Done)
 
         oper.cancel()
 
-        assertEquals(cancelled, oper.status)
+        assertEquals(Cancelled, oper.status)
         verify(domainEventPublisher).publish(oper)
-        checkPublishMoneyOperStatusChanged(done, cancelled, oper)
+        checkPublishMoneyOperStatusChanged(Done, Cancelled, oper)
     }
 
     @Test
     internal fun skipPending() {
         val oper = createIncomeToCash().apply {
-            this.status = pending
+            this.status = Pending
         }
 
         oper.skipPending()
 
-        assertEquals(cancelled, oper.status)
+        assertEquals(Cancelled, oper.status)
         verify(domainEventPublisher).publish(oper)
-        checkPublishMoneyOperStatusChanged(pending, cancelled, oper)
+        checkPublishMoneyOperStatusChanged(Pending, Cancelled, oper)
     }
 
     @Test
@@ -94,7 +94,7 @@ internal class MoneyOperTest: DomainBaseTest() {
         oper.addItem(cash, BigDecimal.TEN, LocalDate.now(), 0, id = UUID.randomUUID())
         assertFalse(MoneyOper.balanceEquals(oper, origOper))
 
-        origOper = createTransferFromCheckingAccountToCash(done)
+        origOper = createTransferFromCheckingAccountToCash(Done)
         oper = SerializationUtils.clone(origOper)
         oper.items.removeAt(0)
         assertFalse(MoneyOper.balanceEquals(oper, origOper))
@@ -103,11 +103,11 @@ internal class MoneyOperTest: DomainBaseTest() {
     @Test
     fun merge() {
         val origTags = listOf(Tag.of("tag1"), Tag.of("tag2"))
-        val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
+        val origOper = MoneyOper(Done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
         val newTags = listOf(Tag.of("tag2"), Tag.of("tag3"))
-        val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
+        val newOper = MoneyOper(origOper.id, status = Done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance1, BigDecimal("-30.00"))
 
@@ -123,18 +123,18 @@ internal class MoneyOperTest: DomainBaseTest() {
         assertThat(origOper.tags).containsAll(newTags)
 
         verify(domainEventPublisher, times(2)).publish(origOper)
-        checkPublishMoneyOperStatusChanged(done, cancelled, origOper)
-        checkPublishMoneyOperStatusChanged(cancelled, done, origOper)
+        checkPublishMoneyOperStatusChanged(Done, Cancelled, origOper)
+        checkPublishMoneyOperStatusChanged(Cancelled, Done, origOper)
     }
 
     @Test
     fun `merge changed balance`() {
         val origTags = listOf(Tag.of("tag1"), Tag.of("tag2"))
-        val origOper = MoneyOper(done, tags = origTags, comment = "orig comment", period = Period.month)
+        val origOper = MoneyOper(Done, tags = origTags, comment = "orig comment", period = Period.month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
         val newTags = listOf(Tag.of("tag2"), Tag.of("tag3"))
-        val newOper = MoneyOper(origOper.id, status = done, tags = newTags,
+        val newOper = MoneyOper(origOper.id, status = Done, tags = newTags,
             comment = "new comment", period = Period.single)
         newOper.addItem(balance2, BigDecimal("-30.00"))
 
@@ -147,32 +147,32 @@ internal class MoneyOperTest: DomainBaseTest() {
 
         verify(domainEventPublisher, times(2)).publish(origOper)
 
-        checkPublishMoneyOperStatusChanged(done, cancelled, origOper)
-        checkPublishMoneyOperStatusChanged(cancelled, done, origOper)
+        checkPublishMoneyOperStatusChanged(Done, Cancelled, origOper)
+        checkPublishMoneyOperStatusChanged(Cancelled, Done, origOper)
     }
 
     @Test
     fun merge_pendingToDone() {
-        val origOper = MoneyOper(pending)
+        val origOper = MoneyOper(Pending)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
-        val newOper = MoneyOper(origOper.id, status = done)
+        val newOper = MoneyOper(origOper.id, status = Done)
         newOper.addItem(balance2, BigDecimal("-20.00"))
 
         MoneyOper.merge(newOper, origOper)
 
-        assertThat(origOper).extracting("status").isEqualTo(done)
+        assertThat(origOper).extracting("status").isEqualTo(Done)
     }
 
     private fun createExpenseFromCash(): MoneyOper {
-        val oper = MoneyOper(UUID.randomUUID(), mutableListOf(), done, LocalDate.now(), ArrayList(),
+        val oper = MoneyOper(UUID.randomUUID(), mutableListOf(), Done, LocalDate.now(), ArrayList(),
             "", null, dateNum = 0)
         oper.addItem(cash, BigDecimal.ONE.negate(), LocalDate.now(), 0, id = UUID.randomUUID())
         return oper
     }
 
     private fun createIncomeToCash(): MoneyOper {
-        val oper = MoneyOper(done)
+        val oper = MoneyOper(Done)
         oper.addItem(cash, BigDecimal.ONE, LocalDate.now(), 0, id = UUID.randomUUID())
         return oper
     }

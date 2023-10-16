@@ -18,7 +18,7 @@ data class RecurrenceOper(
     }
 
     fun createNextMoneyOper(): MoneyOper {
-        val moneyOper = MoneyOper(MoneyOperStatus.recurrence,
+        val moneyOper = MoneyOper(MoneyOperStatus.Recurrence,
             nextDate,
             template.tags,
             template.comment,

@@ -51,7 +51,7 @@ internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
     }
 
     private fun createRecurrenceOper(): RecurrenceOper {
-        val sample = MoneyOper(MoneyOperStatus.done)
+        val sample = MoneyOper(MoneyOperStatus.Done)
         moneyOperDao.save(sample)
         return RecurrenceOper.of(sample)
     }

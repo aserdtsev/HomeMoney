@@ -83,7 +83,7 @@ open class Balance(
                 if (from.type == AccountType.reserve) {
                     to.value = from.value
                 } else {
-                    val moneyOper = MoneyOper(MoneyOperStatus.pending, LocalDate.now(),
+                    val moneyOper = MoneyOper(MoneyOperStatus.Pending, LocalDate.now(),
                         emptyList(), "корректировка остатка", Period.single, dateNum = 0)
                     val amount = from.value - to.value
                     moneyOper.addItem(to, amount, moneyOper.performed)

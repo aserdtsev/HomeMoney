@@ -114,6 +114,8 @@ create table tag2obj
 
 comment on column tag2obj.obj_type is 'Тип объекта, заданного obj_id';
 
+create type money_oper_status as enum ('Done', 'Pending', 'Recurrence', 'Cancelled', 'Template');
+
 create table money_oper
 (
     id uuid not null
@@ -130,7 +132,7 @@ create table money_oper
         constraint money_oper_parent_id_fk
             references money_oper (id),
     period varchar(8) not null,
-    status varchar(10) not null,
+    status money_oper_status not null,
     recurrence_id uuid
 );
 

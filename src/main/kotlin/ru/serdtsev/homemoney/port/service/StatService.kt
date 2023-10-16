@@ -58,9 +58,9 @@ class StatService(
             Map<LocalDate, BsDayStat> {
         val fromDate = currentDate.minusDays(interval)
         val toDate = currentDate.plusDays(interval)
-        val turnovers = getRealTurnovers(MoneyOperStatus.done, fromDate, currentDate, interval)
+        val turnovers = getRealTurnovers(MoneyOperStatus.Done, fromDate, currentDate, interval)
             .plus(getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
-            .plus(getRealTurnovers(MoneyOperStatus.pending, LocalDate.ofEpochDay(0), currentDate, interval))
+            .plus(getRealTurnovers(MoneyOperStatus.Pending, LocalDate.ofEpochDay(0), currentDate, interval))
             .plus(getRecurrenceTurnovers(currentDate, toDate))
             .plus(getTrendTurnovers(currentDate, interval))
         val map = TreeMap<LocalDate, BsDayStat>()
@@ -131,7 +131,7 @@ class StatService(
 
     private fun getCategories(fromDate: LocalDate, toDate: LocalDate): List<CategoryStat> {
         val map = moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, toDate,
-            MoneyOperStatus.done)
+            MoneyOperStatus.Done)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .filter {
                 val item = it.first
@@ -179,7 +179,7 @@ class StatService(
                 val balance = item.balance
                 val turnoverType = TurnoverType.valueOf(balance.type)
                 val creditCardDebtDelta = if (item.dateWithGracePeriod > item.performed) item.value.negate() else BigDecimal.ZERO
-                val operDate = if (status == MoneyOperStatus.pending && item.performed < currentDate) currentDate
+                val operDate = if (status == MoneyOperStatus.Pending && item.performed < currentDate) currentDate
                         else item.performed
                 Turnover(operDate, turnoverType, item.value, creditCardDebtDelta).apply { itemTurnovers.add(this) }
                 if (creditCardDebtDelta > BigDecimal.ZERO && item.dateWithGracePeriod <= currentDate.plusDays(interval)) {
@@ -211,7 +211,7 @@ class StatService(
         log.info { "getTrendTurnovers start" }
         val fromDate = currentDate.minusDays(interval)
         val turnovers = moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(
-            fromDate, currentDate, MoneyOperStatus.done)
+            fromDate, currentDate, MoneyOperStatus.Done)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .filter {
                 val item = it.first
