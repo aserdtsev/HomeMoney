@@ -16,15 +16,16 @@ class CreateMoneyOperUseCase(
     private val moneyOperRepository: MoneyOperRepository
 ) {
     fun run(moneyOper: MoneyOper): List<MoneyOper> {
+        assert(!moneyOperRepository.exists(moneyOper.id))
         val resultMoneyOpers = mutableListOf(moneyOper)
         val balanceSheet = ApiRequestContextHolder.balanceSheet
         createReserveMoneyOper(moneyOper)?.let { resultMoneyOpers.add(it) }
         moneyOper.recurrenceId?.also { skipRecurrenceOper(it) }
-        if ((moneyOper.status in listOf(MoneyOperStatus.done, MoneyOperStatus.doneNew))
+        if ((moneyOper.status == MoneyOperStatus.done)
             && !moneyOper.performed.isAfter(LocalDate.now())) {
-            resultMoneyOpers.forEach { it.complete() }
+            resultMoneyOpers.forEach {  it.newAndComplete() }
         } else {
-            resultMoneyOpers.forEach { it.postpone() }
+            resultMoneyOpers.forEach {  it.newAndPostpone() }
         }
         resultMoneyOpers.forEach { resultMoneyOper ->
             moneyOperRepository

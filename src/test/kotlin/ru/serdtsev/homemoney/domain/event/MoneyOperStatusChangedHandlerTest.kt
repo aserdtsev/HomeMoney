@@ -64,7 +64,7 @@ internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
             return Stream.of(
                 arguments(pending, done, expected1),
                 arguments(cancelled, done, expected1),
-                arguments(doneNew, done, expected1),
+                arguments(new, done, expected1),
                 arguments(done, pending, expected2),
                 arguments(done, cancelled, expected2)
             )
@@ -75,8 +75,8 @@ internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
             return Stream.of(
                 arguments(pending, cancelled),
                 arguments(cancelled, pending),
-                arguments(doneNew, cancelled),
-                arguments(doneNew, pending),
+                arguments(new, cancelled),
+                arguments(new, pending),
                 arguments(recurrence, pending)
             )
         }

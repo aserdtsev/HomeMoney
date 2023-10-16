@@ -84,8 +84,22 @@ class MoneyOper(
                 .map { it.value }
                 .reduce { acc, value -> acc.add(value) }
 
+    fun new() {
+        status = new
+    }
+
+    fun newAndComplete() {
+        new()
+        complete()
+    }
+
+    fun newAndPostpone() {
+        new()
+        postpone()
+    }
+
     fun complete() {
-        assert(status in listOf(doneNew, pending, cancelled)) { status }
+        assert(status in listOf(new, pending, cancelled)) { status }
         assert(!performed.isAfter(LocalDate.now()))
         val beforeStatus = status
         status = done
@@ -96,7 +110,6 @@ class MoneyOper(
 
     fun postpone() {
         assert(status in listOf(done, pending)) { status }
-        assert(performed.isAfter(LocalDate.now())) { performed }
         val beforeStatus = status
         status = pending
         DomainEventPublisher.instance.publish(this)

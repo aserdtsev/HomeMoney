@@ -59,10 +59,10 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val interval = 1L
 
         val m1Date = currentDate.minusDays(1)
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(salaryTag), period = Period.single)
+        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(salaryTag), period = Period.single)
             .apply {
                 addItem(debitCard, BigDecimal("100.00"))
-                complete()
+                newAndComplete()
             }
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
@@ -89,10 +89,10 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(interval).minusDays(1L)
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(salaryTag), period = Period.month)
+        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(salaryTag), period = Period.month)
             .apply {
                 addItem(debitCard, BigDecimal("100000.00"))
-                complete()
+                newAndComplete()
                 RecurrenceOper.of(this)
             }
 
@@ -126,11 +126,11 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(1)
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month,
+        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag), period = Period.month,
             comment = "Продукты, дебетовая карта")
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
-                complete()
+                newAndComplete()
             }
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
@@ -174,18 +174,18 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val p1Date = currentDate.plusDays(1)
         val p2Date = currentDate.plusDays(2)
 
-        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m2Date, mutableListOf(foodstuffsTag), period = Period.month)
+        val moneyOper = MoneyOper(MoneyOperStatus.done, m2Date, mutableListOf(foodstuffsTag), period = Period.month)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
-                complete()
+                newAndComplete()
             }
         val p3Date = moneyOper.items[0].dateWithGracePeriod
         val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
 
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
-                complete()
+                newAndComplete()
                 assert(items[0].dateWithGracePeriod == p3Date)
             }
 
@@ -240,10 +240,10 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = LocalDate.parse("2023-08-12")
 
-        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
+        val moneyOper = MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
-                complete()
+                newAndComplete()
             }
         val p1Date = moneyOper.items[0].dateWithGracePeriod
         val interval = ChronoUnit.DAYS.between(currentDate, p1Date)
@@ -275,19 +275,19 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
 
-        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
+        val moneyOper = MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
-                complete()
+                newAndComplete()
             }
         val p3Date = moneyOper.items[0].dateWithGracePeriod
         val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
 
-        MoneyOper(MoneyOperStatus.doneNew, currentDate, period = Period.single)
+        MoneyOper(MoneyOperStatus.done, currentDate, period = Period.single)
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
                 addItem(creditCard, BigDecimal("100.00"))
-                complete()
+                newAndComplete()
             }
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
@@ -334,11 +334,11 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(interval).minusDays(1L)
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, period = Period.month)
+        MoneyOper(MoneyOperStatus.done, m1Date, period = Period.month)
             .apply {
                 addItem(debitCard, BigDecimal("-25000.00"))
                 addItem(credit, BigDecimal("25000.00"))
-                complete()
+                newAndComplete()
                 RecurrenceOper.of(this)
             }
 
@@ -366,10 +366,10 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
         ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
         val m1Date = currentDate.minusDays(1)
-        val moneyOper = MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+        val moneyOper = MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
-                complete()
+                newAndComplete()
             }
         val recurrenceOper = RecurrenceOper.of(moneyOper)
         val p1Date = recurrenceOper.nextDate
@@ -415,15 +415,15 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(1)
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(salaryTag), period = Period.single)
+        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(salaryTag), period = Period.single)
             .apply {
                 addItem(debitCard, BigDecimal("100.00"))
-                complete()
+                newAndComplete()
             }
-        MoneyOper(MoneyOperStatus.doneNew, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+        MoneyOper(MoneyOperStatus.done, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
-                complete()
+                newAndComplete()
             }
         MoneyOper(MoneyOperStatus.pending, p1Date, mutableListOf(foodstuffsTag), period = Period.single)
             .apply {

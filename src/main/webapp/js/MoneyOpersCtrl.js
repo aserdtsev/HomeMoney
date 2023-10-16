@@ -259,7 +259,8 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
         items.push({id: randomUUID(), balanceId: null, value: null, sgn: 1, performedAt: performedAt, index: 1})
       }
     }
-    oper.status = 'doneNew';
+    oper.isNew = true;
+    oper.status = 'done';
     oper.operDate = performedAt;
     oper.isEdited = true;
     let groupList = $scope.getGroupList('Новые');
@@ -287,7 +288,8 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     if (oper.operDate > today) {
       oper.operDate = today;
     }
-    oper.status = oper.status === 'recurrence' ? 'doneNew' : 'done';
+    oper.isNew = oper.status === 'recurrence';
+    oper.status = 'done';
     oper.isEdited = true;
   }
 
@@ -304,7 +306,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       }
       item.performedAt = oper.operDate;
     }
-    if (oper.status === 'doneNew' || oper.status === 'recurrence') {
+    if (oper.isNew || oper.status === 'recurrence') {
       $scope.createOper(oper);
     } else {
       $scope.updateOper(oper);

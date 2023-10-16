@@ -15,11 +15,11 @@ class MoneyOperStatusChangedHandler(val moneyOperRepository: MoneyOperRepository
     @EventListener
     fun handler(event: MoneyOperStatusChanged) {
         assert(event.afterStatus == event.moneyOper.status) { event.moneyOper }
-        assert(event.afterStatus != doneNew) { event.moneyOper }
+        assert(event.afterStatus != new) { event.moneyOper }
 
         val beforeStatus = event.beforeStatus
         val afterStatus = event.afterStatus
-        if (beforeStatus in listOf(pending, cancelled, doneNew, recurrence) && afterStatus in listOf(pending, cancelled)) {
+        if (beforeStatus in listOf(new, pending, cancelled, recurrence) && afterStatus in listOf(pending, cancelled)) {
             return
         }
         val revert = beforeStatus == done && afterStatus != done

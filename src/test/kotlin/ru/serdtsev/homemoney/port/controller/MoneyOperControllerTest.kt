@@ -65,7 +65,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
         val recurrenceOper = RecurrenceOper.of(sample)
 
         val moneyOper = recurrenceOper.createNextMoneyOper().apply {
-            status = MoneyOperStatus.doneNew
+            status = MoneyOperStatus.done
         }
         val moneyOperDto = conversionService.convert(moneyOper, MoneyOperDto::class.java)!!
 
@@ -88,7 +88,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     @Test
     @Ignore
     fun createMoneyOper_simpleIncome() {
-        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.doneNew, LocalDate.now(), Period.single,
+        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.done, LocalDate.now(), Period.single,
             "comment", listOf("Зарплата"), 0, null, null)
         val moneyOperItemDto = MoneyOperItemDto(UUID.randomUUID(), cashBalance.id, cashBalance.name, BigDecimal("1.00"),
             1, balanceSheet.currencyCode, now)
@@ -114,7 +114,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     @Test
     @Ignore
     fun createMoneyOper_transfer() {
-        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.doneNew, LocalDate.now(), Period.single,
+        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.done, LocalDate.now(), Period.single,
             "comment", listOf(), 0, null, null)
         val moneyOperItemDto1 = MoneyOperItemDto(UUID.randomUUID(), cashBalance.id, cashBalance.name, BigDecimal("1.00"),
             -1, balanceSheet.currencyCode, moneyOperDto.operDate)

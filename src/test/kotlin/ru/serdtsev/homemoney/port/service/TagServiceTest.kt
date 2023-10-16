@@ -51,7 +51,7 @@ internal class TagServiceTest : SpringBootBaseTest() {
     }
 
     private fun createMoneyOperWithTags(tags: List<Tag>): MoneyOper {
-        val moneyOper = MoneyOper(UUID.randomUUID(), mutableListOf(), MoneyOperStatus.doneNew,
+        val moneyOper = MoneyOper(UUID.randomUUID(), mutableListOf(), MoneyOperStatus.done,
             LocalDate.now(), tags, null, Period.month, dateNum = 0)
         val balance1 = Balance(AccountType.debit, "Some account name", BigDecimal.ZERO)
         val balance2 = Balance(AccountType.debit, "Some account name", BigDecimal.ZERO)

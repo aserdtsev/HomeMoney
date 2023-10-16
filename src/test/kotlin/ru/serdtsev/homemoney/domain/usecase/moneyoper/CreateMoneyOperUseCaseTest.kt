@@ -40,7 +40,7 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
         }
 
         val recurrenceOper = RecurrenceOper.of(sample)
-        val moneyOper = recurrenceOper.createNextMoneyOper().apply { this.status = doneNew }
+        val moneyOper = recurrenceOper.createNextMoneyOper().apply { this.status = done }
 
         whenever(recurrenceOperRepository.findById(recurrenceOper.id)).thenReturn(recurrenceOper)
 
@@ -72,7 +72,7 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
             .contains(done, 2)
         verify(domainEventPublisher, atLeastOnce()).publish(moneyOper)
 
-        val moneyOperStatusChanged = MoneyOperStatusChanged(doneNew, done, moneyOper)
+        val moneyOperStatusChanged = MoneyOperStatusChanged(new, done, moneyOper)
         verify(domainEventPublisher).publish(moneyOperStatusChanged)
     }
 }
