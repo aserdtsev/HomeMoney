@@ -246,9 +246,13 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     let performedAt = formatDate($scope.getDefaultDate());
     let oper;
     if (typeof param.id !== 'undefined') {
-      let recurrenceOper = param;
-      oper = {type: recurrenceOper.type, comment: recurrenceOper.comment, tags: recurrenceOper.tags,
-        period: recurrenceOper.period, recurrenceOperId: recurrenceOper.id};
+      let templateOper = param;
+      oper = {type: templateOper.type, comment: templateOper.comment, tags: templateOper.tags,
+        period: templateOper.period, items: templateOper.items};
+      for (let item of oper.items) {
+        item.id = randomUUID()
+        item.performedAt = performedAt
+      }
     } else {
       let type = param;
       let sgn;
