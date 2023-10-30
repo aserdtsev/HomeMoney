@@ -55,7 +55,7 @@ class MoneyOper(
         performed: LocalDate? = LocalDate.now(),
         tags: Collection<Tag>? = mutableListOf(),
         comment: String? = null,
-        period: Period? = Period.month,
+        period: Period? = Period.Month,
         recurrenceId: UUID? = null,
         dateNum: Int = 0
     ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, tags!!, comment, period, recurrenceId, dateNum)

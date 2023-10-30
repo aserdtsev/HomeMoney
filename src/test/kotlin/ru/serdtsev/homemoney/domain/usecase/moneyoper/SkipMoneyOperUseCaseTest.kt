@@ -47,7 +47,7 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
             .apply { whenever(balanceRepository.findById(id)).thenReturn(this) }
         val sample =  MoneyOper(MoneyOperStatus.Done, LocalDate.now().minusMonths(1)).apply {
             this.addItem(balance, BigDecimal("1.00"))
-            this.period = Period.month
+            this.period = Period.Month
         }
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)

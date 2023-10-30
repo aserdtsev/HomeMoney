@@ -52,7 +52,7 @@ internal class RecurrenceOperControllerTest : SpringBootBaseTest() {
     @Test
     fun updateRecurrenceOper() {
         val sample = MoneyOper(MoneyOperStatus.Done, LocalDate.now().minusMonths(1),
-            tags = mutableListOf(foodstuffsTag), comment = "comment", period = Period.month).apply {
+            tags = mutableListOf(foodstuffsTag), comment = "comment", period = Period.Month).apply {
             addItem(cashBalance, BigDecimal("-1.00"))
             domainEventPublisher.publish(this)
         }
@@ -63,7 +63,7 @@ internal class RecurrenceOperControllerTest : SpringBootBaseTest() {
             conversionService.convert(recurrenceOper, RecurrenceOperDto::class.java))
         recurrenceOperDto.let {
             it.nextDate = it.nextDate.plusDays(1)
-            it.period= Period.quarter
+            it.period= Period.Year
             it.items.first().let { item ->
                 item.balanceId = cardBalance.id
                 item.value = BigDecimal("-2.00")

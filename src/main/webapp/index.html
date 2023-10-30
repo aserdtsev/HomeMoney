@@ -131,7 +131,7 @@
                ng-show="oper.status == 'Done'"
                ng-click="newOper(oper)">повторить</a>
             <a href=""
-               ng-show="oper.status == 'Done' && oper.period != 'SINGLE'"
+               ng-show="oper.status == 'Done' && oper.period != 'Single'"
                ng-click="createRecurrenceOperByOper(oper)">повторять</a>
             <a href=""
                ng-show="oper.status == 'Pending' || oper.status == 'Recurrence'"
@@ -176,10 +176,9 @@
             </div>
             <div>
               <select ng-model="oper.period">
-                <option value="month">Месяц</option>
-                <option value="quarter">Квартал</option>
-                <option value="year">Год</option>
-                <option value="single">Разовая</option>
+                <option value="Month">Месяц</option>
+                <option value="Year">Год</option>
+                <option value="Single">Разовая</option>
               </select>
               <input ng-model="oper.comment" placeholder="Комментарий"/>
               <span>
@@ -254,9 +253,8 @@
                        ng-model="recurrenceOper.items[1].value"
                        placeholder="Сумма"/>
                 <select ng-model="recurrenceOper.period">
-                  <option value="month">Месяц</option>
-                  <option value="quarter">Квартал</option>
-                  <option value="year">Год</option>
+                  <option value="Month">Месяц</option>
+                  <option value="Year">Год</option>
                 </select>
               </div>
               <div>

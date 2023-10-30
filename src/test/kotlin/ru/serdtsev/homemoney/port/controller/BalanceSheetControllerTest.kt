@@ -59,7 +59,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val interval = 1L
 
         val m1Date = currentDate.minusDays(1)
-        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(salaryTag), period = Period.single)
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(salaryTag), period = Period.Single)
             .apply {
                 addItem(debitCard, BigDecimal("100.00"))
                 newAndComplete()
@@ -89,7 +89,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(interval).minusDays(1L)
-        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(salaryTag), period = Period.month)
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(salaryTag), period = Period.Month)
             .apply {
                 addItem(debitCard, BigDecimal("100000.00"))
                 newAndComplete()
@@ -126,7 +126,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(1)
-        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.month,
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Month,
             comment = "Продукты, дебетовая карта")
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
@@ -174,7 +174,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val p1Date = currentDate.plusDays(1)
         val p2Date = currentDate.plusDays(2)
 
-        val moneyOper = MoneyOper(MoneyOperStatus.Done, m2Date, mutableListOf(foodstuffsTag), period = Period.month)
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, m2Date, mutableListOf(foodstuffsTag), period = Period.Month)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
@@ -182,7 +182,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val p3Date = moneyOper.items[0].dateWithGracePeriod
         val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
 
-        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Month)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
@@ -240,7 +240,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = LocalDate.parse("2023-08-12")
 
-        val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
@@ -275,7 +275,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
 
-        val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.single)
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
@@ -283,7 +283,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val p3Date = moneyOper.items[0].dateWithGracePeriod
         val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
 
-        MoneyOper(MoneyOperStatus.Done, currentDate, period = Period.single)
+        MoneyOper(MoneyOperStatus.Done, currentDate, period = Period.Single)
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
                 addItem(creditCard, BigDecimal("100.00"))
@@ -334,7 +334,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(interval).minusDays(1L)
-        MoneyOper(MoneyOperStatus.Done, m1Date, period = Period.month)
+        MoneyOper(MoneyOperStatus.Done, m1Date, period = Period.Month)
             .apply {
                 addItem(debitCard, BigDecimal("-25000.00"))
                 addItem(credit, BigDecimal("25000.00"))
@@ -366,7 +366,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
         ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
         val m1Date = currentDate.minusDays(1)
-        val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Month)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
@@ -415,17 +415,17 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val m1Date = currentDate.minusDays(1)
         val p1Date = currentDate.plusDays(1)
-        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(salaryTag), period = Period.single)
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(salaryTag), period = Period.Single)
             .apply {
                 addItem(debitCard, BigDecimal("100.00"))
                 newAndComplete()
             }
-        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.month)
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Month)
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
                 newAndComplete()
             }
-        MoneyOper(MoneyOperStatus.Pending, p1Date, mutableListOf(foodstuffsTag), period = Period.single)
+        MoneyOper(MoneyOperStatus.Pending, p1Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
                 domainEventPublisher.publish(this)

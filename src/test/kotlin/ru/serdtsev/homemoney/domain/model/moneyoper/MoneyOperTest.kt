@@ -103,19 +103,19 @@ internal class MoneyOperTest: DomainBaseTest() {
     @Test
     fun merge() {
         val origTags = listOf(Tag.of("tag1"), Tag.of("tag2"))
-        val origOper = MoneyOper(Done, tags = origTags, comment = "orig comment", period = Period.month)
+        val origOper = MoneyOper(Done, tags = origTags, comment = "orig comment", period = Period.Month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
         val newTags = listOf(Tag.of("tag2"), Tag.of("tag3"))
         val newOper = MoneyOper(origOper.id, status = Done, tags = newTags,
-            comment = "new comment", period = Period.single)
+            comment = "new comment", period = Period.Single)
         newOper.addItem(balance1, BigDecimal("-30.00"))
 
         MoneyOper.merge(newOper, origOper)
 
         assertThat(origOper)
             .extracting("comment", "period")
-            .contains("new comment", Period.single)
+            .contains("new comment", Period.Single)
         assertThat(origOper.items)
             .first()
             .extracting("balance", "value")
@@ -130,12 +130,12 @@ internal class MoneyOperTest: DomainBaseTest() {
     @Test
     fun `merge changed balance`() {
         val origTags = listOf(Tag.of("tag1"), Tag.of("tag2"))
-        val origOper = MoneyOper(Done, tags = origTags, comment = "orig comment", period = Period.month)
+        val origOper = MoneyOper(Done, tags = origTags, comment = "orig comment", period = Period.Month)
         origOper.addItem(balance1, BigDecimal("-20.00"))
 
         val newTags = listOf(Tag.of("tag2"), Tag.of("tag3"))
         val newOper = MoneyOper(origOper.id, status = Done, tags = newTags,
-            comment = "new comment", period = Period.single)
+            comment = "new comment", period = Period.Single)
         newOper.addItem(balance2, BigDecimal("-30.00"))
 
         MoneyOper.merge(newOper, origOper)

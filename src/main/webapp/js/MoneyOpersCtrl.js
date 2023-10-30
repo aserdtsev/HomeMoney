@@ -387,10 +387,9 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.getPeriodName = function(oper) {
     let period = oper['period'];
-    return (period === 'month') ? 'Месяц' :
-        (period === 'quarter') ? 'Квартал' :
-        (period === 'year') ? 'Год' :
-        (period === 'single') ? 'Разовая' : '?';
+    return (period === 'Month') ? 'Месяц' :
+        (period === 'Year') ? 'Год' :
+        (period === 'Single') ? 'Разовая' : '?';
   };
 
   $scope.formatMoney = function(amount, currencySymbol) {

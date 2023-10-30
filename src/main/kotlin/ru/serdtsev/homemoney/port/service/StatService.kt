@@ -216,7 +216,7 @@ class StatService(
             .filter {
                 val item = it.first
                 val moneyOper = it.second
-                moneyOper.period == Period.month
+                moneyOper.period == Period.Month
                         && moneyOper.recurrenceId == null
                         && moneyOper.type != MoneyOperType.transfer
                         && item.balance.type.isBalance

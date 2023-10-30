@@ -37,9 +37,8 @@ data class RecurrenceOper(
 
     fun calcNextDate(date: LocalDate): LocalDate =
         when (template.period) {
-            Period.month -> date.plusMonths(1)
-            Period.quarter -> date.plusMonths(3)
-            Period.year -> date.plusYears(1)
+            Period.Month -> date.plusMonths(1)
+            Period.Year -> date.plusYears(1)
             else -> date
         }
 

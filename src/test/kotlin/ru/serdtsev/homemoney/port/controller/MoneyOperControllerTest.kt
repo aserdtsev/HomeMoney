@@ -58,7 +58,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     fun createMoneyOper_simpleExpense() {
         val balance = cardBalance
         val sample = MoneyOper(MoneyOperStatus.Done, LocalDate.now().minusMonths(1),
-            tags = mutableListOf(foodstuffsTag), comment = "comment", period = Period.month).apply {
+            tags = mutableListOf(foodstuffsTag), comment = "comment", period = Period.Month).apply {
             addItem(cardBalance, BigDecimal("-1.00"))
             domainEventPublisher.publish(this)
         }
@@ -76,7 +76,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
         assertThat(actualMoneyOper)
             .isNotNull
             .extracting("items", "status", "performed", "comment", "period", "tags")
-            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.month, mutableSetOf(foodstuffsTag))
+            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.Month, mutableSetOf(foodstuffsTag))
 
         val actualBalance = balanceRepository.findById(balance.id)
         assertEquals(BigDecimal("-1.00"), actualBalance.value)
@@ -88,7 +88,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     @Test
     @Ignore
     fun createMoneyOper_simpleIncome() {
-        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.Done, LocalDate.now(), Period.single,
+        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.Done, LocalDate.now(), Period.Single,
             "comment", listOf("Зарплата"), 0, null, null)
         val moneyOperItemDto = MoneyOperItemDto(UUID.randomUUID(), cashBalance.id, cashBalance.name, BigDecimal("1.00"),
             1, balanceSheet.currencyCode, now)
@@ -104,7 +104,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
         assertThat(actualMoneyOper)
             .isNotNull
             .extracting("items", "status", "performed", "comment", "period", "tags")
-            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.single,
+            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.Single,
                 mutableSetOf(salaryTag))
 
         val actualBalance = balanceRepository.findById(cashBalance.id)
@@ -114,7 +114,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     @Test
     @Ignore
     fun createMoneyOper_transfer() {
-        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.Done, LocalDate.now(), Period.single,
+        val moneyOperDto = MoneyOperDto(UUID.randomUUID(), MoneyOperStatus.Done, LocalDate.now(), Period.Single,
             "comment", listOf(), 0, null, null)
         val moneyOperItemDto1 = MoneyOperItemDto(UUID.randomUUID(), cashBalance.id, cashBalance.name, BigDecimal("1.00"),
             -1, balanceSheet.currencyCode, moneyOperDto.operDate)
@@ -134,7 +134,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
         assertThat(actualMoneyOper)
             .isNotNull
             .extracting("items", "status", "performed", "comment", "period", "tags")
-            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.single, mutableSetOf<Tag>())
+            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.Single, mutableSetOf<Tag>())
 
         assertEquals(BigDecimal("99.00"), balanceRepository.findById(cashBalance.id).value)
         assertEquals(BigDecimal("1.00"), balanceRepository.findById(cardBalance.id).value)
@@ -143,12 +143,12 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
     @Test
     internal fun updateMoneyOper() {
         val origMoneyOper = MoneyOper(MoneyOperStatus.Done, now, mutableSetOf(salaryTag), "Comment 1",
-            Period.month)
+            Period.Month)
         origMoneyOper.addItem(cashBalance, BigDecimal("-1.00"), now, 0)
         domainEventPublisher.publish(origMoneyOper)
 
         val moneyOperDto = conversionService.convert(origMoneyOper, MoneyOperDto::class.java)!!.apply {
-            this.period = Period.single
+            this.period = Period.Single
             this.comment = "Comment 2"
             this.tags = listOf("Зарплата")
             this.items[0].apply {
@@ -164,7 +164,7 @@ internal class MoneyOperControllerTest : SpringBootBaseTest() {
         assertThat(actualMoneyOper)
             .isNotNull
             .extracting("items", "status", "performed", "comment", "period", "tags")
-            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.single, mutableSetOf(salaryTag))
+            .contains(expectedItems, MoneyOperStatus.Done, now, moneyOperDto.comment, Period.Single, mutableSetOf(salaryTag))
 
         assertEquals(BigDecimal("101.00"), balanceRepository.findById(cashBalance.id).value)
         assertEquals(BigDecimal("-2.00"), balanceRepository.findById(cardBalance.id).value)

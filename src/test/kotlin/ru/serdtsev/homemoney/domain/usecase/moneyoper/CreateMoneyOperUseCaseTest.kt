@@ -28,7 +28,7 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
     fun run_done() {
         val balance = Balance(AccountType.debit, "Cash")
         whenever(balanceRepository.findById(balance.id)).thenReturn(balance)
-        val sample =  MoneyOper(Done, LocalDate.now().minusMonths(1), period = Period.month)
+        val sample =  MoneyOper(Done, LocalDate.now().minusMonths(1), period = Period.Month)
             .apply {this.addItem(balance, BigDecimal("1.00")) }
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)

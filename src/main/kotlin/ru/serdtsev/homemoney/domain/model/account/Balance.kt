@@ -84,7 +84,7 @@ open class Balance(
                     to.value = from.value
                 } else {
                     val moneyOper = MoneyOper(MoneyOperStatus.Pending, LocalDate.now(),
-                        emptyList(), "корректировка остатка", Period.single, dateNum = 0)
+                        emptyList(), "корректировка остатка", Period.Single, dateNum = 0)
                     val amount = from.value - to.value
                     moneyOper.addItem(to, amount, moneyOper.performed)
                     moneyOper.complete()
