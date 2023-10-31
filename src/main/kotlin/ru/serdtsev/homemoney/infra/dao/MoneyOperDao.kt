@@ -30,17 +30,33 @@ class MoneyOperDao(
     @CacheEvict(cacheNames = ["TagDao.findByObjId"], key = "#domainAggregate.id")
     override fun save(domainAggregate: MoneyOper) {
         val sql = """
-            insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, status, recurrence_id)
-               values(:id, :bsId, :createdTs, :performed, :dateNum, :comment, :period, :status::money_oper_status, :recurrenceId)
+            insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, period_params, 
+                    status, recurrence_id)
+               values(:id, :bsId, :createdTs, :performed, :dateNum, :comment, :period, :periodParams, 
+                    :status::money_oper_status, :recurrenceId)
             on conflict(id) do update set 
-               balance_sheet_id = :bsId, created_ts = :createdTs, trn_date = :performed, date_num = :dateNum,
-                comment = :comment, period = :period, status = :status::money_oper_status, recurrence_id = :recurrenceId
+               balance_sheet_id = :bsId, 
+               created_ts = :createdTs, 
+               trn_date = :performed, 
+               date_num = :dateNum,
+               comment = :comment, 
+               period = :period,
+               period_params = :periodParams, 
+               status = :status::money_oper_status, 
+               recurrence_id = :recurrenceId
             
         """.trimIndent()
         val paramMap = with(domainAggregate) {
-            mapOf("id" to id, "bsId" to ApiRequestContextHolder.balanceSheet.id, "createdTs" to created,
-                "performed" to performed, "dateNum" to dateNum, "comment" to comment, "period" to period.toString(),
-                "status" to status.toString(), "recurrenceId" to recurrenceId)
+            mapOf("id" to id,
+                "bsId" to ApiRequestContextHolder.balanceSheet.id,
+                "createdTs" to created,
+                "performed" to performed,
+                "dateNum" to dateNum,
+                "comment" to comment,
+                "period" to period.toString(),
+                "periodParams" to gson.toJsonb(periodParams as Any),
+                "status" to status.toString(),
+                "recurrenceId" to recurrenceId)
         }
         jdbcTemplate.update(sql, paramMap)
 
@@ -287,8 +303,15 @@ class MoneyOperDao(
         val tags = tagDao.findByObjId(id)
         val comment = rs.getString("comment")
         val period = rs.getString("period")?.let { Period.valueOf(it) }
+        val periodParams = rs.getString("period_params")?.let {
+            val clazz = when (period) {
+                Period.Day -> DayPeriodParams::class.java
+                else -> throw IllegalStateException("MoneyOper invalid period: $period")
+            }
+            gson.fromJson(it, clazz)
+        }
         val recurrenceId = rs.getString("recurrence_id")?.let { UUID.fromString(it) }
-        MoneyOper(id, items, status, performed, tags, comment, period, recurrenceId, dateNum).apply {
+        MoneyOper(id, items, status, performed, tags, comment, period, periodParams, recurrenceId, dateNum).apply {
             this.created = rs.getTimestamp("created_ts")
         }
     }

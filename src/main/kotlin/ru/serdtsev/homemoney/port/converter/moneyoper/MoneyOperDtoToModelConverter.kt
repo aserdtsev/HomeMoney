@@ -27,6 +27,6 @@ class MoneyOperDtoToModelConverter(private val applicationContext: ApplicationCo
             }
             .toMutableList()
         return MoneyOper(source.id, items, source.status, source.operDate, tags, source.comment,
-            period, source.recurrenceId, dateNum)
+            period, null, source.recurrenceId, dateNum)
     }
 }

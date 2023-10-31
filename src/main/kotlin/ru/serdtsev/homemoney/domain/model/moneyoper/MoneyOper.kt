@@ -22,6 +22,7 @@ class MoneyOper(
     tags: Collection<Tag> = mutableListOf(),
     comment: String? = null,
     var period: Period? = null,
+    var periodParams: PeriodParams? = null,
     aRecurrenceId: UUID? = null,
     var dateNum: Int = 0
 ) : DomainEvent, Serializable {
@@ -56,9 +57,11 @@ class MoneyOper(
         tags: Collection<Tag>? = mutableListOf(),
         comment: String? = null,
         period: Period? = Period.Month,
+        periodParams: PeriodParams? = null,
         recurrenceId: UUID? = null,
         dateNum: Int = 0
-    ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, tags!!, comment, period, recurrenceId, dateNum)
+    ) : this(UUID.randomUUID(), mutableListOf(), status, performed!!, tags!!, comment, period, periodParams,
+        recurrenceId, dateNum)
 
     fun addItem(balance: Balance, value: BigDecimal, performed: LocalDate = this.performed, index: Int = items.size,
             id: UUID = UUID.randomUUID()): MoneyOperItem {

@@ -132,6 +132,7 @@ create table money_oper
         constraint money_oper_parent_id_fk
             references money_oper (id),
     period varchar(8) not null,
+    period_params jsonb,
     status money_oper_status not null,
     recurrence_id uuid
 );

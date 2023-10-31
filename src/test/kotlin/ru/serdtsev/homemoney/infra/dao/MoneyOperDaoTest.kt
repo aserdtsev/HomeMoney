@@ -65,6 +65,20 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
     }
 
     @Test
+    internal fun `save new MoneyOper by periodParams`() {
+        val periodParams = DayPeriodParams(1)
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, period = Period.Day, periodParams = periodParams)
+            .apply {
+                addItem(balanceA, BigDecimal("-1.00"))
+                moneyOperDao.save(this)
+            }
+
+        val actual = moneyOperDao.findById(moneyOper.id).periodParams
+
+        assertEquals(periodParams, actual)
+    }
+
+    @Test
     internal fun findByBalanceSheetAndValueOrderByPerformedDesc() {
         val value = BigDecimal("1.00")
         val moneyOper1 = MoneyOper(MoneyOperStatus.Done, dateNum = 0).apply {
