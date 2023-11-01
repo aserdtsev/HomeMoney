@@ -54,7 +54,7 @@ class MoneyOperDao(
                 "dateNum" to dateNum,
                 "comment" to comment,
                 "period" to period.toString(),
-                "periodParams" to gson.toJsonb(periodParams as Any),
+                "periodParams" to periodParams?.let { gson.toJsonb(it as Any) },
                 "status" to status.toString(),
                 "recurrenceId" to recurrenceId)
         }
