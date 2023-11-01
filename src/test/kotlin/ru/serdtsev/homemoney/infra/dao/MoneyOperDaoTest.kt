@@ -4,6 +4,10 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.Arguments.arguments
+import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
@@ -14,7 +18,11 @@ import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import java.math.BigDecimal
+import java.time.DayOfWeek
+import java.time.DayOfWeek.MONDAY
+import java.time.DayOfWeek.SUNDAY
 import java.time.LocalDate
+import java.time.MonthDay
 
 internal class MoneyOperDaoTest: SpringBootBaseTest() {
     @Autowired
@@ -64,18 +72,18 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
     }
 
-    @Test
-    internal fun `save new MoneyOper by periodParams`() {
-        val periodParams = DayPeriodParams(1)
-        val moneyOper = MoneyOper(MoneyOperStatus.Done, period = Period.Day, periodParams = periodParams)
+    @ParameterizedTest
+    @MethodSource("params for save new MoneyOper by recurrenceParams")
+    internal fun `save new MoneyOper by recurrenceParams`(period: Period, recurrenceParams: RecurrenceParams) {
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, period = period, recurrenceParams = recurrenceParams)
             .apply {
                 addItem(balanceA, BigDecimal("-1.00"))
                 moneyOperDao.save(this)
             }
 
-        val actual = moneyOperDao.findById(moneyOper.id).periodParams
+        val actual = moneyOperDao.findById(moneyOper.id).recurrenceParams
 
-        assertEquals(periodParams, actual)
+        assertEquals(recurrenceParams, actual)
     }
 
     @Test
@@ -126,5 +134,16 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
 
         moneyOperDao.findByPerformedBetweenAndMoneyOperStatus(LocalDate.now(), LocalDate.now(),
             MoneyOperStatus.Done).also { assertEquals(listOf(moneyOper), it) }
+    }
+
+    companion object {
+        @JvmStatic
+        private fun `params for save new MoneyOper by recurrenceParams`(): List<Arguments> =
+            listOf(
+                arguments(Period.Day, DayRecurrenceParams(1)),
+                arguments(Period.Week, WeekRecurrenceParams(listOf(MONDAY, SUNDAY))),
+                arguments(Period.Month, MonthRecurrenceParams(1)),
+                arguments(Period.Year, YearRecurrenceParams(1, 1))
+            )
     }
 }

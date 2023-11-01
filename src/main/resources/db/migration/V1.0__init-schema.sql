@@ -132,13 +132,13 @@ create table money_oper
         constraint money_oper_parent_id_fk
             references money_oper (id),
     period varchar(8) not null,
-    period_params jsonb,
+    recurrence_params jsonb,
     status money_oper_status not null,
     recurrence_id uuid
 );
 
 comment on column money_oper.status is 'Статус операции: pending - в ожидании, done - выполнен, cancelled - отменен.';
-
+comment on column money_oper.recurrence_params is 'Параметры повторения';
 comment on column money_oper.recurrence_id is 'Идентификатор повторяющейся операции';
 
 create index money_oper_bs_id_trn_date_status_idx

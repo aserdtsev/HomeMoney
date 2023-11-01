@@ -30,9 +30,9 @@ class MoneyOperDao(
     @CacheEvict(cacheNames = ["TagDao.findByObjId"], key = "#domainAggregate.id")
     override fun save(domainAggregate: MoneyOper) {
         val sql = """
-            insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, period_params, 
-                    status, recurrence_id)
-               values(:id, :bsId, :createdTs, :performed, :dateNum, :comment, :period, :periodParams, 
+            insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, 
+                    recurrence_params, status, recurrence_id)
+               values(:id, :bsId, :createdTs, :performed, :dateNum, :comment, :period, :recurrenceParams, 
                     :status::money_oper_status, :recurrenceId)
             on conflict(id) do update set 
                balance_sheet_id = :bsId, 
@@ -41,7 +41,7 @@ class MoneyOperDao(
                date_num = :dateNum,
                comment = :comment, 
                period = :period,
-               period_params = :periodParams, 
+               recurrence_params = :recurrenceParams, 
                status = :status::money_oper_status, 
                recurrence_id = :recurrenceId
             
@@ -54,7 +54,7 @@ class MoneyOperDao(
                 "dateNum" to dateNum,
                 "comment" to comment,
                 "period" to period.toString(),
-                "periodParams" to periodParams?.let { gson.toJsonb(it as Any) },
+                "recurrenceParams" to recurrenceParams?.let { gson.toJsonb(it as Any) },
                 "status" to status.toString(),
                 "recurrenceId" to recurrenceId)
         }
@@ -303,15 +303,14 @@ class MoneyOperDao(
         val tags = tagDao.findByObjId(id)
         val comment = rs.getString("comment")
         val period = rs.getString("period")?.let { Period.valueOf(it) }
-        val periodParams = rs.getString("period_params")?.let {
-            val clazz = when (period) {
-                Period.Day -> DayPeriodParams::class.java
-                else -> throw IllegalStateException("MoneyOper invalid period: $period")
+        val recurrenceParams = rs.getString("recurrence_params")?.let { json ->
+            period?.let {
+                val clazz = getRecurrenceParamsClass(period)
+                gson.fromJson(json, clazz)
             }
-            gson.fromJson(it, clazz)
         }
         val recurrenceId = rs.getString("recurrence_id")?.let { UUID.fromString(it) }
-        MoneyOper(id, items, status, performed, tags, comment, period, periodParams, recurrenceId, dateNum).apply {
+        MoneyOper(id, items, status, performed, tags, comment, period, recurrenceParams, recurrenceId, dateNum).apply {
             this.created = rs.getTimestamp("created_ts")
         }
     }
