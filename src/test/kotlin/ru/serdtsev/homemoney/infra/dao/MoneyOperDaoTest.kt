@@ -18,11 +18,9 @@ import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import java.math.BigDecimal
-import java.time.DayOfWeek
 import java.time.DayOfWeek.MONDAY
 import java.time.DayOfWeek.SUNDAY
 import java.time.LocalDate
-import java.time.MonthDay
 
 internal class MoneyOperDaoTest: SpringBootBaseTest() {
     @Autowired
