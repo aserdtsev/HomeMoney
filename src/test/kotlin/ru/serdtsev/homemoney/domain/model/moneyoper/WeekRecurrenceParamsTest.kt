@@ -6,8 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments.arguments
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.DayOfWeek
-import java.time.DayOfWeek.THURSDAY
-import java.time.DayOfWeek.WEDNESDAY
+import java.time.DayOfWeek.*
 import java.time.LocalDate
 
 internal class WeekRecurrenceParamsTest {
@@ -22,9 +21,9 @@ internal class WeekRecurrenceParamsTest {
     companion object {
         @JvmStatic
         fun `params for getNext`() = listOf(
-            arguments(listOf(THURSDAY), LocalDate.parse("2023-11-01"), LocalDate.parse("2023-11-02")),
             arguments(listOf(WEDNESDAY), LocalDate.parse("2023-11-01"), LocalDate.parse("2023-11-08")),
-            arguments(listOf(WEDNESDAY, THURSDAY), LocalDate.parse("2023-11-01"), LocalDate.parse("2023-11-02"))
+            arguments(listOf(TUESDAY), LocalDate.parse("2023-11-01"), LocalDate.parse("2023-11-07")),
+            arguments(listOf(TUESDAY, SUNDAY), LocalDate.parse("2023-11-01"), LocalDate.parse("2023-11-05"))
         )
     }
 }

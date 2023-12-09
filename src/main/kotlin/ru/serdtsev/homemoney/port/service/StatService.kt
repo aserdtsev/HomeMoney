@@ -273,7 +273,7 @@ class StatService(
                     // Если дата повторяющейся операции раньше или равна текущему дню, то считаем, что она будет
                     // выполнена завтра, а не сегодня. Чтобы в графике не искажать баланс текущего дня операциями,
                     // которые, возможно, сегодня не будут выполнены.
-                    val nextDate = if (roNextDate.isBefore(currentDate)) currentDate.plusDays(1) else roNextDate
+                    val nextDate = if (roNextDate <= currentDate) currentDate.plusDays(1) else roNextDate
                     it.template.items.forEach { item ->
                         val repaymentScheduleItem = item.balance.credit
                             ?.let { credit -> RepaymentScheduleItem.of(nextDate, credit, item.value) }

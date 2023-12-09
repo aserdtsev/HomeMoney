@@ -11,7 +11,9 @@ import kotlin.math.absoluteValue
  */
 interface RecurrenceParams {
     /**
-     * Возвращает дату следующего повтора после даты, заданной параметром date
+     * Возвращает следующюю за date дату повтора
+     *
+     * @param date дата предыдущего повтора
      */
     fun getNext(date: LocalDate): LocalDate
 }
@@ -19,9 +21,13 @@ interface RecurrenceParams {
 /**
  * Повторение для {@link ru.serdtsev.homemoney.domain.model.moneyoper.Period.Day}
  */
-data class DayRecurrenceParams(val n: Int?) : RecurrenceParams {
+data class DayRecurrenceParams(val n: Int = 1) : RecurrenceParams {
+    init {
+        assert(n > 0) { n }
+    }
+
     override fun getNext(date: LocalDate): LocalDate {
-        return date.plusDays((n ?: 0).toLong() + 1)
+        return date.plusDays(n.toLong())
     }
 }
 
@@ -46,15 +52,20 @@ data class MonthRecurrenceParams(val dayOfMonth: Int) : RecurrenceParams {
     init {
         assert(dayOfMonth != 0 && abs(dayOfMonth) < 32) { dayOfMonth }
     }
+
     override fun getNext(date: LocalDate): LocalDate {
         val next = date.plusDays(1)
-        val normDayOfMonth = getNormDayOfMonth(next).toLong()
-        return if (normDayOfMonth > 0) {
-            next.plusDays(normDayOfMonth - next.dayOfMonth)
+        val normNextDayOfMonth = getNormDayOfMonth(next).toLong()
+        return if (normNextDayOfMonth > 0) {
+            if (normNextDayOfMonth >= next.dayOfMonth) {
+                next.plusDays(normNextDayOfMonth - next.dayOfMonth)
+            } else {
+                LocalDate.of(date.year, date.month, normNextDayOfMonth.toInt()).plusMonths(1)
+            }
         } else {
-            val nextYearMonth = YearMonth.of(next.year, next.monthValue + 1)
-            val d = nextYearMonth.atDay(1).plusDays(normDayOfMonth)
-            if (d.isBefore(next)) d.plusMonths(1) else d
+            val nextYearMonth = YearMonth.of(date.year, date.monthValue + 1)
+            val d = nextYearMonth.atDay(1).plusDays(normNextDayOfMonth)
+            if (d.isBefore(date)) d.plusMonths(1) else d
         }
     }
 
@@ -78,19 +89,18 @@ data class YearRecurrenceParams(val month: Int, val day: Int) : RecurrenceParams
     }
 
     override fun getNext(date: LocalDate): LocalDate {
-        return date.plusDays(1)
-            .let { nextDate ->
-                val day = this.day.coerceAtMost(YearMonth.of(date.year, month).lengthOfMonth())
-                LocalDate.of(date.year, month, day).let { resultCandidate ->
-                    if (resultCandidate < nextDate) {
-                        val nextYear = date.year + 1
-                        this.day.coerceAtMost(YearMonth.of(nextYear, month).lengthOfMonth())
-                            .let { day -> LocalDate.of(nextYear, month, day) }
-                    } else {
-                        resultCandidate
-                    }
+        return date.plusDays(1).let { nextDate ->
+            val day = this.day.coerceAtMost(YearMonth.of(date.year, month).lengthOfMonth())
+            LocalDate.of(date.year, month, day).let { resultCandidate ->
+                if (resultCandidate < nextDate) {
+                    val nextYear = date.year + 1
+                    this.day.coerceAtMost(YearMonth.of(nextYear, month).lengthOfMonth())
+                        .let { day -> LocalDate.of(nextYear, month, day) }
+                } else {
+                    resultCandidate
                 }
             }
+        }
     }
 }
 

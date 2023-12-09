@@ -10,6 +10,7 @@ import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
+import java.time.LocalDate
 
 internal class RecurrenceOperTest : DomainBaseTest() {
     private val moneyOperRepository: MoneyOperRepository = mock { }
@@ -68,7 +69,6 @@ internal class RecurrenceOperTest : DomainBaseTest() {
     @Test
     fun calcNextDate() {
         val sample = MoneyOper(MoneyOperStatus.Done)
-        val nextDate = sample.performed.plusMonths(1)
 
         whenever(moneyOperRepository.findById(sample.id)).thenReturn(sample)
         whenever(domainEventPublisher.publish(any())).doAnswer { invocation ->
@@ -79,9 +79,9 @@ internal class RecurrenceOperTest : DomainBaseTest() {
         }
         val recurrenceOper = RecurrenceOper.of(sample)
 
-        val actual = recurrenceOper.calcNextDate(nextDate)
+        val actual = recurrenceOper.calcNextDate(LocalDate.now())
 
-        val expected = nextDate.plusMonths(1)
+        val expected = sample.performed.plusMonths(1)
         assertEquals(expected, actual)
     }
 

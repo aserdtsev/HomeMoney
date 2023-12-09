@@ -10,7 +10,7 @@ import java.util.*
 data class RecurrenceOper(
     val id: UUID,
     var template: MoneyOper,
-    var nextDate: LocalDate = LocalDate.MAX,
+    var nextDate: LocalDate,
     var arc: Boolean = false
 ) : DomainEvent, Serializable {
     init {
@@ -35,12 +35,20 @@ data class RecurrenceOper(
         return nextDate
     }
 
-    fun calcNextDate(date: LocalDate): LocalDate =
-        when (template.period) {
-            Period.Month -> date.plusMonths(1)
-            Period.Year -> date.plusYears(1)
-            else -> date
-        }
+    /**
+     * Возвращает следующюю за {@param date} дату повтора
+     */
+    fun calcNextDate(date: LocalDate): LocalDate {
+        val recurrenceParams = template.recurrenceParams
+            ?: when (template.period) {
+                Period.Day -> DayRecurrenceParams(1)
+                Period.Week -> WeekRecurrenceParams(listOf(nextDate.dayOfWeek))
+                Period.Month -> MonthRecurrenceParams(nextDate.dayOfMonth)
+                Period.Year -> YearRecurrenceParams(nextDate.monthValue, nextDate.dayOfMonth)
+                else -> throw IllegalStateException()
+            }
+        return recurrenceParams.getNext(date)
+    }
 
     /**
      * Переводит повторяющуюся операцию в архив.
@@ -55,8 +63,8 @@ data class RecurrenceOper(
         private val log = KotlinLogging.logger {  }
         fun of(sample: MoneyOper): RecurrenceOper {
             val template = sample.createTemplate()
-            val recurrenceOper = RecurrenceOper(UUID.randomUUID(), template).apply {
-                nextDate = calcNextDate(template.performed)
+            val recurrenceOper = RecurrenceOper(UUID.randomUUID(), template, template.performed).apply {
+                nextDate = calcNextDate(nextDate)
             }
             DomainEventPublisher.instance.publish(recurrenceOper)
 
