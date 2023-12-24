@@ -114,7 +114,7 @@ create table tag2obj
 
 comment on column tag2obj.obj_type is 'Тип объекта, заданного obj_id';
 
-create type money_oper_status as enum ('Done', 'Pending', 'Recurrence', 'Cancelled', 'Template');
+create type money_oper_status as enum ('Done', 'Pending', 'Recurrence', 'Cancelled', 'Template', 'Trend');
 
 create table money_oper
 (

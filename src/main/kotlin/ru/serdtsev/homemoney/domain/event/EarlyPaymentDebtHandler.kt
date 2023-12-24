@@ -11,24 +11,27 @@ import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 
 @Service
-class MoneyOperStatusChangedHandler(val moneyOperRepository: MoneyOperRepository) {
+@Suppress("DuplicatedCode")
+class EarlyPaymentDebtHandler(
+    private val moneyOperRepository: MoneyOperRepository
+) {
     @EventListener
     fun handler(event: MoneyOperStatusChanged) {
-        assert(event.afterStatus == event.moneyOper.status) { event.moneyOper }
-        assert(event.afterStatus != New) { event.moneyOper }
-
         val beforeStatus = event.beforeStatus
         val afterStatus = event.afterStatus
         if (beforeStatus in listOf(New, Pending, Cancelled, Recurrence) && afterStatus in listOf(Pending, Cancelled)) {
             return
         }
         val revert = beforeStatus == Done && afterStatus != Done
-        val factor = BigDecimal.ONE.let { if (revert) it.negate() else it }
         val moneyOper = event.moneyOper
         moneyOper.items.forEach { operItem ->
-            operItem.balance.changeValue(operItem.value * factor, moneyOper.id)
-            if (operItem.isDebtRepayment)
-                if (!revert) earlyRepaymentDebt(operItem) else rollbackEarlyRepaymentDebt(operItem)
+            if (operItem.isDebtRepayment) {
+                if (!revert) {
+                    earlyRepaymentDebt(operItem)
+                } else {
+                    rollbackEarlyRepaymentDebt(operItem)
+                }
+            }
         }
     }
 
@@ -40,15 +43,18 @@ class MoneyOperStatusChangedHandler(val moneyOperRepository: MoneyOperRepository
                     .filter { creditCardChargeItem -> creditCardChargeItem.balanceId == operItem.balanceId }
                     .forEach { creditCardChargeItem ->
                         // todo Учесть, что задолженность может гаситься несколькими операциями
-                        creditCardChargeItem.repaymentSchedule?.get(0)?.let {
-                            it.repaymentDebtOperItemId = operItem.id
-                            val repaymentDebtAmount =
-                                (it.repaidDebtAmount ?: BigDecimal.ZERO) + min(it.totalAmount, debtAmount)
-                            it.repaidDebtAmount = repaymentDebtAmount
-                            if (it.repaidDebtAmount == it.totalAmount) {
-                                it.endDate = operItem.performed
+                        if (debtAmount > BigDecimal.ZERO) {
+                            creditCardChargeItem.repaymentSchedule?.get(0)?.let {
+                                it.repaymentDebtOperItemId = operItem.id
+                                val repaymentDebtAmount =
+                                    (it.repaidDebtAmount ?: BigDecimal.ZERO) + min(it.totalAmount, debtAmount)
+                                assert(repaymentDebtAmount > BigDecimal.ZERO)
+                                it.repaidDebtAmount = repaymentDebtAmount
+                                if (it.repaidDebtAmount == it.totalAmount) {
+                                    it.endDate = operItem.performed
+                                }
+                                debtAmount -= repaymentDebtAmount
                             }
-                            debtAmount -= repaymentDebtAmount
                         }
                     }
                 DomainEventPublisher.instance.publish(oper)

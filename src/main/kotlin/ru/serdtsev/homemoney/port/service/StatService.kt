@@ -2,7 +2,6 @@ package ru.serdtsev.homemoney.port.service
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.domain.model.account.AccountType
@@ -16,8 +15,6 @@ import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.config.CoroutineApiRequestContext
 import java.math.BigDecimal
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.*
 
 @Service
@@ -29,8 +26,6 @@ class StatService(
     private val recurrenceOperRepository: RecurrenceOperRepository,
     private val apiRequestContextHolder: ApiRequestContextHolder
 ) {
-    private val log = KotlinLogging.logger {  }
-
     @Transactional(readOnly = true)
     fun getBsStat(currentDate: LocalDate, interval: Long): BsStat {
         return runBlocking(Dispatchers.Default + CoroutineApiRequestContext()) {
@@ -160,9 +155,6 @@ class StatService(
     }
 
     private fun getRealTurnovers(status: MoneyOperStatus, fromDate: LocalDate, currentDate: LocalDate, interval: Long): Collection<Turnover> {
-        log.info { "getRealTurnovers start by $status, ${fromDate.format(DateTimeFormatter.ISO_DATE)} - ${currentDate.format(
-            DateTimeFormatter.ISO_DATE)}" }
-
         val toDate = currentDate.plusDays(interval)
         val turnovers =
             moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, toDate, status)
@@ -178,7 +170,9 @@ class StatService(
                 val itemTurnovers = ArrayList<Turnover>()
                 val balance = item.balance
                 val turnoverType = TurnoverType.valueOf(balance.type)
-                val creditCardDebtDelta = if (item.dateWithGracePeriod > item.performed) item.value.negate() else BigDecimal.ZERO
+                val creditCardDebtDelta =
+                    if (item.dateWithGracePeriod > item.performed) item.value.negate()
+                    else BigDecimal.ZERO
                 val operDate = if (status == MoneyOperStatus.Pending && item.performed < currentDate) currentDate
                         else item.performed
                 Turnover(operDate, turnoverType, item.value, creditCardDebtDelta).apply { itemTurnovers.add(this) }
@@ -203,67 +197,54 @@ class StatService(
         turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
             dayAndTypeTurnovers.forEach { turnover.plus(it) } }
 
-        log.info { "getRealTurnovers finish" }
         return turnovers.keys
     }
 
     private fun getTrendTurnovers(currentDate: LocalDate, interval: Long): Collection<Turnover> {
-        log.info { "getTrendTurnovers start" }
-        val fromDate = currentDate.minusDays(interval)
-        val turnovers = moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(
-            fromDate, currentDate, MoneyOperStatus.Done)
+        val toDate = currentDate.plusDays(interval)
+        val turnovers = moneyOperRepository.findTrends()
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
-            .filter {
-                val item = it.first
-                val moneyOper = it.second
-                moneyOper.period == Period.Month
-                        && moneyOper.recurrenceId == null
-                        && moneyOper.type != MoneyOperType.transfer
-                        && item.balance.type.isBalance
-                        && item.balance.type != AccountType.reserve
-            }
-            .sortedBy { it.first.performed }
             .flatMap {
                 val item = it.first
                 val moneyOper = it.second
                 val moneyOperItemsTurnovers = mutableListOf<Turnover>()
-                val trendDate = currentDate.plusDays(ChronoUnit.DAYS.between(item.performed, currentDate))
-                val repaymentScheduleItem = item.balance.credit
-                    ?.let { credit -> RepaymentScheduleItem.of(trendDate, credit, item.value) }
-                val creditCardDebtAmount = repaymentScheduleItem?.let {
-                    if (repaymentScheduleItem.endDate > trendDate) repaymentScheduleItem.mainDebtAmount.negate()
-                    else null
-                } ?: BigDecimal.ZERO
-                Turnover(trendDate, TurnoverType.valueOf(item.balance.type), item.value, creditCardDebtAmount)
-                    .apply { moneyOperItemsTurnovers.add(this) }
-                repaymentScheduleItem?.apply {
-                    if (endDate > trendDate && endDate <= currentDate.plusDays(interval)) {
-                        // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
-                        // экземпляр BsDayStat.
-                        Turnover(item.dateWithGracePeriod, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"),
-                            creditCardDebtAmount.negate())
-                            .apply { moneyOperItemsTurnovers.add(this) }
+                var operDate = moneyOper.performed
+                do {
+                    val repaymentScheduleItem = item.balance.credit
+                        ?.let { credit -> RepaymentScheduleItem.of(operDate, credit, item.value) }
+                    val creditCardDebtAmount = repaymentScheduleItem?.let {
+                        if (repaymentScheduleItem.endDate > operDate) repaymentScheduleItem.mainDebtAmount.negate()
+                        else null
+                    } ?: BigDecimal.ZERO
+                    Turnover(operDate, TurnoverType.valueOf(item.balance.type), item.value, creditCardDebtAmount)
+                        .apply { moneyOperItemsTurnovers.add(this) }
+                    repaymentScheduleItem?.apply {
+                        if (endDate > operDate && endDate <= toDate) {
+                            // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
+                            // экземпляр BsDayStat.
+                            Turnover(endDate, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"),
+                                creditCardDebtAmount.negate())
+                                .apply { moneyOperItemsTurnovers.add(this) }
+                        }
                     }
-                }
-                Turnover(trendDate, TurnoverType.valueOf(moneyOper.type.name), item.value.abs())
-                    .apply { moneyOperItemsTurnovers.add(this) }
+                    Turnover(operDate, TurnoverType.valueOf(moneyOper.type.name), item.value.abs())
+                        .apply { moneyOperItemsTurnovers.add(this) }
+                    operDate = moneyOper.recurrenceParams!!.getNext(operDate)
+                } while (operDate < toDate)
                 moneyOperItemsTurnovers
             }
+            .sortedBy { it.operDate }
             .groupBy { Turnover(it.operDate, it.turnoverType) }
-
         turnovers.forEach { (turnover, dayAndTypeTurnovers) ->
             dayAndTypeTurnovers.forEach { turnover.plus(it) } }
 
         val trendTurnovers = turnovers.keys.toMutableList()
         trendTurnovers.sortBy { it.operDate }
 
-        log.info { "getTrendTurnovers finish" }
         return trendTurnovers
     }
 
     private fun getRecurrenceTurnovers(currentDate: LocalDate, toDate: LocalDate): Collection<Turnover> {
-        log.info { "getRecurrenceTurnovers start" }
-
         val recurrenceOpers = recurrenceOperRepository.findByBalanceSheetAndArc(false)
         val turnovers = HashSet<Turnover>()
         recurrenceOpers
@@ -283,6 +264,15 @@ class StatService(
                         } ?: BigDecimal.ZERO
                         putRecurrenceTurnover(turnovers, item.value, TurnoverType.valueOf(item.balance.type), nextDate,
                             creditCardDebtAmount)
+                        repaymentScheduleItem?.apply {
+                            if (endDate > nextDate && endDate <= toDate) {
+                                // Добавим нулевой оборот на день гашения задолженности по кредитке, чтобы создать на этот день
+                                // экземпляр BsDayStat.
+                                Turnover(repaymentScheduleItem.endDate, TurnoverType.valueOf(item.balance.type), BigDecimal("0.00"),
+                                    creditCardDebtAmount.negate())
+                                    .apply { turnovers.add(this) }
+                            }
+                        }
                         val operType = it.template.type
                         if (operType != MoneyOperType.transfer) {
                             putRecurrenceTurnover(turnovers, item.value.abs(), TurnoverType.valueOf(operType.name), nextDate)
@@ -295,7 +285,6 @@ class StatService(
         val recurrenceTurnovers = turnovers.toMutableList()
         recurrenceTurnovers.sortBy { it.operDate }
 
-        log.info { "getRecurrenceTurnovers finish" }
         return recurrenceTurnovers
     }
 
@@ -312,7 +301,7 @@ class StatService(
                 .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
                 .filter {
                     val item = it.first
-                    item.balance.type.isBalance &&item.dateWithGracePeriod > item.performed
+                    item.balance.type.isBalance && item.dateWithGracePeriod > item.performed
                 }
                 .flatMap {
                     val item = it.first

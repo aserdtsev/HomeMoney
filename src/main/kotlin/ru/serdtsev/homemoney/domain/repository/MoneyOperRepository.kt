@@ -6,6 +6,8 @@ import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
+import ru.serdtsev.homemoney.domain.model.moneyoper.Period
+import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
@@ -19,7 +21,7 @@ interface MoneyOperRepository {
     fun findByBalanceSheetAndStatusAndPerformed(balanceSheet: BalanceSheet, status: MoneyOperStatus,
          performed: LocalDate, pageable: Pageable): Page<MoneyOper>
     fun findByBalanceSheetAndStatusAndPerformed(bsId: UUID, status: MoneyOperStatus, performed: LocalDate): List<MoneyOper>
-    fun findByBalanceSheetAndStatusAndPerformedGreaterThan(status: MoneyOperStatus, performed: LocalDate): List<MoneyOper>
+    fun findByStatusAndPerformedGreaterThan(status: MoneyOperStatus, performed: LocalDate): List<MoneyOper>
     fun findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet: BalanceSheet, absValue: BigDecimal,
         pageable: Pageable): Page<MoneyOper>
     fun findByPerformedBetweenAndMoneyOperStatus(startDate: LocalDate, finishDate: LocalDate,
@@ -34,4 +36,6 @@ interface MoneyOperRepository {
      */
     fun findByCreditCardChargesForEarlyRepaymentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper>
     fun findByCreditCardChargesForRollbackEarlyRepaymentDebt(moneyOperItemId: UUID): List<MoneyOper>
+    fun findTrend(category: Tag, period: Period): MoneyOper?
+    fun findTrends(): List<MoneyOper>
 }

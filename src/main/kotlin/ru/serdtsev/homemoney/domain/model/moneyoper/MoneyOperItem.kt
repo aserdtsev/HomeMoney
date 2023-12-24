@@ -50,9 +50,7 @@ class MoneyOperItem (
     companion object {
         fun of(moneyOperId: UUID, balance: Balance, value: BigDecimal, performed: LocalDate, index: Int,
             id: UUID = UUID.randomUUID()): MoneyOperItem {
-            val repaymentSchedule = if (value < 0.toBigDecimal())
-                balance.credit?.let { RepaymentSchedule.of(performed, it, value.abs()) }
-                else null
+            val repaymentSchedule = getRepaymentSchedule(value, balance, performed)
             return MoneyOperItem(id, moneyOperId, balance.id, value, performed, index, repaymentSchedule)
         }
 
@@ -67,8 +65,14 @@ class MoneyOperItem (
             to.value = from.value
             to.index = from.index
             to.performed = from.performed
+            to.repaymentSchedule = getRepaymentSchedule(from.value, from.balance, from.performed)
             return listOf(to)
         }
+
+        private fun getRepaymentSchedule(value: BigDecimal, balance: Balance, performed: LocalDate) =
+            if (value < 0.toBigDecimal())
+                balance.credit?.let { RepaymentSchedule.of(performed, it, value.abs()) }
+            else null
     }
 }
 

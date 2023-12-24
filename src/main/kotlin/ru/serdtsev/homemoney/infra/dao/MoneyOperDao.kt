@@ -150,7 +150,7 @@ class MoneyOperDao(
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
-    override fun findByBalanceSheetAndStatusAndPerformedGreaterThan(status: MoneyOperStatus,
+    override fun findByStatusAndPerformedGreaterThan(status: MoneyOperStatus,
         performed: LocalDate): List<MoneyOper> {
         val sql = """
             select * from money_oper 
@@ -204,8 +204,12 @@ class MoneyOperDao(
                 and o.status = :status::money_oper_status
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
-        val paramMap = mapOf("bsId" to bsId,
-            "startDate" to startDate, "finishDate" to finishDate, "status" to status.toString())
+        val paramMap = mapOf(
+            "bsId" to bsId,
+            "startDate" to startDate,
+            "finishDate" to finishDate,
+            "status" to status.name
+        )
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
@@ -215,12 +219,17 @@ class MoneyOperDao(
             from money_oper o
             join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
-                and o.status = 'Done'::money_oper_status
+                and o.status = :status::money_oper_status
                 and i.performed < :startDate 
                 and (i.repayment_schedule -> 0 ->> 'endDate')::date between :startDate and :finishDate
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
-        val paramMap = mapOf("bsId" to bsId, "startDate" to startDate, "finishDate" to finishDate)
+        val paramMap = mapOf(
+            "bsId" to bsId,
+            "status" to MoneyOperStatus.Done.name,
+            "startDate" to startDate,
+            "finishDate" to finishDate
+        )
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
@@ -230,7 +239,7 @@ class MoneyOperDao(
             from money_oper o
             join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
-                and o.status = 'Done'::money_oper_status
+                and o.status = :status::money_oper_status
                 and i.balance_id = :balanceId
                 and i.performed <= :operDate 
                 and i.repayment_schedule is not null
@@ -240,6 +249,7 @@ class MoneyOperDao(
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf(
             "bsId" to bsId,
+            "status" to MoneyOperStatus.Done.name,
             "balanceId" to balanceId,
             "operDate" to operDate)
         return jdbcTemplate.query(sql, paramMap, rowMapper)
@@ -251,7 +261,7 @@ class MoneyOperDao(
             from money_oper o
             join money_oper_item i on i.oper_id = o.id
             where o.balance_sheet_id = :bsId 
-                and o.status = 'done'
+                and o.status = :status::money_oper_status
                 and i.repayment_schedule is not null
                 and (i.repayment_schedule -> 0 ->> 'repaymentDebtOperItemId')::uuid = :moneyOperItemId
             order by i.performed
@@ -259,7 +269,41 @@ class MoneyOperDao(
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf(
             "bsId" to bsId,
-            "moneyOperItemId" to moneyOperItemId)
+            "status" to MoneyOperStatus.Done.name,
+            "moneyOperItemId" to moneyOperItemId
+        )
+        return jdbcTemplate.query(sql, paramMap, rowMapper)
+    }
+
+    override fun findTrend(category: Tag, period: Period): MoneyOper? {
+        val sql = """
+            select o.*
+            from tag2obj t
+                join money_oper o on o.id = t.obj_id
+            where t.tag_id = :tagId
+                and o.status = :status::money_oper_status
+                and o.period = :period
+                and o.balance_sheet_id = :bsId
+        """.trimIndent()
+        val paramMap = mapOf(
+            "bsId" to ApiRequestContextHolder.balanceSheet.id,
+            "tagId" to category.id,
+            "period" to period.name,
+            "status" to MoneyOperStatus.Trend.name)
+        return jdbcTemplate.query(sql, paramMap, rowMapper).firstOrNull()
+    }
+
+    override fun findTrends(): List<MoneyOper> {
+        val sql = """
+            select o.*
+            from money_oper o
+            where o.status = :status::money_oper_status
+                and o.balance_sheet_id = :bsId
+        """.trimIndent()
+        val paramMap = mapOf(
+            "bsId" to ApiRequestContextHolder.balanceSheet.id,
+            "status" to MoneyOperStatus.Trend.name
+        )
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 

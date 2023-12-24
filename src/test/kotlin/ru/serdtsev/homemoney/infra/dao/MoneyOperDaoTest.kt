@@ -134,6 +134,10 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
             MoneyOperStatus.Done).also { assertEquals(listOf(moneyOper), it) }
     }
 
+    @Test
+    internal fun findTrend() {
+    }
+
     companion object {
         @JvmStatic
         private fun `params for save new MoneyOper by recurrenceParams`(): List<Arguments> =

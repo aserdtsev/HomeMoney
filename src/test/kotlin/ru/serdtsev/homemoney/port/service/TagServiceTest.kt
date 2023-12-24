@@ -33,7 +33,7 @@ internal class TagServiceTest : SpringBootBaseTest() {
         val tagsC = listOf(clothes)
 
         val opers = listOf(createMoneyOperWithTags(tagsA), createMoneyOperWithTags(tagsB), createMoneyOperWithTags(tagsC))
-        whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformedGreaterThan(any(), any()))
+        whenever(moneyOperRepository.findByStatusAndPerformedGreaterThan(any(), any()))
             .thenReturn(opers)
 
         whenever(tagRepository.findByBalanceSheetOrderByName())

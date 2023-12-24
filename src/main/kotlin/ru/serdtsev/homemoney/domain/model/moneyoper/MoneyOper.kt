@@ -152,6 +152,7 @@ class MoneyOper(
                 ", performed=" + performed +
                 ", items=" + items +
                 ", created=" + created +
+                ", recurrenceParams=" + recurrenceParams
                 '}'
     }
 
@@ -171,6 +172,10 @@ class MoneyOper(
     }
 
     companion object {
+        fun of(status: MoneyOperStatus, period: Period, recurrenceParams: DayRecurrenceParams): MoneyOper {
+            return MoneyOper(status, period = period, recurrenceParams = recurrenceParams)
+        }
+
         fun merge(from: MoneyOper, to: MoneyOper) {
             assert(from.id == to.id)
             val balanceEquals = balanceEquals(from, to)

@@ -2,14 +2,16 @@ package ru.serdtsev.homemoney.domain.model.moneyoper
 
 enum class MoneyOperStatus {
     New,
-    /** выполнен */
+    /** Выполнен */
     Done,
-    /** в ожидании */
+    /** В ожидании */
     Pending,
-    /** ожидает повтора */
+    /** Ожидает повтора */
     Recurrence,
-    /** отменен, конечный статус */
+    /** Отменен, конечный статус */
     Cancelled,
-    /** шаблон */
-    Template
+    /** Шаблон */
+    Template,
+    /** Тренд */
+    Trend
 }

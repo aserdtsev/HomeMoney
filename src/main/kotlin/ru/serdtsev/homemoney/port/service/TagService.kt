@@ -34,7 +34,7 @@ class TagService(
             } else {
                 // Найдем 10 наиболее часто используемых тегов-некатегорий за последние 30 дней.
                 val startDate = LocalDate.now().minusDays(30)
-                moneyOperRepository.findByBalanceSheetAndStatusAndPerformedGreaterThan(MoneyOperStatus.Done, startDate)
+                moneyOperRepository.findByStatusAndPerformedGreaterThan(MoneyOperStatus.Done, startDate)
                     .flatMap { it.tags }
                     .filter { !(it.arc) && !it.isCategory && !tags.contains(it.name) }
                     .groupingBy { it }.eachCount()

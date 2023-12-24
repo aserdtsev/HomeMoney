@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.domain.event
 
 import com.nhaarman.mockito_kotlin.doAnswer
-import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
@@ -16,13 +15,11 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
-import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 import java.util.stream.Stream
 
-internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
-    private val moneyOperRepository: MoneyOperRepository = mock { }
-    private val moneyOperStatusChangedHandler = MoneyOperStatusChangedHandler(moneyOperRepository)
+internal class ChangeBalanceValueHandlerTest: DomainBaseTest() {
+    private val changeBalanceValueHandler = ChangeBalanceValueHandler()
 
     @ParameterizedTest
     @MethodSource("paramsFor_handler_balanceIsChanged")
@@ -38,7 +35,7 @@ internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
             assertEquals(expected, aBalance.value)
         }.whenever(domainEventPublisher).publish(balance)
 
-        moneyOperStatusChangedHandler.handler(event)
+        changeBalanceValueHandler.handler(event)
 
         verify(domainEventPublisher).publish(balance)
     }
@@ -51,7 +48,7 @@ internal class MoneyOperStatusChangedHandlerTest: DomainBaseTest() {
         moneyOper.addItem(balance, BigDecimal("1.00"))
         val event = MoneyOperStatusChanged(beforeStatus, afterStatus, moneyOper)
 
-        moneyOperStatusChangedHandler.handler(event)
+        changeBalanceValueHandler.handler(event)
 
         verify(domainEventPublisher, times(0)).publish(balance)
     }
