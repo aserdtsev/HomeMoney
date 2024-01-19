@@ -39,25 +39,7 @@ class EarlyPaymentDebtHandler(
         var debtAmount = operItem.value
         moneyOperRepository.findByCreditCardChargesForEarlyRepaymentDebt(operItem.balanceId, operItem.performed)
             .forEach { oper ->
-                oper.items
-                    .filter { creditCardChargeItem -> creditCardChargeItem.balanceId == operItem.balanceId }
-                    .forEach { creditCardChargeItem ->
-                        // todo Учесть, что задолженность может гаситься несколькими операциями
-                        if (debtAmount > BigDecimal.ZERO) {
-                            creditCardChargeItem.repaymentSchedule?.get(0)?.let {
-                                it.repaymentDebtOperItemId = operItem.id
-                                val repaymentDebtAmount =
-                                    (it.repaidDebtAmount ?: BigDecimal.ZERO) + min(it.totalAmount, debtAmount)
-                                assert(repaymentDebtAmount > BigDecimal.ZERO)
-                                it.repaidDebtAmount = repaymentDebtAmount
-                                if (it.repaidDebtAmount == it.totalAmount) {
-                                    it.endDate = operItem.performed
-                                }
-                                debtAmount -= repaymentDebtAmount
-                            }
-                        }
-                    }
-                DomainEventPublisher.instance.publish(oper)
+                debtAmount = oper.earlyRepaymentDebt(operItem, debtAmount)
             }
     }
 
@@ -68,6 +50,7 @@ class EarlyPaymentDebtHandler(
                     .filter { creditCardChargeItem -> creditCardChargeItem.balanceId == operItem.balanceId }
                     .forEach { creditCardChargeItem ->
                         val credit = requireNotNull(creditCardChargeItem.balance.credit)
+                        // todo Учесть рассрочку на несколько месяцев
                         creditCardChargeItem.repaymentSchedule = RepaymentSchedule.of(creditCardChargeItem.performed,
                             credit, creditCardChargeItem.value.abs())
                     }

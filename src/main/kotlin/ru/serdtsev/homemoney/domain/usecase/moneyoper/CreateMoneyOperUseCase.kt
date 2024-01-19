@@ -6,7 +6,6 @@ import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
-import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.time.LocalDate
 import java.util.*
 
@@ -18,7 +17,6 @@ class CreateMoneyOperUseCase(
     fun run(moneyOper: MoneyOper): List<MoneyOper> {
         assert(!moneyOperRepository.exists(moneyOper.id))
         val resultMoneyOpers = mutableListOf(moneyOper)
-        val balanceSheet = ApiRequestContextHolder.balanceSheet
         createReserveMoneyOper(moneyOper)?.let { resultMoneyOpers.add(it) }
         moneyOper.recurrenceId?.also { skipRecurrenceOper(it) }
         if ((moneyOper.status == MoneyOperStatus.Done)
@@ -29,8 +27,7 @@ class CreateMoneyOperUseCase(
         }
         resultMoneyOpers.forEach { resultMoneyOper ->
             moneyOperRepository
-                .findByBalanceSheetAndStatusAndPerformed(
-                    balanceSheet.id,
+                .findByStatusAndPerformed(
                     resultMoneyOper.status,
                     resultMoneyOper.performed
                 ).lastOrNull { moneyOper -> moneyOper.id !in resultMoneyOpers.map { it.id } }

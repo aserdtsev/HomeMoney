@@ -13,8 +13,7 @@ class UpMoneyOperUseCase(private val moneyOperRepository: MoneyOperRepository) {
     fun run(moneyOperId: UUID) {
         val bsId = ApiRequestContextHolder.bsId
         val moneyOper = moneyOperRepository.findById(moneyOperId)
-        val moneyOpers = moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(bsId,
-            Done, moneyOper.performed)
+        val moneyOpers = moneyOperRepository.findByStatusAndPerformed(Done, moneyOper.performed)
             .sortedBy { it.dateNum }
             .toMutableList()
         val index = moneyOpers.indexOf(moneyOper)

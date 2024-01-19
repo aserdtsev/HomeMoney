@@ -25,7 +25,7 @@ internal class UpMoneyOperUseCaseTest: DomainBaseTest() {
         val moneyOper = moneyOpers[2]
 
         whenever(moneyOperRepository.findById(moneyOper.id)).thenReturn(moneyOper)
-        whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(balanceSheet.id, MoneyOperStatus.Done, LocalDate.now()))
+        whenever(moneyOperRepository.findByStatusAndPerformed(MoneyOperStatus.Done, LocalDate.now()))
             .thenReturn(moneyOpers)
 
         useCase.run(moneyOper.id)
@@ -43,7 +43,7 @@ internal class UpMoneyOperUseCaseTest: DomainBaseTest() {
         val nextMoneyOper = moneyOpers[1]
 
         whenever(moneyOperRepository.findById(moneyOper.id)).thenReturn(moneyOper)
-        whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(balanceSheet.id, MoneyOperStatus.Done, LocalDate.now()))
+        whenever(moneyOperRepository.findByStatusAndPerformed(MoneyOperStatus.Done, LocalDate.now()))
             .thenReturn(moneyOpers)
 
         doAnswer {

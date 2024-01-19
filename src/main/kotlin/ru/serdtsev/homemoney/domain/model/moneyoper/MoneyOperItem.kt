@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.domain.model.moneyoper
 
+import org.apache.commons.lang3.ObjectUtils
 import ru.serdtsev.homemoney.domain.event.DomainEvent
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
@@ -26,6 +27,28 @@ class MoneyOperItem (
 
     val isDebtRepayment: Boolean
         get() = balance.isCreditCard && value > BigDecimal.ZERO
+
+    fun earlyRepaymentDebt(repaymentDebtOperItem: MoneyOperItem, inDebtAmount: BigDecimal): BigDecimal {
+        assert(inDebtAmount > BigDecimal.ZERO)
+        var outDebtAmount = inDebtAmount
+        repaymentSchedule
+            ?.filter { rsi ->
+                repaymentDebtOperItem.performed in (rsi.startDate..rsi.endDate)
+                        && (rsi.repaidDebtAmount ?: BigDecimal.ZERO) < rsi.totalAmount
+            }
+            ?.forEach {
+                it.repaymentDebtOperItemId = repaymentDebtOperItem.id
+                val repaymentDebtAmount =
+                    (it.repaidDebtAmount ?: BigDecimal.ZERO) + ObjectUtils.min(it.totalAmount, inDebtAmount)
+                assert(repaymentDebtAmount > BigDecimal.ZERO)
+                it.repaidDebtAmount = repaymentDebtAmount
+                if (it.repaidDebtAmount == it.totalAmount) {
+                    it.endDate = repaymentDebtOperItem.performed
+                }
+                outDebtAmount -= repaymentDebtAmount
+            }
+        return outDebtAmount
+    }
 
     override fun toString(): String {
         return "MoneyOperItem{id=$id, moneyOperId=$moneyOperId, balanceId=$balanceId, value=$value, " +

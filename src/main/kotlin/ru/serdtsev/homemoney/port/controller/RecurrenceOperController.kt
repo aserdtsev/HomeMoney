@@ -36,7 +36,7 @@ class RecurrenceOperController(
     @Transactional(readOnly = true)
     fun getList(@RequestParam(required = false, defaultValue = "") search: String): HmResponse {
         return try {
-            val list = moneyOperService.getRecurrenceOpers(apiRequestContextHolder.getBalanceSheet(), search)
+            val list = moneyOperService.getRecurrenceOpers(search)
                     .stream()
                     .sorted(Comparator.comparing(RecurrenceOper::nextDate))
                     .map { conversionService.convert(it, RecurrenceOperDto::class.java) }

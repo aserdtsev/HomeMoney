@@ -105,21 +105,21 @@ internal class MoneyOperDaoTest: SpringBootBaseTest() {
         with(PageRequest.of(0, 1)) {
             val expected = PageImpl(listOf(moneyOper2), this, 2)
             val actual =
-                moneyOperDao.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, this)
+                moneyOperDao.findByValueOrderByPerformedDesc(value, this)
             assertEquals(expected.totalPages, actual.totalPages)
             assertEquals(expected.content, actual.content)
         }
         with(PageRequest.of(1, 1)) {
             val expected = PageImpl(listOf(moneyOper1), this, 2)
             val actual =
-                moneyOperDao.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, this)
+                moneyOperDao.findByValueOrderByPerformedDesc(value, this)
             assertEquals(expected.totalPages, actual.totalPages)
             assertEquals(expected.content, actual.content)
         }
         with(PageRequest.of(0, 2)) {
             val expected = PageImpl(listOf(moneyOper2, moneyOper1), this, 1)
             val actual =
-                moneyOperDao.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, this)
+                moneyOperDao.findByValueOrderByPerformedDesc(value, this)
             assertEquals(expected.totalPages, actual.totalPages)
             assertEquals(expected.content, actual.content)
         }

@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.domain.model.account.Balance
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
@@ -102,11 +101,12 @@ class MoneyOperDao(
 
     override fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
-    override fun findByBalanceSheetAndStatus(balanceSheet: BalanceSheet, status: MoneyOperStatus, pageable: Pageable): Page<MoneyOper> {
+    override fun findByStatus(status: MoneyOperStatus, pageable: Pageable): Page<MoneyOper> {
+        val bsId = ApiRequestContextHolder.balanceSheet.id
         val whereCondition = "balance_sheet_id = :bsId and status = :status::money_oper_status"
         val total = run {
             val sql = "select count(*) from money_oper where $whereCondition"
-            val paramMap = mapOf("bsId" to balanceSheet.id, "status" to status.toString())
+            val paramMap = mapOf("bsId" to bsId, "status" to status.toString())
             jdbcTemplate.queryForObject(sql, paramMap, Long::class.java)!!
         }
         val orderByExpression = pageable.sort
@@ -118,28 +118,29 @@ class MoneyOperDao(
             order by $orderByExpression 
             limit :limit 
             offset :offset""".trimIndent()
-        val paramMap = mapOf("bsId" to balanceSheet.id, "status" to status.toString(), "limit" to pageable.pageSize,
+        val paramMap = mapOf("bsId" to bsId, "status" to status.toString(), "limit" to pageable.pageSize,
             "offset" to pageable.offset)
         val list = jdbcTemplate.query(sql, paramMap, rowMapper)
         return PageImpl(list, pageable, total)
     }
 
-    override fun findByBalanceSheetAndStatusAndPerformed(balanceSheet: BalanceSheet,
-        status: MoneyOperStatus, performed: LocalDate, pageable: Pageable): Page<MoneyOper> {
+    override fun findByStatusAndPerformed(status: MoneyOperStatus, performed: LocalDate, pageable: Pageable): Page<MoneyOper> {
+        val bsId = ApiRequestContextHolder.balanceSheet.id
         val whereCondition = "balance_sheet_id = :bsId and status = :status::money_oper_status and trn_date = :performed"
         val total = run {
             val sql = "select count(*) from money_oper where $whereCondition"
-            val paramMap = mapOf("bsId" to balanceSheet.id, "status" to status.toString(), "performed" to performed)
+            val paramMap = mapOf("bsId" to bsId, "status" to status.toString(), "performed" to performed)
             jdbcTemplate.queryForObject(sql, paramMap, Long::class.java)!!
         }
         val sql = "select * from money_oper where $whereCondition order by date_num limit :limit offset :offset"
-        val paramMap = mapOf("bsId" to balanceSheet.id, "status" to status.toString(), "performed" to performed,
+        val paramMap = mapOf("bsId" to bsId, "status" to status.toString(), "performed" to performed,
             "limit" to pageable.pageSize, "offset" to pageable.offset)
         val list = jdbcTemplate.query(sql, paramMap, rowMapper)
         return PageImpl(list, pageable, total)
     }
 
-    override fun findByBalanceSheetAndStatusAndPerformed(bsId: UUID, status: MoneyOperStatus, performed: LocalDate): List<MoneyOper> {
+    override fun findByStatusAndPerformed(status: MoneyOperStatus, performed: LocalDate): List<MoneyOper> {
+        val bsId = ApiRequestContextHolder.balanceSheet.id
         val sql = """
             select * from money_oper 
             where balance_sheet_id = :bsId and status = :status::money_oper_status and trn_date = :performed 
@@ -150,8 +151,7 @@ class MoneyOperDao(
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
-    override fun findByStatusAndPerformedGreaterThan(status: MoneyOperStatus,
-        performed: LocalDate): List<MoneyOper> {
+    override fun findByStatusAndPerformedGreaterThan(status: MoneyOperStatus, performed: LocalDate): List<MoneyOper> {
         val sql = """
             select * from money_oper 
             where balance_sheet_id = :bsId and status = :status::money_oper_status and trn_date > :performed 
@@ -164,8 +164,8 @@ class MoneyOperDao(
         return jdbcTemplate.query(sql, paramMap, rowMapper)
     }
 
-    override fun findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet: BalanceSheet, absValue: BigDecimal,
-        pageable: Pageable): Page<MoneyOper> {
+    override fun findByValueOrderByPerformedDesc(absValue: BigDecimal, pageable: Pageable): Page<MoneyOper> {
+        val bsId = ApiRequestContextHolder.balanceSheet.id
         val total = run {
             val sql = """
                 select count(*)
@@ -176,7 +176,7 @@ class MoneyOperDao(
                     ) t
             """.trimIndent()
             val paramMap =
-                mapOf("bsId" to balanceSheet.id, "value" to absValue)
+                mapOf("bsId" to bsId, "value" to absValue)
             jdbcTemplate.queryForObject(sql, paramMap, Long::class.java)!!
         }
         val sql = """
@@ -188,7 +188,7 @@ class MoneyOperDao(
             limit :limit
             offset :offset    
         """.trimIndent()
-        val paramMap = mapOf("bsId" to balanceSheet.id, "value" to absValue,
+        val paramMap = mapOf("bsId" to bsId, "value" to absValue,
             "limit" to pageable.pageSize, "offset" to pageable.offset)
         val list = jdbcTemplate.query(sql, paramMap, rowMapper)
         return PageImpl(list, pageable, total)
@@ -235,16 +235,20 @@ class MoneyOperDao(
 
     override fun findByCreditCardChargesForEarlyRepaymentDebt(balanceId: UUID, operDate: LocalDate): List<MoneyOper> {
         val sql = """
-            select o.* 
-            from money_oper o
-            join money_oper_item i on i.oper_id = o.id
-            where o.balance_sheet_id = :bsId 
-                and o.status = :status::money_oper_status
-                and i.balance_id = :balanceId
-                and i.performed <= :operDate 
-                and i.repayment_schedule is not null
-                and :operDate between i.performed and (i.repayment_schedule -> 0 ->> 'endDate')::date
-            order by i.performed
+            select distinct on (trn_date, id) *
+            from (
+                select o.*,
+                    (jsonb_array_elements(repayment_schedule) ->> 'startDate')::date as start_date,
+                    (jsonb_array_elements(repayment_schedule) ->> 'endDate')::date as end_date
+                from money_oper o
+                    join money_oper_item i on i.oper_id = o.id
+                where o.balance_sheet_id = :bsId 
+                    and o.status = :status::money_oper_status
+                    and i.balance_id = :balanceId
+                    and i.performed <= :operDate 
+                    and i.repayment_schedule is not null ) t
+            where :operDate between start_date and end_date          
+            order by trn_date
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf(

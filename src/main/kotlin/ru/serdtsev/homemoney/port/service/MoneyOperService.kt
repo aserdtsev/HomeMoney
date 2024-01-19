@@ -1,7 +1,6 @@
 package ru.serdtsev.homemoney.port.service
 
 import org.springframework.stereotype.Service
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
@@ -17,8 +16,8 @@ class MoneyOperService(private val recurrenceOperRepository: RecurrenceOperRepos
     /**
      * Возвращает следующие повторы операций.
      */
-    fun getNextRecurrenceOpers(balanceSheet: BalanceSheet, search: String, beforeDate: LocalDate?): List<MoneyOper> {
-        return getRecurrenceOpers(balanceSheet, search)
+    fun getNextRecurrenceOpers(search: String, beforeDate: LocalDate?): List<MoneyOper> {
+        return getRecurrenceOpers(search)
                 .filter { it.nextDate.isBefore(beforeDate) }
                 .map { it.createNextMoneyOper() }
     }
@@ -26,7 +25,7 @@ class MoneyOperService(private val recurrenceOperRepository: RecurrenceOperRepos
     /**
      * Возвращает повторяющиеся операции.
      */
-    fun getRecurrenceOpers(balanceSheet: BalanceSheet, search: String): List<RecurrenceOper> =
+    fun getRecurrenceOpers(search: String): List<RecurrenceOper> =
             recurrenceOperRepository.findByBalanceSheetAndArc(false).filter { isOperMatchSearch(it, search) }
 
     /**

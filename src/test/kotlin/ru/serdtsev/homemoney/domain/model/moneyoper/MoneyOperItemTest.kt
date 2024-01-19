@@ -1,13 +1,13 @@
 package ru.serdtsev.homemoney.domain.model.moneyoper
 
 import org.apache.commons.lang3.SerializationUtils
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import ru.serdtsev.homemoney.domain.DomainBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
+import ru.serdtsev.homemoney.domain.model.account.Credit
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*
@@ -42,5 +42,24 @@ internal class MoneyOperItemTest : DomainBaseTest() {
         item = SerializationUtils.clone(origItem)
         item.value = origItem.value.add(BigDecimal.ONE)
         assertFalse(MoneyOperItem.balanceEquals(item, origItem))
+    }
+
+    @Test
+    internal fun earlyRepaymentDebt() {
+        val credit = Credit(BigDecimal("700000.00"), 12, 6)
+        val balance = Balance(AccountType.debit, "Credti card", credit = credit)
+        val repaymentDebtOperItem = MoneyOperItem.of(UUID.randomUUID(), balance, BigDecimal("100.00"), LocalDate.parse("2024-01-05"), 0)
+        val operItem = MoneyOperItem.of(UUID.randomUUID(), balance, BigDecimal("-99.00"), LocalDate.parse("2023-12-01"), 0)
+            .apply {
+                this.repaymentSchedule = RepaymentSchedule.of(
+                    RepaymentScheduleItem.of(LocalDate.parse("2023-12-01"), credit, BigDecimal("33.00"))!!,
+                    RepaymentScheduleItem.of(LocalDate.parse("2024-01-01"), credit, BigDecimal("33.00"))!!,
+                    RepaymentScheduleItem.of(LocalDate.parse("2024-02-01"), credit, BigDecimal("33.00"))!!
+                )
+            }
+
+        val actualMainDebt = operItem.earlyRepaymentDebt(repaymentDebtOperItem, repaymentDebtOperItem.value)
+
+        assertEquals(BigDecimal("67.00"), actualMainDebt)
     }
 }

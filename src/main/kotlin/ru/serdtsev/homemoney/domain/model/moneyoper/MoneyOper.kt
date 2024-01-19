@@ -145,6 +145,24 @@ class MoneyOper(
         recurrenceId = recurrenceOper.id
     }
 
+    fun earlyRepaymentDebt(repaymentDebtOperItem: MoneyOperItem, inDebtAmount: BigDecimal): BigDecimal {
+        var outDebtAmount = inDebtAmount
+        var needPublish = false
+        items
+            .filter { it.balanceId == repaymentDebtOperItem.balanceId }
+            .forEach { operItem ->
+                if (outDebtAmount > BigDecimal.ZERO) {
+                    val oldOutDebtAmount = outDebtAmount
+                    outDebtAmount = operItem.earlyRepaymentDebt(repaymentDebtOperItem, outDebtAmount)
+                    needPublish = needPublish || outDebtAmount != oldOutDebtAmount
+                }
+            }
+        if (needPublish) {
+            DomainEventPublisher.instance.publish(this)
+        }
+        return outDebtAmount
+    }
+
     override fun toString(): String {
         return "MoneyOper{" +
                 "id=" + id +

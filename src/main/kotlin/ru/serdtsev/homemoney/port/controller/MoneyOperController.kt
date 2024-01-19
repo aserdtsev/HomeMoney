@@ -5,7 +5,6 @@ import org.springframework.core.convert.ConversionService
 import org.springframework.data.domain.*
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
@@ -49,18 +48,17 @@ class MoneyOperController(
             @RequestParam(required = false, defaultValue = "0") offset: Int): HmResponse {
         return try {
             val opers = ArrayList<MoneyOperDto>()
-            val balanceSheet = apiRequestContextHolder.getBalanceSheet()
             if (offset == 0) {
-                val pendingOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.Pending, search, limit + 1, offset)
+                val pendingOpers = getMoneyOpers(MoneyOperStatus.Pending, search, limit + 1, offset)
                         .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
                 opers.addAll(pendingOpers)
                 val beforeDate = LocalDate.now().plusDays(30)
-                val recurrenceOpers = moneyOperService.getNextRecurrenceOpers(balanceSheet, search, beforeDate)
+                val recurrenceOpers = moneyOperService.getNextRecurrenceOpers(search, beforeDate)
                         .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
                 opers.addAll(recurrenceOpers)
                 opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
             }
-            val doneOpers = getMoneyOpers(balanceSheet, MoneyOperStatus.Done, search, limit + 1, offset)
+            val doneOpers = getMoneyOpers(MoneyOperStatus.Done, search, limit + 1, offset)
                     .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
             val hasNext = doneOpers.size > limit
             opers.addAll(if (hasNext) doneOpers.subList(0, limit) else doneOpers)
@@ -71,27 +69,25 @@ class MoneyOperController(
         }
     }
 
-    private fun getMoneyOpers(balanceSheet: BalanceSheet, status: MoneyOperStatus, search: String,
-                              limit: Int, offset: Int): List<MoneyOper> {
+    private fun getMoneyOpers(status: MoneyOperStatus, search: String, limit: Int, offset: Int): List<MoneyOper> {
         val sort = Sort.by(Sort.Direction.DESC, "trn_date")
                 .and(Sort.by(Sort.Direction.DESC,"date_num"))
                 .and(Sort.by(Sort.Direction.DESC, "created_ts"))
         return if (search.isBlank())
-            getMoneyOpers(balanceSheet, status, sort, limit, offset)
+            getMoneyOpers(status, sort, limit, offset)
         else
-            getMoneyOpersBySearch(balanceSheet, status, search.lowercase(Locale.getDefault()), sort, limit, offset)
+            getMoneyOpersBySearch(status, search.lowercase(Locale.getDefault()), sort, limit, offset)
     }
 
-    private fun getMoneyOpers(balanceSheet: BalanceSheet, status: MoneyOperStatus, sort: Sort, limit: Int,
-                              offset: Int): List<MoneyOper> {
+    private fun getMoneyOpers(status: MoneyOperStatus, sort: Sort, limit: Int, offset: Int): List<MoneyOper> {
         val pageRequest: Pageable = PageRequest.of(offset / (limit - 1), limit - 1, sort)
-        return moneyOperRepository.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest).content.plus(
-                moneyOperRepository.findByBalanceSheetAndStatus(balanceSheet, status, pageRequest.next()).content.take(1)
+        return moneyOperRepository.findByStatus(status, pageRequest).content.plus(
+                moneyOperRepository.findByStatus(status, pageRequest.next()).content.take(1)
         )
     }
 
-    private fun getMoneyOpersBySearch(balanceSheet: BalanceSheet, status: MoneyOperStatus, search: String,
-                                      sort: Sort, limit: Int, offset: Int): List<MoneyOper> {
+    private fun getMoneyOpersBySearch(status: MoneyOperStatus, search: String, sort: Sort,
+        limit: Int, offset: Int): List<MoneyOper> {
         var pageRequest: Pageable = PageRequest.of(0, 100, sort)
         val opers = ArrayList<MoneyOper>()
         var page: Page<*>
@@ -102,7 +98,9 @@ class MoneyOperController(
             search.matches(SearchDateRegex) -> {
                 // по дате в формате ISO
                 pager = Function { pageable: Pageable ->
-                    moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(balanceSheet, status, LocalDate.parse(search), pageable)
+                    moneyOperRepository.findByStatusAndPerformed(status,
+                        LocalDate.parse(search),
+                        pageable)
                 }
                 adder = Consumer { p: Page<*> -> opers.addAll((p as Page<MoneyOper>).content) }
             }
@@ -123,7 +121,7 @@ class MoneyOperController(
                 pageRequest = PageRequest.of(pageRequest.pageNumber, pageRequest.pageSize)
                 pager = Function { pageable: Pageable ->
                     val value = BigDecimal(search).abs()
-                    moneyOperRepository.findByBalanceSheetAndValueOrderByPerformedDesc(balanceSheet, value, pageable)
+                    moneyOperRepository.findByValueOrderByPerformedDesc(value, pageable)
                 }
                 adder = Consumer { p: Page<*> ->
                     (p as Page<MoneyOper>).content
@@ -132,7 +130,7 @@ class MoneyOperController(
                 }
             }
             else -> {
-                pager = Function { pageable: Pageable? -> moneyOperRepository.findByBalanceSheetAndStatus(balanceSheet, status, pageable!!) }
+                pager = Function { pageable: Pageable? -> moneyOperRepository.findByStatus(status, pageable!!) }
                 adder = Consumer { p: Page<*> ->
                     val opersChunk = (p as Page<MoneyOper>).content
                             .filter { oper: MoneyOper ->

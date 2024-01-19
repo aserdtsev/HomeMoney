@@ -46,7 +46,7 @@ internal class CreateMoneyOperUseCaseTest : DomainBaseTest() {
 
         val moneyOper0 = MoneyOper(Done, dateNum = 0)
         val moneyOper1 = MoneyOper(Done, dateNum = 1)
-        whenever(moneyOperRepository.findByBalanceSheetAndStatusAndPerformed(balanceSheet.id, Done, moneyOper.performed))
+        whenever(moneyOperRepository.findByStatusAndPerformed(Done, moneyOper.performed))
             .thenReturn(listOf(moneyOper, moneyOper0, moneyOper1))
 
         doAnswer {
