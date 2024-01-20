@@ -24,7 +24,7 @@ class UserDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : DomainMode
         jdbcTemplate.update(sql, paramMap)
     }
 
-    @Cacheable("UserDao.findByEmail", condition = "#result == null")
+    @Cacheable("UserDao.findByEmail", condition = "#result != null")
     override fun findByEmail(email: String): User? {
         val sql = """
             select id, balance_sheet_id, email, pwd_hash 

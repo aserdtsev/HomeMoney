@@ -233,6 +233,7 @@ class StatService(
                 } while (operDate < toDate)
                 moneyOperItemsTurnovers
             }
+            .filter { it.operDate <= toDate }
             .sortedBy { it.operDate }
             .groupBy { Turnover(it.operDate, it.turnoverType) }
         turnovers.forEach { (turnover, dayAndTypeTurnovers) ->

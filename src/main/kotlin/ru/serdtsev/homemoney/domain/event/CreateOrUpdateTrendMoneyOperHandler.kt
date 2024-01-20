@@ -20,11 +20,22 @@ class CreateOrUpdateTrendMoneyOperHandler(
     fun handler(event: MoneyOperStatusChanged) {
         val moneyOper = event.moneyOper
         val category = moneyOper.tags.firstOrNull { it.isCategory }
-        if (moneyOper.recurrenceId != null || moneyOper.period != Period.Month || category == null) {
+        val period = moneyOper.period
+        val calculatedDate = moneyOper.performed
+        if (moneyOper.recurrenceId != null || period != Period.Month || category == null) {
             return
         }
 
-        val (items, intervalDays) = getItemsAndIntervalDays(requireNotNull(moneyOper.period), category)
+        createOrUpdateTrendMoneyOper(period, category, calculatedDate)
+    }
+
+    @EventListener
+    fun handler(event: TrendMoneyOperNeedsToBeUpdated) = with(event) {
+        createOrUpdateTrendMoneyOper(period, category, calculatedDate)
+    }
+
+    private fun createOrUpdateTrendMoneyOper(period: Period, category: Tag, calculatedDate: LocalDate) {
+        val (items, intervalDays) = getItemsAndIntervalDays(period, category)
         val dateToSumMap = items
             .groupBy { it.performed }
             .entries
@@ -45,14 +56,14 @@ class CreateOrUpdateTrendMoneyOperHandler(
                 val item = this.items[0]
                 item.value = avg
                 item.balanceId = balanceId
-                this.performed = recurrenceParams.getNext(moneyOper.performed)
+                this.performed = recurrenceParams.getNext(calculatedDate)
                 while (this.performed < LocalDate.now()) {
                     this.performed = recurrenceParams.getNext(this.performed)
                 }
             }
             ?: MoneyOper.of(MoneyOperStatus.Trend, Period.Day, recurrenceParams).apply {
                 this.setTags(listOf(category))
-                this.performed = recurrenceParams.getNext(moneyOper.performed)
+                this.performed = recurrenceParams.getNext(calculatedDate)
                 val balance = balanceRepository.findById(balanceId)
                 this.addItem(balance, avg)
             }

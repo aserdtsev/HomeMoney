@@ -7,6 +7,7 @@ import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import ru.serdtsev.homemoney.domain.DomainBaseTest
+import ru.serdtsev.homemoney.domain.event.MoneyOperStatusChanged
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.*

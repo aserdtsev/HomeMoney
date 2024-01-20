@@ -2,6 +2,7 @@ package ru.serdtsev.homemoney.domain.model.moneyoper
 
 import ru.serdtsev.homemoney.domain.event.DomainEvent
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
+import ru.serdtsev.homemoney.domain.event.MoneyOperStatusChanged
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*

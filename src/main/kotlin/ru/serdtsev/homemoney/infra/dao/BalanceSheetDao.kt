@@ -8,6 +8,7 @@ import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
 import java.math.BigDecimal
+import java.sql.ResultSet
 import java.sql.Timestamp
 import java.util.*
 
@@ -39,15 +40,10 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
     @Cacheable("BalanceSheetDao.findById", keyGenerator = "")
     override fun findById(id: UUID): BalanceSheet = findByIdOrNull(id)!!
 
-    @Cacheable("BalanceSheetDao.findById", condition = "#result == null")
+    @Cacheable("BalanceSheetDao.findById", condition = "#result != null")
     override fun findByIdOrNull(id: UUID): BalanceSheet? {
         val sql = "select * from balance_sheet where id = :id"
-        return jdbcTemplate.query(sql, mapOf("id" to id)) { rs, _ ->
-            val id1 = UUID.fromString(rs.getString("id"))
-            val createdTs = rs.getTimestamp("created_ts").toInstant()
-            val currencyCode = rs.getString("currency_code")
-            BalanceSheet(id1, createdTs, currencyCode)
-        }.firstOrNull()
+        return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()
     }
 
     override fun getAggregateAccountSaldoList(id: UUID): List<Pair<AccountType, BigDecimal>> {
@@ -79,4 +75,12 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
         return jdbcTemplate.queryForObject(sql, paramMap, BigDecimal::class.java) ?: BigDecimal.ZERO
     }
 
+    override fun findAll(): List<BalanceSheet> = jdbcTemplate.query("select * from balance_sheet", rowMapper)
+
+    private val rowMapper: (rs: ResultSet, rowNum: Int) -> BalanceSheet = { rs, _ ->
+        val id = UUID.fromString(rs.getString("id"))
+        val createdTs = rs.getTimestamp("created_ts").toInstant()
+        val currencyCode = rs.getString("currency_code")
+        BalanceSheet(id, createdTs, currencyCode)
+    }
 }

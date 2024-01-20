@@ -4,7 +4,6 @@ import org.springframework.context.event.EventListener
 import org.springframework.core.annotation.Order
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
 import java.math.BigDecimal
 
 @Service

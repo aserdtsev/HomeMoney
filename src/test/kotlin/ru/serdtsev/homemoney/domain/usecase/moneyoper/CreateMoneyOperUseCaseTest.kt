@@ -9,7 +9,7 @@ import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
+import ru.serdtsev.homemoney.domain.event.MoneyOperStatusChanged
 import ru.serdtsev.homemoney.domain.model.moneyoper.Period
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository

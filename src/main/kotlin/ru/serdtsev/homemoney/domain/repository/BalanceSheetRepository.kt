@@ -14,4 +14,5 @@ interface BalanceSheetRepository {
     fun findByIdOrNull(id: UUID): BalanceSheet?
     fun getAggregateAccountSaldoList(id: UUID): List<Pair<AccountType, BigDecimal>>
     fun getActualDebt(id: UUID): BigDecimal
+    fun findAll(): List<BalanceSheet>
 }

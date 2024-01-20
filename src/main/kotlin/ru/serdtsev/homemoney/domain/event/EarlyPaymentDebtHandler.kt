@@ -1,14 +1,11 @@
 package ru.serdtsev.homemoney.domain.event
 
-import org.apache.commons.lang3.ObjectUtils.min
 import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.*
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatusChanged
 import ru.serdtsev.homemoney.domain.model.moneyoper.RepaymentSchedule
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
-import java.math.BigDecimal
 
 @Service
 @Suppress("DuplicatedCode")
