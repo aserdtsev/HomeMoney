@@ -6,7 +6,6 @@ import org.springframework.data.domain.*
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
@@ -18,12 +17,9 @@ import ru.serdtsev.homemoney.port.common.PagedList
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
 import ru.serdtsev.homemoney.port.service.MoneyOperService
 import ru.serdtsev.homemoney.port.service.TagService
-import java.math.BigDecimal
 import java.sql.SQLException
 import java.time.LocalDate
 import java.util.*
-import java.util.function.Consumer
-import java.util.function.Function
 
 @RestController
 @RequestMapping("/api/money-opers")
@@ -49,16 +45,16 @@ class MoneyOperController(
         return try {
             val opers = ArrayList<MoneyOperDto>()
             if (offset == 0) {
-                val pendingOpers = getMoneyOpers(MoneyOperStatus.Pending, search, limit + 1, offset)
-                        .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
-                opers.addAll(pendingOpers)
                 val beforeDate = LocalDate.now().plusDays(30)
-                val recurrenceOpers = moneyOperService.getNextRecurrenceOpers(search, beforeDate)
-                        .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
-                opers.addAll(recurrenceOpers)
+                val upcomingOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Pending, search, Int.MAX_VALUE)
+                    .plus(moneyOperService.getNextRecurrenceOpers(search, beforeDate))
+                    .plus(moneyOperService.getMoneyOpers(MoneyOperStatus.Trend, search, Int.MAX_VALUE)
+                        .filter { it.performed < beforeDate })
+                    .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
+                opers.addAll(upcomingOpers)
                 opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
             }
-            val doneOpers = getMoneyOpers(MoneyOperStatus.Done, search, limit + 1, offset)
+            val doneOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Done, search, limit + 1, offset)
                     .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
             val hasNext = doneOpers.size > limit
             opers.addAll(if (hasNext) doneOpers.subList(0, limit) else doneOpers)
@@ -68,89 +64,6 @@ class MoneyOperController(
             HmResponse.getFail(e.code.name)
         }
     }
-
-    private fun getMoneyOpers(status: MoneyOperStatus, search: String, limit: Int, offset: Int): List<MoneyOper> {
-        val sort = Sort.by(Sort.Direction.DESC, "trn_date")
-                .and(Sort.by(Sort.Direction.DESC,"date_num"))
-                .and(Sort.by(Sort.Direction.DESC, "created_ts"))
-        return if (search.isBlank())
-            getMoneyOpers(status, sort, limit, offset)
-        else
-            getMoneyOpersBySearch(status, search.lowercase(Locale.getDefault()), sort, limit, offset)
-    }
-
-    private fun getMoneyOpers(status: MoneyOperStatus, sort: Sort, limit: Int, offset: Int): List<MoneyOper> {
-        val pageRequest: Pageable = PageRequest.of(offset / (limit - 1), limit - 1, sort)
-        return moneyOperRepository.findByStatus(status, pageRequest).content.plus(
-                moneyOperRepository.findByStatus(status, pageRequest.next()).content.take(1)
-        )
-    }
-
-    private fun getMoneyOpersBySearch(status: MoneyOperStatus, search: String, sort: Sort,
-        limit: Int, offset: Int): List<MoneyOper> {
-        var pageRequest: Pageable = PageRequest.of(0, 100, sort)
-        val opers = ArrayList<MoneyOper>()
-        var page: Page<*>
-        val pager: Function<Pageable, Page<*>>
-        val adder: Consumer<Page<*>>
-        @Suppress("UNCHECKED_CAST")
-        when {
-            search.matches(SearchDateRegex) -> {
-                // по дате в формате ISO
-                pager = Function { pageable: Pageable ->
-                    moneyOperRepository.findByStatusAndPerformed(status,
-                        LocalDate.parse(search),
-                        pageable)
-                }
-                adder = Consumer { p: Page<*> -> opers.addAll((p as Page<MoneyOper>).content) }
-            }
-            search.matches(SearchUuidRegex) -> {
-                // по идентификатору операции
-                pager = Function { pageable: Pageable ->
-                    val list = (moneyOperRepository.findByIdOrNull(UUID.fromString(search))
-                        ?.let { listOf(it) }
-                        ?.filter { it.status == status }
-                        ?: listOf())
-                        .toMutableList()
-                    PageImpl(list, pageable, list.size.toLong())
-                }
-                adder = Consumer { p: Page<*> -> opers.addAll((p as Page<MoneyOper>).content) }
-            }
-            search.matches(SearchMoneyRegex) -> {
-                // по сумме операции
-                pageRequest = PageRequest.of(pageRequest.pageNumber, pageRequest.pageSize)
-                pager = Function { pageable: Pageable ->
-                    val value = BigDecimal(search).abs()
-                    moneyOperRepository.findByValueOrderByPerformedDesc(value, pageable)
-                }
-                adder = Consumer { p: Page<*> ->
-                    (p as Page<MoneyOper>).content
-                            .filter { it.status !== status }
-                            .forEach { e: MoneyOper -> opers.add(e) }
-                }
-            }
-            else -> {
-                pager = Function { pageable: Pageable? -> moneyOperRepository.findByStatus(status, pageable!!) }
-                adder = Consumer { p: Page<*> ->
-                    val opersChunk = (p as Page<MoneyOper>).content
-                            .filter { oper: MoneyOper ->
-                                (oper.items.any { item: MoneyOperItem -> item.balance.name.lowercase(Locale.getDefault())
-                                    .contains(search) } // по комментарию
-                                        || oper.comment?.lowercase(Locale.getDefault())?.contains(search) ?: false // по меткам
-                                        || oper.tags.any { tagService.tagContains(it, search) })
-                            }
-                    opers.addAll(opersChunk)
-                }
-            }
-        }
-        do {
-            page = pager.apply(pageRequest)
-            adder.accept(page)
-            pageRequest = pageRequest.next()
-        } while (opers.size - offset < limit && page.hasNext())
-        return opers.subList(offset, opers.size).take(limit)
-    }
-
 
     @RequestMapping("/item")
     @Transactional(readOnly = true)
@@ -236,11 +149,4 @@ class MoneyOperController(
         val tags = tagService.getTags(apiRequestContextHolder.getBsId()).map(Tag::name)
         return HmResponse.getOk(tags)
     }
-
-    companion object {
-        private val SearchDateRegex = "\\d{4}-\\d{2}-\\d{2}".toRegex()
-        private val SearchUuidRegex = "\\p{Alnum}{8}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{4}-\\p{Alnum}{12}".toRegex()
-        private val SearchMoneyRegex = "\\d+\\.*\\d*".toRegex()
-    }
-
 }
