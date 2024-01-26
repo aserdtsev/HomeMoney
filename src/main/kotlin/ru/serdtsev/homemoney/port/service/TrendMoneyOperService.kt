@@ -9,6 +9,7 @@ import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.time.LocalDate
+import java.util.concurrent.TimeUnit
 
 
 @Service
@@ -16,7 +17,7 @@ class TrendMoneyOperService(
     val balanceSheetRepository: BalanceSheetRepository,
     val moneyOperRepository: MoneyOperRepository
     ) {
-    @Scheduled(fixedDelay = 86400L)
+    @Scheduled(fixedDelay = 1L, timeUnit = TimeUnit.DAYS)
     fun refreshTrendMoneyOpers() {
         balanceSheetRepository.findAll().forEach { balanceSheet ->
             ApiRequestContextHolder.apiRequestContext.balanceSheet = balanceSheet

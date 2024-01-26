@@ -2,10 +2,7 @@ package ru.serdtsev.homemoney.port.service
 
 import org.springframework.data.domain.*
 import org.springframework.stereotype.Service
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
-import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
+import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.RecurrenceOperRepository
 import java.math.BigDecimal
@@ -31,6 +28,16 @@ class MoneyOperService(
             getMoneyOpers(status, sort, limit, offset)
         else
             getMoneyOpersBySearch(status, search.lowercase(Locale.getDefault()), sort, limit, offset)
+    }
+
+    fun getUpcomingMoneyOpers(search: String): List<MoneyOper> {
+        return getMoneyOpers(MoneyOperStatus.Trend, search, Int.MAX_VALUE)
+            .map { trendMoneyOper -> MoneyOper(trendMoneyOper.status, trendMoneyOper.performed, trendMoneyOper.tags,
+                trendMoneyOper.comment, Period.Month, trendMoneyOper.recurrenceParams)
+                .apply { trendMoneyOper.items.forEach {
+                    addItem(it.balance, it.value, it.performed, it.index)
+                } }
+            }
     }
 
     private fun getMoneyOpers(status: MoneyOperStatus, sort: Sort, limit: Int, offset: Int): List<MoneyOper> {

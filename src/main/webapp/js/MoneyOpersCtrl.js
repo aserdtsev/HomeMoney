@@ -292,7 +292,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     if (oper.operDate > today) {
       oper.operDate = today;
     }
-    oper.isNew = oper.status === 'Recurrence';
+    oper.isNew = oper.status === 'Recurrence' || oper.status === 'Trend';
     oper.status = 'Done';
     oper.isEdited = true;
   }

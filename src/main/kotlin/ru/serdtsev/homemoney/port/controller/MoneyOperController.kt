@@ -23,7 +23,6 @@ import java.util.*
 
 @RestController
 @RequestMapping("/api/money-opers")
-@Transactional
 class MoneyOperController(
     private val createMoneyOperUseCase: CreateMoneyOperUseCase,
     private val updateMoneyOperUseCase: UpdateMoneyOperUseCase,
@@ -48,7 +47,7 @@ class MoneyOperController(
                 val beforeDate = LocalDate.now().plusDays(30)
                 val upcomingOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Pending, search, Int.MAX_VALUE)
                     .plus(moneyOperService.getNextRecurrenceOpers(search, beforeDate))
-                    .plus(moneyOperService.getMoneyOpers(MoneyOperStatus.Trend, search, Int.MAX_VALUE)
+                    .plus(moneyOperService.getUpcomingMoneyOpers(search)
                         .filter { it.performed < beforeDate })
                     .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
                 opers.addAll(upcomingOpers)

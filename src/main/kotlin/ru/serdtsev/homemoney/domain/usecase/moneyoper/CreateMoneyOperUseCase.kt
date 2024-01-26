@@ -1,6 +1,7 @@
 package ru.serdtsev.homemoney.domain.usecase.moneyoper
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
@@ -14,6 +15,7 @@ class CreateMoneyOperUseCase(
     private val recurrenceOperRepository: RecurrenceOperRepository,
     private val moneyOperRepository: MoneyOperRepository
 ) {
+    @Transactional
     fun run(moneyOper: MoneyOper): List<MoneyOper> {
         assert(!moneyOperRepository.exists(moneyOper.id))
         val resultMoneyOpers = mutableListOf(moneyOper)

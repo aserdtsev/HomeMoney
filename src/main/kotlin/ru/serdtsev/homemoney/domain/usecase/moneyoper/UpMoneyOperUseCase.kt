@@ -1,17 +1,17 @@
 package ru.serdtsev.homemoney.domain.usecase.moneyoper
 
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus.Done
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
-import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.util.*
 import java.util.stream.IntStream
 
 @Service
 class UpMoneyOperUseCase(private val moneyOperRepository: MoneyOperRepository) {
+    @Transactional
     fun run(moneyOperId: UUID) {
-        val bsId = ApiRequestContextHolder.bsId
         val moneyOper = moneyOperRepository.findById(moneyOperId)
         val moneyOpers = moneyOperRepository.findByStatusAndPerformed(Done, moneyOper.performed)
             .sortedBy { it.dateNum }

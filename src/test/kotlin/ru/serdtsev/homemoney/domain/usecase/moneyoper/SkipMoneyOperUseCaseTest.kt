@@ -19,7 +19,7 @@ internal class SkipMoneyOperUseCaseTest: DomainBaseTest() {
     private val recurrenceOperRepository: RecurrenceOperRepository = mock { }
     private val balanceRepository = repositoryRegistry.balanceRepository
     private val moneyOperRepository = repositoryRegistry.moneyOperRepository
-    private val useCase = SkipMoneyOperUseCase(recurrenceOperRepository, moneyOperRepository)
+    private val useCase = SkipMoneyOperUseCase(recurrenceOperRepository)
 
     @Test
     fun run_byPendingMoneyOper() {
