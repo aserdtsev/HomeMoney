@@ -35,14 +35,13 @@ class MoneyOperController(
     private val tagService: TagService,
     @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
-    @RequestMapping
-    @Transactional(readOnly = true)
+    @GetMapping
     fun getMoneyOpers(
             @RequestParam(required = false, defaultValue = "") search: String,
             @RequestParam(required = false, defaultValue = "10") limit: Int,
             @RequestParam(required = false, defaultValue = "0") offset: Int): HmResponse {
         return try {
-            val opers = ArrayList<MoneyOperDto>()
+            var opers = mutableListOf<MoneyOperDto>()
             if (offset == 0) {
                 val beforeDate = LocalDate.now().plusDays(30)
                 val upcomingOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Pending, search, Int.MAX_VALUE)
@@ -52,6 +51,7 @@ class MoneyOperController(
                     .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
                 opers.addAll(upcomingOpers)
                 opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
+                opers = opers.subList(Math.max(opers.lastIndex-10, 0), opers.lastIndex)
             }
             val doneOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Done, search, limit + 1, offset)
                     .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
@@ -64,8 +64,25 @@ class MoneyOperController(
         }
     }
 
+    @GetMapping("/done")
+    fun getDoneMoneyOpers(
+        @RequestParam(required = false, defaultValue = "") search: String,
+        @RequestParam(required = false, defaultValue = "10") limit: Int,
+        @RequestParam(required = false, defaultValue = "0") offset: Int): HmResponse {
+        return try {
+            val opers = ArrayList<MoneyOperDto>()
+            val doneOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Done, search, limit + 1, offset)
+                .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
+            val hasNext = doneOpers.size > limit
+            opers.addAll(if (hasNext) doneOpers.subList(0, limit) else doneOpers)
+            val pagedList = PagedList(opers, limit, offset, hasNext)
+            HmResponse.getOk(pagedList)
+        } catch (e: HmException) {
+            HmResponse.getFail(e.code.name)
+        }
+    }
+
     @RequestMapping("/item")
-    @Transactional(readOnly = true)
     fun getMoneyOpers(@RequestParam id: UUID): HmResponse {
         return try {
             val oper = moneyOperRepository.findById(id)
@@ -131,7 +148,6 @@ class MoneyOperController(
     }
 
     @RequestMapping(value = ["/suggest-tags"], method = [RequestMethod.GET])
-    @Transactional(readOnly = true)
     fun suggestTags(
         @RequestParam operType: String,
         @RequestParam search: String?,
@@ -143,7 +159,6 @@ class MoneyOperController(
     }
 
     @RequestMapping(value = ["/tags"])
-    @Transactional(readOnly = true)
     fun tags(): HmResponse {
         val tags = tagService.getTags(apiRequestContextHolder.getBsId()).map(Tag::name)
         return HmResponse.getOk(tags)

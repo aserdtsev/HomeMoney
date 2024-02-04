@@ -24,7 +24,7 @@ class TrendMoneyOperService(
             moneyOperRepository.findTrends()
                 .forEach {
                     val category = it.tags.first { it.isCategory }
-                    val event = TrendMoneyOperNeedsToBeUpdated(Period.Month, category, LocalDate.now())
+                    val event = TrendMoneyOperNeedsToBeUpdated(Period.Day, category, LocalDate.now())
                     DomainEventPublisher.instance.publish(event)
                 }
         }

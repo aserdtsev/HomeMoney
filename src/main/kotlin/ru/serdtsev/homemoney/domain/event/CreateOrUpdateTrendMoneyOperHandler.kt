@@ -20,9 +20,9 @@ class CreateOrUpdateTrendMoneyOperHandler(
     fun handler(event: MoneyOperStatusChanged) {
         val moneyOper = event.moneyOper
         val category = moneyOper.tags.firstOrNull { it.isCategory }
-        val period = moneyOper.period
+        val period = moneyOper.period ?: Period.Day
         val calculatedDate = moneyOper.performed
-        if (moneyOper.recurrenceId != null || period != Period.Month || category == null) {
+        if (moneyOper.recurrenceId != null || period != Period.Day || category == null) {
             return
         }
 

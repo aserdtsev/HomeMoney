@@ -146,8 +146,8 @@
           <div ng-show="oper['comment'].length > 0">
             <span>{{oper['comment']}}</span>
           </div>
-          <div ng-hide="oper['period'] == 'Month'">
-            Периодичность: <span ng-bind="getPeriodName(oper)"></span>
+          <div ng-hide="oper['period'] == 'Day'">
+            Период: <span ng-bind="getPeriodName(oper)"></span>
           </div>
         </div>
         <div ng-if="typeof(oper.isEdited) !== 'undefined' && oper.isEdited">
@@ -176,6 +176,8 @@
             </div>
             <div>
               <select ng-model="oper.period">
+                <option value="Day">День</option>
+                <option value="Week">Неделя</option>
                 <option value="Month">Месяц</option>
                 <option value="Year">Год</option>
                 <option value="Single">Разовая</option>
@@ -253,6 +255,7 @@
                        ng-model="recurrenceOper.items[1].value"
                        placeholder="Сумма"/>
                 <select ng-model="recurrenceOper.period">
+                  <option value="Week">Месяц</option>
                   <option value="Month">Месяц</option>
                   <option value="Year">Год</option>
                 </select>

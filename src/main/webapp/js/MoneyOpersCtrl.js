@@ -84,9 +84,6 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     });
     if (typeof result === 'undefined') {
       result = {caption: caption, isDone: caption !== 'Новые' && caption !== 'Ближайшие', expanded: true, items: []};
-      if (caption === 'Ближайшие') {
-        result.expanded = false;
-      }
       $scope.opers.data.splice(0, 0, result);
       $scope.opers.data.sort(function(a, b) {
         if (a.caption < b.caption) return 1;
@@ -388,6 +385,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.getPeriodName = function(oper) {
     let period = oper['period'];
     return (period === 'Day') ? 'День' :
+        (period === 'Week') ? 'Неделя' :
         (period === 'Month') ? 'Месяц' :
         (period === 'Year') ? 'Год' :
         (period === 'Single') ? 'Разовая' : '?';

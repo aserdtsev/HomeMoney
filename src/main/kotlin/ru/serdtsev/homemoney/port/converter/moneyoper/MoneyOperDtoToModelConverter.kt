@@ -18,7 +18,7 @@ class MoneyOperDtoToModelConverter(private val applicationContext: ApplicationCo
     override fun convert(source: MoneyOperDto): MoneyOper {
         val dateNum = source.dateNum
         val tags = tagService.getTagsByStrings(source.tags)
-        val period = source.period ?: Period.Month
+        val period = source.period ?: Period.Day
         val items = source.items
             .map {
                 val balance = balanceRepository.findById(it.balanceId)

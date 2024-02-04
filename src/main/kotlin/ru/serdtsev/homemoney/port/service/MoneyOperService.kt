@@ -33,7 +33,7 @@ class MoneyOperService(
     fun getUpcomingMoneyOpers(search: String): List<MoneyOper> {
         return getMoneyOpers(MoneyOperStatus.Trend, search, Int.MAX_VALUE)
             .map { trendMoneyOper -> MoneyOper(trendMoneyOper.status, trendMoneyOper.performed, trendMoneyOper.tags,
-                trendMoneyOper.comment, Period.Month, trendMoneyOper.recurrenceParams)
+                trendMoneyOper.comment, trendMoneyOper.period, trendMoneyOper.recurrenceParams)
                 .apply { trendMoneyOper.items.forEach {
                     addItem(it.balance, it.value, it.performed, it.index)
                 } }
