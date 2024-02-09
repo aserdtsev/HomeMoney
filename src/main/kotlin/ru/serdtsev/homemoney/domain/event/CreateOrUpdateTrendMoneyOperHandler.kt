@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
+import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 
@@ -56,9 +57,18 @@ class CreateOrUpdateTrendMoneyOperHandler(
                 val item = this.items[0]
                 item.value = avg
                 item.balanceId = balanceId
-                this.performed = recurrenceParams.getNext(calculatedDate)
-                while (this.performed < LocalDate.now()) {
-                    this.performed = recurrenceParams.getNext(this.performed)
+                if (items.none { moItem -> moItem.performed > calculatedDate }) {
+                    val calculatedDaySum = items.filter { moItem -> moItem.performed == calculatedDate }
+                            .sumOf { it.value }
+                            .abs()
+                    if (calculatedDaySum > avg.abs().multiply(BigDecimal("0.75"))) {
+                        this.performed = recurrenceParams.getNext(calculatedDate)
+                    } else if (calculatedDaySum > BigDecimal.ZERO) {
+                        this.performed = calculatedDate
+                    }
+                    while (this.performed < calculatedDate) {
+                        this.performed = recurrenceParams.getNext(this.performed)
+                    }
                 }
             }
             ?: MoneyOper.of(MoneyOperStatus.Trend, Period.Day, recurrenceParams).apply {
@@ -84,7 +94,7 @@ class CreateOrUpdateTrendMoneyOperHandler(
             if (items.size >= 5) {
                 break
             } else {
-                intervalDays *= 3
+                intervalDays *= 2
             }
         }
         return Pair(items, intervalDays)
