@@ -1,3 +1,10 @@
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
 div.block {
     background-color: mintcream;
     width: 800px;
