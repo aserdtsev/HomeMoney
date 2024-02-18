@@ -78,7 +78,9 @@ hmServices.factory('MoneyOpersSvc', ['$resource',
   function($resource) {
     const baseUrl = 'api/money-opers';
     return $resource(baseUrl, {}, {
-      query: { method: 'GET', params: { search: '@search', offset: '@offset', limit: '@limit' } },
+      done: { method: 'GET', url: baseUrl + '/done', params: { search: '@search', offset: '@offset', limit: '@limit' } },
+      upcoming: { method: 'GET', url: baseUrl + '/upcoming',
+        params: { search: '@search', offset: '@offset', limit: '@limit' } },
       item: { method: 'GET', url: baseUrl + '/item' },
       create: { method: 'POST', url: baseUrl + '/create' },
       delete: { method: 'POST', url: baseUrl + '/delete' },

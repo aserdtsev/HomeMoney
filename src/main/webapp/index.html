@@ -100,15 +100,114 @@
       <input ng-model="search"/>
       <input type="button" ng-click="find(search)" value="искать"/>
     </div>
+
     <div>
-      <span>Добавить</span>
+      <div class="list-item-caption">
+        <a href="" ng-click="showUpcomingOpers = !showUpcomingOpers">Предстоящие платежи</a>
+      </div>
+      <div ng-show="showUpcomingOpers" class="list-item-caption">
+        <a href="" ng-show="hasUpcomingOpersNextPage()" ng-click="loadUpcomingOpersNextPage(search)">↑</a>
+        <a href="" ng-show="hasUpcomingOpersNextPage()" ng-click="reduceUpcomingOpers()">↓</a>
+      </div>
+      <div ng-repeat="oper in upcomingOpers.data" ng-show="showUpcomingOpers" class="list-item-block">
+        <div ng-show="!oper.isEdited">
+          <span>{{oper.operDate}}</span>
+          <a href=""
+             ng-click="oper.isEdited=true"
+             ng-bind-html="getAmountAsHtml(oper)"
+             class="{{oper.type == 'transfer' ? 'money' : (oper.type == 'income' ? 'positive-money' : 'negative-money')}}">
+          </a>
+          <span ng-bind="oper.items[0].balanceName"></span>
+          <span ng-show="oper.items.length > 1">&rarr;</span>
+          <span ng-show="oper.items.length > 1" ng-bind="oper.items[1].balanceName"></span>
+          <span class="tag" ng-repeat="tag in oper['tags']">{{tag}}</span>
+          <span>
+          <a href=""
+             ng-show="oper.status == 'Pending' || oper.status == 'Recurrence' || oper.status == 'Trend'"
+             ng-click="completeOper(oper)">выполнить</a>
+          <a href=""
+             ng-hide="(oper.status == 'Recurrence' || oper.status == 'Pending') && oper.recurrenceId != null"
+             ng-click="deleteOper(oper)">удалить</a>
+          <a href=""
+             ng-show="(oper.status == 'Recurrence' || oper.status == 'Pending') && oper.recurrenceId != null"
+             ng-click="skipOper(oper)">пропустить</a>
+        </span>
+          <div ng-show="oper['comment'].length > 0">
+            <span>{{oper['comment']}}</span>
+          </div>
+          <div ng-hide="oper['period'] == 'Day'">
+            Период: <span ng-bind="getPeriodName(oper)"></span>
+          </div>
+        </div>
+        <div ng-if="typeof(oper.isEdited) !== 'undefined' && oper.isEdited">
+          <div class="form">
+            <div>
+              <span ng-bind="oper.type == 'expense' ? 'расход' : oper.type == 'income' ? 'доход' : 'перевод'"></span>
+            </div>
+            <div>
+              <input class="date" ng-model="oper.operDate" placeholder="Дата"/>
+              <input class="amount" ng-model="oper.items[0].value" placeholder="Сумма"/>
+              <span ng-bind="oper.type == 'income' ? 'Куда: ' : 'Откуда: '"></span>
+              <select
+                      ng-model="oper.items[0].balanceId"
+                      ng-options="acc.id as acc.name for acc in getFirstAccounts(oper)">
+              </select>
+              <span ng-if="oper.type == 'transfer'">Куда: </span>
+              <select
+                      ng-if="oper.type == 'transfer'"
+                      ng-model="oper.items[1].balanceId"
+                      ng-options="acc.id as acc.name for acc in getSecondAccounts(oper)">
+              </select>
+              <input class="amount"
+                     ng-if="oper.type == 'transfer' && balanceCurrenciesIsNotEqual(oper.items[0].balanceId, oper.items[1].balanceId)"
+                     ng-model="oper.items[1].value"
+                     placeholder="Сумма"/>
+            </div>
+            <div>
+              <select ng-model="oper.period">
+                <option value="Day">День</option>
+                <option value="Week">Неделя</option>
+                <option value="Month">Месяц</option>
+                <option value="Year">Год</option>
+                <option value="Single">Разовая</option>
+              </select>
+              <input ng-model="oper.comment" placeholder="Комментарий"/>
+              <span>
+              <span ng-repeat="tag in oper['tags']">
+                <a href="" class="tag" ng-show="!tagIsEdited[$index]" ng-click="tagIsEdited[$index]=true">{{tag}}</a>
+                <input class="tag" ng-show="tagIsEdited[$index]" ng-model="tag"
+                       ng-keypress="tagIsEdited[$index]=$event.keyCode!=13;editTagKeyPressed($event, $index, tag, oper)"/>
+              </span>
+              <a href="" ng-show="!isNewTag" ng-click="isNewTag=true" class="tag">+</a>
+              <input class="tag" ng-hide="!isNewTag" ng-model="newTag" list="tagList"
+                     ng-keypress="isNewTag=$event.keyCode!=13; newTagKeyPressed($event, newTag, oper); newTag = $event.keyCode==13 ? null : newTag"
+                     ng-focus="getSuggestTags(oper, newTag)"/>
+              <datalist id="tagList">
+                <option ng-repeat="tag in suggestTags" value="{{tag}}"></option>
+              </datalist>
+            </span>
+            </div>
+            <div>
+              <input type="submit"
+                     ng-click="saveOper(oper)"
+                     ng-disabled="!validOper(oper)"
+                     value="сохранить"/>
+              <a href="" ng-click="cancelOper(oper)">отменить</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <span>Добавить: </span>
       <a href="" ng-click="newOper('expense')">расход</a>,
       <a href="" ng-click="newOper('income')">доход</a> или
       <a href="" ng-click="newOper('transfer')">перевод</a>.
     </div>
-    
+
     <div ng-repeat="groupList in opers.data">
-      <div align="center">
+      <div class="list-item-caption">
         <a href="" ng-click="groupList.expanded = !groupList.expanded">{{groupList.caption}}</a>
       </div>
       <div ng-repeat="oper in groupList.items" ng-show="groupList.expanded" class="list-item-block">
@@ -133,15 +232,6 @@
             <a href=""
                ng-show="oper.status == 'Done' && oper.period != 'Single'"
                ng-click="createRecurrenceOperByOper(oper)">повторять</a>
-            <a href=""
-               ng-show="oper.status == 'Pending' || oper.status == 'Recurrence' || oper.status == 'Trend'"
-               ng-click="completeOper(oper)">выполнить</a>
-            <a href=""
-               ng-hide="(oper.status == 'Recurrence' || oper.status == 'Pending') && oper.recurrenceId != null"
-               ng-click="deleteOper(oper)">удалить</a>
-            <a href=""
-               ng-show="(oper.status == 'Recurrence' || oper.status == 'Pending') && oper.recurrenceId != null"
-               ng-click="skipOper(oper)">пропустить</a>
           </span>
           <div ng-show="oper['comment'].length > 0">
             <span>{{oper['comment']}}</span>
@@ -214,7 +304,7 @@
       Повторяющиеся платежи
       <a href="" ng-click="showRecurrenceOpers=!showRecurrenceOpers"
          ng-bind="showRecurrenceOpers ? 'скрыть' : 'показать'"></a>
-      <div ng-hide="!showRecurrenceOpers" ng-repeat="recurrenceOper in recurrenceOpers" class="list-item-block">
+      <div ng-repeat="recurrenceOper in recurrenceOpers" ng-hide="!showRecurrenceOpers" class="list-item-block">
         <div>
           <div ng-hide="recurrenceOper.isEdited">
             <span>{{recurrenceOper.nextDate}}</span>

@@ -84,7 +84,7 @@ class StatService(
             .toMutableMap()
         val currentDate = bsStat.toDate
         map.values
-            .filter { it.localDate > currentDate }
+            .filter { it.localDate >= currentDate }
             .sortedBy { it.localDate }
             .forEach { dayStat ->
                 AccountType.values().forEach { type ->

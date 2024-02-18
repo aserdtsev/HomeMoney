@@ -9,12 +9,14 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.balances;
   $scope.search = '';
   $scope.opers;
+  $scope.upcomingOpers;
   $scope.recurrenceOpers;
   $scope.tags;
   $scope.suggestTags;
 
   $scope.$on('login', function() {
     $scope.loadRecurrenceOpers();
+    $scope.loadUpcomingOpersFirstPage($scope.pageSize);
     $scope.loadOpersFirstPage($scope.pageSize);
     $scope.loadAccounts();
     $scope.loadBalances();
@@ -27,6 +29,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     $scope.fromAccounts = undefined;
     $scope.toAccounts = undefined;
     $scope.opers = undefined;
+    $scope.upcomingOpers = undefined;
     $scope.search = undefined;
   });
 
@@ -56,6 +59,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.refreshOpers = function() {
     $scope.loadOpersFirstPage($scope.getOpersLength());
+    $scope.loadUpcomingOpersFirstPage($scope.getOpersLength());
     $scope.loadTags();
   }
 
@@ -105,6 +109,10 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     });
   }
 
+  $scope.addToUpcomingOpers = function(list) {
+    $scope.upcomingOpers.data = list.concat($scope.upcomingOpers.data)
+  }
+
   $scope.loadRecurrenceOpers = function() {
     if (!$scope.isLogged()) return;
     let response = RecurrenceOpersSvc.query({search: $scope.search}, function() {
@@ -118,7 +126,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
     if (typeof limit === 'undefined') {
       qLimit = $scope.pageSize;
     }
-    let response = MoneyOpersSvc.query({search: $scope.search, limit: qLimit, offset: 0}, function() {
+    let response = MoneyOpersSvc.done({search: $scope.search, limit: qLimit, offset: 0}, function() {
       $scope.opers = {data: [], hasNext: response.data['paging'].hasNext};
       $scope.addToOpers(response.data.items);
     });
@@ -126,7 +134,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.loadOpersNextPage = function(search) {
     let offset = $scope.getOpersLength();
-    let response = MoneyOpersSvc.query({search: search, limit: $scope.pageSize, offset: offset}, function () {
+    let response = MoneyOpersSvc.done({search: search, limit: $scope.pageSize, offset: offset}, function () {
       $scope.addToOpers(response.data.items);
       $scope.opers.hasNext = response.data['paging'].hasNext;
     });
@@ -146,6 +154,38 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       return false;
     }
     return $scope.opers.hasNext;
+  };
+
+  $scope.loadUpcomingOpersFirstPage = function(limit) {
+    if (!$scope.isLogged()) return;
+    let qLimit = limit;
+    if (typeof limit === 'undefined') {
+      qLimit = $scope.pageSize;
+    }
+    let response = MoneyOpersSvc.upcoming({search: $scope.search, limit: qLimit, offset: 0}, function() {
+      $scope.upcomingOpers = {data: [], hasNext: response.data['paging'].hasNext};
+      $scope.addToUpcomingOpers(response.data.items);
+    });
+  };
+
+  $scope.loadUpcomingOpersNextPage = function(search) {
+    let offset = $scope.upcomingOpers.data.length;
+    let response = MoneyOpersSvc.upcoming({search: search, limit: $scope.pageSize, offset: offset}, function () {
+      $scope.addToUpcomingOpers(response.data.items);
+      $scope.upcomingOpers.hasNext = response.data['paging'].hasNext;
+    });
+  };
+
+  $scope.reduceUpcomingOpers = function() {
+    let len = $scope.upcomingOpers.data.length
+    $scope.upcomingOpers.data = $scope.upcomingOpers.data.slice(Math.max(len - $scope.pageSize, 0));
+  };
+
+  $scope.hasUpcomingOpersNextPage = function() {
+    if (typeof $scope.upcomingOpers === 'undefined' || typeof $scope.upcomingOpers.data === 'undefined') {
+      return false;
+    }
+    return $scope.upcomingOpers.hasNext;
   };
 
   $scope.getDefaultDate = function() {
@@ -307,7 +347,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
       }
       item.performedAt = oper.operDate;
     }
-    if (oper.isNew || oper.status === 'Recurrence') {
+    if (oper.isNew || oper.status === 'Recurrence' || oper.status === 'Trend') {
       $scope.createOper(oper);
     } else {
       $scope.updateOper(oper);
@@ -318,6 +358,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.createOper = function(oper) {
     oper.id = randomUUID();
     let response = MoneyOpersSvc.create(oper, function() {
+      $scope.loadUpcomingOpersFirstPage($scope.upcomingOpers.data.length)
       $scope.loadOpersFirstPage($scope.getOpersLength() + response.data.length);
       $rootScope.$broadcast('refreshBalanceSheet');
     });
@@ -340,6 +381,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.skipOper = function(oper) {
     MoneyOpersSvc.skip(oper, function() {
+      $scope.loadUpcomingOpersFirstPage($scope.upcomingOpers.data.length)
       $scope.loadOpersFirstPage($scope.getOpersLength());
       $scope.loadRecurrenceOpers();
       $rootScope.$broadcast('refreshBalanceSheet');

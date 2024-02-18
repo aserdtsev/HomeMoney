@@ -3,7 +3,6 @@ package ru.serdtsev.homemoney.port.controller
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.core.convert.ConversionService
 import org.springframework.data.domain.*
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
@@ -35,26 +34,15 @@ class MoneyOperController(
     private val tagService: TagService,
     @Qualifier("conversionService") private val conversionService: ConversionService
 ) {
-    @GetMapping
-    fun getMoneyOpers(
-            @RequestParam(required = false, defaultValue = "") search: String,
-            @RequestParam(required = false, defaultValue = "10") limit: Int,
-            @RequestParam(required = false, defaultValue = "0") offset: Int): HmResponse {
+    @GetMapping("/done")
+    fun getDoneMoneyOpers(
+        @RequestParam(required = false, defaultValue = "") search: String,
+        @RequestParam(required = false, defaultValue = "5") limit: Int,
+        @RequestParam(required = false, defaultValue = "0") offset: Int): HmResponse {
         return try {
-            var opers = mutableListOf<MoneyOperDto>()
-            if (offset == 0) {
-                val beforeDate = LocalDate.now().plusDays(30)
-                val upcomingOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Pending, search, Int.MAX_VALUE)
-                    .plus(moneyOperService.getNextRecurrenceOpers(search, beforeDate))
-                    .plus(moneyOperService.getUpcomingMoneyOpers(search)
-                        .filter { it.performed < beforeDate })
-                    .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
-                opers.addAll(upcomingOpers)
-                opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
-                opers = opers.subList(Math.max(opers.lastIndex-10, 0), opers.lastIndex)
-            }
+            val opers = ArrayList<MoneyOperDto>()
             val doneOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Done, search, limit + 1, offset)
-                    .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
+                .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
             val hasNext = doneOpers.size > limit
             opers.addAll(if (hasNext) doneOpers.subList(0, limit) else doneOpers)
             val pagedList = PagedList(opers, limit, offset, hasNext)
@@ -64,17 +52,25 @@ class MoneyOperController(
         }
     }
 
-    @GetMapping("/done")
-    fun getDoneMoneyOpers(
+    @GetMapping("/upcoming")
+    fun getUpcomingMoneyOpers(
         @RequestParam(required = false, defaultValue = "") search: String,
-        @RequestParam(required = false, defaultValue = "10") limit: Int,
+        @RequestParam(required = false, defaultValue = "5") limit: Int,
         @RequestParam(required = false, defaultValue = "0") offset: Int): HmResponse {
         return try {
-            val opers = ArrayList<MoneyOperDto>()
-            val doneOpers = moneyOperService.getMoneyOpers(MoneyOperStatus.Done, search, limit + 1, offset)
+            val beforeDate = LocalDate.now().plusMonths(2)
+            var opers = moneyOperService.getMoneyOpers(MoneyOperStatus.Pending, search, Int.MAX_VALUE)
+                .plus(moneyOperService.getNextRecurrenceOpers(search, beforeDate))
+                .plus(moneyOperService.getUpcomingMoneyOpers(search))
                 .map { conversionService.convert(it, MoneyOperDto::class.java)!! }
-            val hasNext = doneOpers.size > limit
-            opers.addAll(if (hasNext) doneOpers.subList(0, limit) else doneOpers)
+                .toMutableList()
+            val hasNext = opers.size > limit
+            opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
+            val todayOpers = opers.filter { it.operDate <= LocalDate.now() }.toMutableList()
+            opers = if (offset == 0 && todayOpers.isNotEmpty()) todayOpers
+            else with (opers.lastIndex) {
+                if (this > -1) opers.subList(Math.max(this - limit - offset, 0), this - offset) else opers
+            }
             val pagedList = PagedList(opers, limit, offset, hasNext)
             HmResponse.getOk(pagedList)
         } catch (e: HmException) {

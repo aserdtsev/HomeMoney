@@ -29,6 +29,10 @@ div.list-item-block {
     text-decoration: inherit;
 }
 
+div.list-item-caption {
+    text-align: center;
+}
+
 .money, .positive-money, .negative-money {
     text-align: right;
 }
