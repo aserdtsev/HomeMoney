@@ -59,7 +59,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.refreshOpers = function() {
     $scope.loadOpersFirstPage($scope.getOpersLength());
-    $scope.loadUpcomingOpersFirstPage($scope.getOpersLength());
+    $scope.loadUpcomingOpersFirstPage($scope.upcomingOpers.data.length);
     $scope.loadTags();
   }
 
