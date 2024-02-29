@@ -232,6 +232,8 @@
             <a href=""
                ng-show="oper.status == 'Done' && oper.period != 'Single'"
                ng-click="createRecurrenceOperByOper(oper)">повторять</a>
+            <a href=""
+               ng-click="deleteOper(oper)">удалить</a>
           </span>
           <div ng-show="oper['comment'].length > 0">
             <span>{{oper['comment']}}</span>
