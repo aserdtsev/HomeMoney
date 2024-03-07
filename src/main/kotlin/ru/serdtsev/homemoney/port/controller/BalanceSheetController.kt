@@ -20,7 +20,7 @@ class BalanceSheetController(
     private val clock: Clock
 ) {
     @RequestMapping("/api/bs-stat")
-    fun getBalanceSheetInfo(@RequestParam(defaultValue = "30") interval: Long): HmResponse {
+    fun getBalanceSheetInfo(@RequestParam(defaultValue = "1") interval: Long): HmResponse {
         val model = statService.getBsStat(LocalDate.now(clock), interval)
         val dto = conversionService.convert(model, BsStatDto::class.java)
         return getOk(dto)

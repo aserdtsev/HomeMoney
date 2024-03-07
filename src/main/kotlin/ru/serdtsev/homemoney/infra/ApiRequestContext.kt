@@ -34,7 +34,7 @@ class ApiRequestContextHolder(
             }
 
         var balanceSheet: BalanceSheet
-            get() = apiRequestContext.balanceSheet!!
+            get() = requireNotNull(apiRequestContext.balanceSheet)
             set(value) {
                 apiRequestContext.balanceSheet = value
                 apiRequestContext.bsId = value.id

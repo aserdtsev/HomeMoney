@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import java.math.BigDecimal
 import java.sql.ResultSet
 import java.sql.Timestamp
@@ -46,7 +47,8 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
         return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()
     }
 
-    override fun getAggregateAccountSaldoList(id: UUID): List<Pair<AccountType, BigDecimal>> {
+    override fun getAggregateAccountSaldoList(): List<Pair<AccountType, BigDecimal>> {
+        val id = ApiRequestContextHolder.instance.getBsId()
         val sql = """
             select type, sum(saldo) as saldo 
             from v_crnt_saldo_by_base_cry 
@@ -61,7 +63,8 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
         }
     }
 
-    override fun getActualDebt(id: UUID): BigDecimal {
+    override fun getActualDebt(): BigDecimal {
+        val id = ApiRequestContextHolder.instance.getBsId()
         val sql = """
             select sum(round(coalesce((b.credit -> 'annuityPayment' -> 'value')::numeric * -1, b.value) * coalesce(er.ask, 1), 2)) as value
             from account a

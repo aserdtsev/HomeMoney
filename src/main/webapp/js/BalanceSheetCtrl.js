@@ -1,6 +1,6 @@
 hmControllers.controller('BalanceSheetCtrl', ['$scope', '$rootScope', 'BalanceSheetSvc', BalanceSheetCtrl]);
 function BalanceSheetCtrl($scope, $rootScope, BalanceSheetSvc) {
-  $scope.interval = 30;
+  $scope.interval = 1;
   $scope.bsStat;
 
   $scope.isLogged = function() {

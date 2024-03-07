@@ -5,10 +5,12 @@ import org.springframework.http.HttpHeaders
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
+import ru.serdtsev.homemoney.domain.event.UserLogged
 import ru.serdtsev.homemoney.domain.model.User
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
 import ru.serdtsev.homemoney.domain.repository.BalanceSheetRepository
 import ru.serdtsev.homemoney.domain.repository.UserRepository
+import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.exception.HmException
 import ru.serdtsev.homemoney.port.common.HmResponse
 import ru.serdtsev.homemoney.port.dto.LoginResponse
@@ -26,7 +28,9 @@ class UserController(
         return try {
             val email = decodeAuthorization(authorization).first
             log.info { "User login; email:$email" }
-            val user = userRepository.findByEmail(email)!!
+            val user = requireNotNull(userRepository.findByEmail(email))
+            ApiRequestContextHolder.balanceSheet = balanceSheetRepository.findById(user.bsId)
+            DomainEventPublisher.instance.publish(UserLogged())
             val auth = LoginResponse(user.bsId)
             HmResponse.getOk(auth)
         } catch (e: HmException) {

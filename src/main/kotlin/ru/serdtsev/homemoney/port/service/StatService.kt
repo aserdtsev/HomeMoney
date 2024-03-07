@@ -29,16 +29,14 @@ class StatService(
     @Transactional(readOnly = true)
     fun getBsStat(currentDate: LocalDate, interval: Long): BsStat {
         return runBlocking(Dispatchers.Default + CoroutineApiRequestContext()) {
-            val bsId = apiRequestContextHolder.getBsId()
-
-            val fromDate = currentDate.minusDays(interval)
+            val fromDate = currentDate.minusMonths(interval)
 
             val categories = getCategories(fromDate, currentDate)
-            val actualDebt = balanceSheetRepository.getActualDebt(bsId)
+            val actualDebt = balanceSheetRepository.getActualDebt()
             val currentCreditCardDebt = moneyOperRepository.getCurrentCreditCardDebt(currentDate)
             val bsStat = BsStat(fromDate, currentDate, categories = categories, currentDebt = actualDebt,
                 currentCreditCardDebt = currentCreditCardDebt)
-            balanceSheetRepository.getAggregateAccountSaldoList(bsId).forEach { bsStat.saldoMap[it.first] = it.second }
+            balanceSheetRepository.getAggregateAccountSaldoList().forEach { bsStat.saldoMap[it.first] = it.second }
 
             val dayStatMap: Map<LocalDate, BsDayStat> = getDayStatMap(currentDate, interval)
             correctBsStatInPast(bsStat, dayStatMap)
@@ -51,8 +49,8 @@ class StatService(
 
     private fun getDayStatMap(currentDate: LocalDate, interval: Long):
             Map<LocalDate, BsDayStat> {
-        val fromDate = currentDate.minusDays(interval)
-        val toDate = currentDate.plusDays(interval)
+        val fromDate = currentDate.minusMonths(interval)
+        val toDate = currentDate.plusMonths(interval)
         val turnovers = getRealTurnovers(MoneyOperStatus.Done, fromDate, currentDate, interval)
             .plus(getCreditCardChargesThatAffectPeriodTurnovers(fromDate, toDate))
             .plus(getRealTurnovers(MoneyOperStatus.Pending, LocalDate.ofEpochDay(0), currentDate, interval))
@@ -84,7 +82,7 @@ class StatService(
             .toMutableMap()
         val currentDate = bsStat.toDate
         map.values
-            .filter { it.localDate >= currentDate }
+            .filter { it.localDate > currentDate }
             .sortedBy { it.localDate }
             .forEach { dayStat ->
                 AccountType.values().forEach { type ->
@@ -154,8 +152,9 @@ class StatService(
         return map.keys.sortedByDescending { it.amount }
     }
 
-    private fun getRealTurnovers(status: MoneyOperStatus, fromDate: LocalDate, currentDate: LocalDate, interval: Long): Collection<Turnover> {
-        val toDate = currentDate.plusDays(interval)
+    private fun getRealTurnovers(status: MoneyOperStatus, fromDate: LocalDate, currentDate: LocalDate,
+        interval: Long): Collection<Turnover> {
+        val toDate = currentDate.plusMonths(interval)
         val turnovers =
             moneyOperRepository.findByPerformedBetweenAndMoneyOperStatus(fromDate, toDate, status)
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
@@ -176,7 +175,7 @@ class StatService(
                 val operDate = if (status == MoneyOperStatus.Pending && item.performed < currentDate) currentDate
                         else item.performed
                 Turnover(operDate, turnoverType, item.value, creditCardDebtDelta).apply { itemTurnovers.add(this) }
-                if (creditCardDebtDelta > BigDecimal.ZERO && item.dateWithGracePeriod <= currentDate.plusDays(interval)) {
+                if (creditCardDebtDelta > BigDecimal.ZERO && item.dateWithGracePeriod <= currentDate.plusMonths(interval)) {
                     // Добавим день гашения задолженности по кредитке с изменением задолженности по кредитным картам.
                     Turnover(item.dateWithGracePeriod, turnoverType, creditCardDebtDelta = -creditCardDebtDelta)
                         .apply { itemTurnovers.add(this) }
@@ -201,7 +200,7 @@ class StatService(
     }
 
     private fun getTrendTurnovers(currentDate: LocalDate, interval: Long): Collection<Turnover> {
-        val toDate = currentDate.plusDays(interval)
+        val toDate = currentDate.plusMonths(interval)
         val turnovers = moneyOperRepository.findTrends()
             .flatMap { moneyOper -> moneyOper.items.map { Pair(it, moneyOper) } }
             .flatMap {
