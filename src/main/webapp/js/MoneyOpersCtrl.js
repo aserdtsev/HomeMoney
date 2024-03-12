@@ -9,6 +9,7 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
   $scope.balances;
   $scope.search = '';
   $scope.opers;
+  $scope.showUpcomingOpers = false;
   $scope.upcomingOpers;
   $scope.recurrenceOpers;
   $scope.tags;
@@ -59,8 +60,19 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.refreshOpers = function() {
     $scope.loadOpersFirstPage($scope.getOpersLength());
-    $scope.loadUpcomingOpersFirstPage($scope.upcomingOpers.data.length);
+    $scope.refreshUpcomingOpers();
     $scope.loadTags();
+  }
+
+  $scope.refreshUpcomingOpers = function() {
+    $scope.loadUpcomingOpersFirstPage($scope.upcomingOpers.data.length);
+  }
+
+  $scope.switchUpcomingOpers = function() {
+    $scope.showUpcomingOpers = !$scope.showUpcomingOpers
+    if ($scope.showUpcomingOpers) {
+      $scope.refreshUpcomingOpers()
+    }
   }
 
   $scope.loadAccounts = function() {
