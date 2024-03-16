@@ -85,10 +85,10 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     @Test
     internal fun `getBsStat by recurrence income to debit card`() {
         val currentDate = LocalDate.now(clock)
-        val interval = ChronoUnit.DAYS.between(currentDate, currentDate.plusMonths(1L))
+        val interval = 1L
 
         val m1Date = currentDate.minusDays(1)
-        val p1Date = currentDate.plusDays(interval).minusDays(1L)
+        val p1Date = currentDate.plusMonths(interval).minusDays(1L)
         MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(salaryTag), period = Period.Month)
             .apply {
                 addItem(debitCard, BigDecimal("100000.00"))
@@ -108,7 +108,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             incomeAmount = BigDecimal("100000.00"))
         val dayStats = listOf(dayStatM1, dayStatP1)
 
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("200000.00"),
             totalSaldo = BigDecimal("200000.00"),
             freeAmount = BigDecimal("200000.00"),
@@ -125,7 +125,6 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val interval = 1L
 
         val m1Date = currentDate.minusDays(1)
-        val p1Date = currentDate.plusDays(1)
         MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Month,
             comment = "Продукты, дебетовая карта")
             .apply {
@@ -261,7 +260,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
 
         val interval = 2L
-        val m1Date = currentDate.minusDays(1)
+        val m1Date = currentDate.minusMonths(1)
 
         MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {

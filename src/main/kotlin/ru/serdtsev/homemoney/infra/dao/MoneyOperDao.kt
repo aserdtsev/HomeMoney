@@ -316,10 +316,9 @@ class MoneyOperDao(
             select 
                 sum((i.repayment_schedule -> 0 ->> 'totalAmount')::numeric - coalesce((i.repayment_schedule -> 0 ->> 'repaidDebtAmount'), '0')::numeric) 
             from money_oper o
-                join money_oper_item i on i.oper_id = o.id
+                join money_oper_item i on i.oper_id = o.id and (i.repayment_schedule -> 0 ->> 'endDate')::date > :currentDate
             where o.balance_sheet_id = :bsId 
                 and o.status = 'Done'::money_oper_status
-                and (i.repayment_schedule -> 0 ->> 'endDate')::date > :currentDate
         """.trimIndent()
         val bsId = ApiRequestContextHolder.balanceSheet.id
         val paramMap = mapOf("bsId" to bsId, "currentDate" to currentDate)
