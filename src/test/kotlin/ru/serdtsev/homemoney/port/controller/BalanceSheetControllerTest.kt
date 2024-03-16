@@ -15,6 +15,7 @@ import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.balancesheet.CategoryStat
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.port.common.localDateToLong
+import ru.serdtsev.homemoney.port.common.longToLocalDate
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsDayStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.CategoryStatDto
@@ -43,9 +44,8 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         salaryTag = Tag.of("Зарплата", CategoryType.income)
         foodstuffsTag = Tag.of("Продукты", CategoryType.expense)
 
-        debitCard = Balance(AccountType.debit, "Дебетовая карта", BigDecimal("100000.00")).apply {
-            domainEventPublisher.publish(this)
-        }
+        debitCard = Balance(AccountType.debit, "Дебетовая карта", BigDecimal("100000.00"))
+            .apply { domainEventPublisher.publish(this) }
         creditCard = run {
             val creditParams = Credit(BigDecimal("400000.00"), 12, 6)
             Balance(AccountType.debit, "Кредитная карта", credit = creditParams)
@@ -71,7 +71,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             BigDecimal("100.00"))
         val dayStats = listOf(dayStatM1)
 
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("100100.00"),
             totalSaldo = BigDecimal("100100.00"),
             freeAmount = BigDecimal("100100.00"),
@@ -139,18 +139,14 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             totalSaldo = BigDecimal("99900.00"),
             freeAmount = BigDecimal("99900.00"),
             chargeAmount = BigDecimal("100.00"))
-        val dayStatP1 = BsDayStatDto(localDateToLong(p1Date),
-            totalSaldo = BigDecimal("99800.00"),
-            freeAmount = BigDecimal("99800.00"),
-            chargeAmount = BigDecimal("100.00"))
-        val dayStats = listOf(dayStatM1, dayStatP1)
+        val dayStats = listOf(dayStatM1)
 
         val categories = run {
             val foodstuffsCategoryStatDto = requireNotNull(conversionService.convert(CategoryStat.of(foodstuffsTag,
                 BigDecimal("100.00")), CategoryStatDto::class.java))
             listOf(foodstuffsCategoryStatDto)
         }
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("99900.00"),
             totalSaldo = BigDecimal("99900.00"),
             freeAmount = BigDecimal("99900.00"),
@@ -165,28 +161,27 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     @Test
     internal fun `getBsStat by simple charge from credit card`() {
         val currentDate = LocalDate.parse("2023-09-03")
+        assert(currentDate == longToLocalDate(localDateToLong(currentDate)))
         val zoneId = ZoneId.systemDefault()
         clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
         ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
 
         val m2Date = currentDate.minusDays(2)
         val m1Date = currentDate.minusDays(1)
-        val p1Date = currentDate.plusDays(1)
-        val p2Date = currentDate.plusDays(2)
 
-        val moneyOper = MoneyOper(MoneyOperStatus.Done, m2Date, mutableListOf(foodstuffsTag), period = Period.Month)
+        val moneyOper = MoneyOper(MoneyOperStatus.Done, m2Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
             }
-        val p3Date = moneyOper.items[0].dateWithGracePeriod
-        val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
+        val p1Date = moneyOper.items[0].dateWithGracePeriod
+        val interval = 2L
 
-        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Month)
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
-                assert(items[0].dateWithGracePeriod == p3Date)
+                assert(items[0].dateWithGracePeriod == p1Date)
             }
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
@@ -200,25 +195,17 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             freeAmount = BigDecimal("100000.00"),
             chargeAmount = BigDecimal("100.00"))
         val dayStatP1 = BsDayStatDto(localDateToLong(p1Date),
-            totalSaldo = BigDecimal("99700.00"),
-            freeAmount = BigDecimal("100000.00"),
-            chargeAmount = BigDecimal("100.00"))
-        val dayStatP2 = BsDayStatDto(localDateToLong(p2Date),
-            totalSaldo = BigDecimal("99600.00"),
-            freeAmount = BigDecimal("100000.00"),
-            chargeAmount = BigDecimal("100.00"))
-        val dayStatP3 = BsDayStatDto(localDateToLong(p3Date),
-            totalSaldo = BigDecimal("99600.00"),
-            freeAmount = BigDecimal("99600.00"),
+            totalSaldo = BigDecimal("99800.00"),
+            freeAmount = BigDecimal("99800.00"),
             debt = BigDecimal("0.00"))
-        val dayStats = listOf(dayStatM2, dayStatM1, dayStatP1, dayStatP2, dayStatP3)
+        val dayStats = listOf(dayStatM2, dayStatM1, dayStatP1)
 
         val categories = run {
             val foodstuffsCategoryStat = requireNotNull(conversionService.convert(CategoryStat.of(foodstuffsTag,
                 BigDecimal("200.00")), CategoryStatDto::class.java))
             listOf(foodstuffsCategoryStat)
         }
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("99800.00"),
             totalSaldo = BigDecimal("99800.00"),
             chargesAmount = BigDecimal("200.00"),
@@ -238,7 +225,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
         ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
 
-        val m1Date = LocalDate.parse("2023-08-12")
+        val m1Date = LocalDate.parse("2023-08-04")
 
         val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {
@@ -246,7 +233,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
                 newAndComplete()
             }
         val p1Date = moneyOper.items[0].dateWithGracePeriod
-        val interval = ChronoUnit.DAYS.between(currentDate, p1Date)
+        val interval = 1L
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
 
@@ -255,7 +242,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             freeAmount = BigDecimal("99900.00"))
         val dayStats = listOf(dayStatP1)
 
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("99900.00"),
             totalSaldo = BigDecimal("99900.00"),
             freeAmount = BigDecimal("100000.00"),
@@ -273,16 +260,14 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
         ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
 
+        val interval = 2L
         val m1Date = currentDate.minusDays(1)
 
-        val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Single)
+        MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Single)
             .apply {
                 addItem(creditCard, BigDecimal("-100.00"))
                 newAndComplete()
             }
-        val p3Date = moneyOper.items[0].dateWithGracePeriod
-        val interval = ChronoUnit.DAYS.between(currentDate, p3Date)
-
         MoneyOper(MoneyOperStatus.Done, currentDate, period = Period.Single)
             .apply {
                 addItem(debitCard, BigDecimal("-100.00"))
@@ -292,22 +277,22 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
 
-        val dayStatM2 = BsDayStatDto(localDateToLong(m1Date),
+        val dayStatM1 = BsDayStatDto(localDateToLong(m1Date),
             totalSaldo = BigDecimal("99900.00"),
             freeAmount = BigDecimal("100000.00"),
             chargeAmount = BigDecimal("100.00"))
-        val dayStatM1 = BsDayStatDto(localDateToLong(currentDate),
+        val dayStatC = BsDayStatDto(localDateToLong(currentDate),
             totalSaldo = BigDecimal("99900.00"),
             freeAmount = BigDecimal("99900.00"))
 
-        val dayStats = listOf(dayStatM2, dayStatM1)
+        val dayStats = listOf(dayStatM1, dayStatC)
 
         val categories = run {
             val foodstuffsCategoryStat = requireNotNull(conversionService.convert(CategoryStat.of(foodstuffsTag,
                 BigDecimal("100.00")), CategoryStatDto::class.java))
             listOf(foodstuffsCategoryStat)
         }
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("99900.00"),
             totalSaldo = BigDecimal("99900.00"),
             chargesAmount = BigDecimal("100.00"),
@@ -330,10 +315,10 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         }
 
         val currentDate = LocalDate.now()
-        val interval = ChronoUnit.DAYS.between(currentDate, currentDate.plusMonths(1L))
+        val interval = 1L
 
         val m1Date = currentDate.minusDays(1)
-        val p1Date = currentDate.plusDays(interval).minusDays(1L)
+        val p1Date = m1Date.plusMonths(interval)
         MoneyOper(MoneyOperStatus.Done, m1Date, period = Period.Month)
             .apply {
                 addItem(debitCard, BigDecimal("-25000.00"))
@@ -348,7 +333,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val dayStatP1 = BsDayStatDto(localDateToLong(p1Date), freeAmount = BigDecimal("50000.00"))
         val dayStats = listOf(dayStatM1, dayStatP1)
 
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("75000.00"),
             creditSaldo = BigDecimal("-75000.00"),
             freeAmount = BigDecimal("75000.00"),
@@ -374,7 +359,8 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val recurrenceOper = RecurrenceOper.of(moneyOper)
         val p1Date = recurrenceOper.nextDate
         val p2Date = moneyOper.items[0].dateWithGracePeriod
-        val interval = ChronoUnit.DAYS.between(currentDate, p2Date)
+        val p3Date = recurrenceOper.nextDate.plusMonths(1)
+        val interval = 2L
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
 
@@ -389,13 +375,17 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val dayStatP2 = BsDayStatDto(localDateToLong(p2Date),
             totalSaldo = BigDecimal("99800.00"),
             freeAmount = BigDecimal("99900.00"))
-        val dayStats = listOf(dayStatM1, dayStatP1, dayStatP2)
+        val dayStatP3 = BsDayStatDto(localDateToLong(p3Date),
+            totalSaldo = BigDecimal("99700.00"),
+            freeAmount = BigDecimal("99900.00"),
+            chargeAmount = BigDecimal("100.00"))
+        val dayStats = listOf(dayStatM1, dayStatP1, dayStatP2, dayStatP3)
 
         val categories = run {
             val foodstuffsCategoryStat = CategoryStat.of(foodstuffsTag, BigDecimal("100.00"))
             listOf(requireNotNull(conversionService.convert(foodstuffsCategoryStat, CategoryStatDto::class.java)))
         }
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("99900.00"),
             totalSaldo = BigDecimal("99900.00"),
             freeAmount = BigDecimal("100000.00"),
@@ -440,11 +430,11 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
         val dayStatM1 = BsDayStatDto(localDateToLong(m1Date), BigDecimal("100000.00"), BigDecimal("100000.00"),
             BigDecimal("100.00"), BigDecimal("100.00"))
-        val dayStatP1 = BsDayStatDto(localDateToLong(p1Date), BigDecimal("99800.00"), BigDecimal("99800.00"),
-            BigDecimal("0.00"), BigDecimal("200.00"))
+        val dayStatP1 = BsDayStatDto(localDateToLong(p1Date), BigDecimal("99900.00"), BigDecimal("99900.00"),
+            BigDecimal("0.00"), BigDecimal("100.00"))
         val dayStats = listOf(dayStatM1, dayStatP1)
 
-        val expected = BsStatDto(currentDate.minusDays(interval), currentDate,
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
             debitSaldo = BigDecimal("100000.00"),
             totalSaldo = BigDecimal("100000.00"),
             freeAmount = BigDecimal("100000.00"),

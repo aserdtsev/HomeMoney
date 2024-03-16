@@ -66,8 +66,8 @@ class MoneyOperController(
                 .toMutableList()
             val hasNext = opers.size > limit
             opers.sortWith(Comparator.comparing(MoneyOperDto::operDate).reversed())
-            val todayOpers = opers.filter { it.operDate <= LocalDate.now() }.toMutableList()
-            opers = if (offset == 0 && todayOpers.size > limit) todayOpers
+            val upTodayOpers = opers.filter { it.operDate <= LocalDate.now() }.toMutableList()
+            opers = if (offset == 0 && upTodayOpers.size <= limit) upTodayOpers
             else with (opers.lastIndex) {
                 if (this > -1) opers.subList(Math.max(this - limit - offset, 0), this - offset) else opers
             }
