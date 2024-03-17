@@ -36,16 +36,23 @@ class CreateOrUpdateTrendMoneyOperHandler(
     }
 
     private fun createOrUpdateTrendMoneyOper(period: Period, category: Tag, calculatedDate: LocalDate) {
-        val (items, intervalDays) = getItemsAndIntervalDays(period, category)
+        val items = getItemsAndIntervalDays(period, category, calculatedDate)
         val dateToSumMap = items
             .groupBy { it.performed }
             .entries
             .map { it.key to it.value.sumOf { item -> item.value } }
         val sum = dateToSumMap.sumOf { it.second }
         val count = dateToSumMap.size
+        if (count < 3) {
+            moneyOperRepository.findTrend(category, Period.Day)?.apply { this.cancel() }
+            return
+        }
         val avg = sum.divide(count.toBigDecimal(), RoundingMode.HALF_UP)
-        val n = intervalDays / count
-        val recurrenceParams = DayRecurrenceParams(n.toInt())
+        val calcIntervalDays = run {
+            val days = dateToSumMap.map { it.first }
+            java.time.Period.between(days.min(), days.max()).days
+        }
+        val recurrenceParams = DayRecurrenceParams(calcIntervalDays / (count - 1))
         val balanceId = items.groupBy { it.balanceId }
             .entries
             .map { it.key to it.value.sumOf { item -> item.value } }
@@ -81,22 +88,22 @@ class CreateOrUpdateTrendMoneyOperHandler(
         DomainEventPublisher.instance.publish(trendMoneyOper)
     }
 
-    private fun getItemsAndIntervalDays(period: Period, category: Tag): Pair<List<MoneyOperItem>, Long> {
+    private fun getItemsAndIntervalDays(period: Period, category: Tag, calculatedDate: LocalDate): List<MoneyOperItem> {
         var intervalDays = 30L
         lateinit var items: List<MoneyOperItem>
         while (intervalDays < 366L) {
-            val startDate = LocalDate.now().minusDays(intervalDays)
+            val startDate = calculatedDate.minusDays(intervalDays)
             items = moneyOperRepository.findByStatusAndPerformedGreaterThan(MoneyOperStatus.Done, startDate)
                 .filter { it.period == period }
                 .filter { it.recurrenceId == null }
                 .filter { it.tags.contains(category) }
                 .flatMap { it.items }
-            if (items.size >= 5) {
+            if (items.size >= 3) {
                 break
             } else {
                 intervalDays *= 2
             }
         }
-        return Pair(items, intervalDays)
+        return items
     }
 }

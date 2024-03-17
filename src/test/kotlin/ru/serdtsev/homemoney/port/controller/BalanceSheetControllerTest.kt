@@ -15,7 +15,6 @@ import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.balancesheet.CategoryStat
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.port.common.localDateToLong
-import ru.serdtsev.homemoney.port.common.longToLocalDate
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsDayStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.CategoryStatDto
@@ -23,7 +22,8 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
+import java.util.stream.IntStream
+import kotlin.streams.asSequence
 
 internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     @Autowired @Qualifier("conversionService")
@@ -160,10 +160,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     @Test
     internal fun `getBsStat by simple charge from credit card`() {
         val currentDate = LocalDate.parse("2023-09-03")
-        assert(currentDate == longToLocalDate(localDateToLong(currentDate)))
-        val zoneId = ZoneId.systemDefault()
-        clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
-        ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
+        setCurrentDate(currentDate)
 
         val m2Date = currentDate.minusDays(2)
         val m1Date = currentDate.minusDays(1)
@@ -220,9 +217,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     @Test
     internal fun `getBsStat by before interval charge from credit card`() {
         val currentDate = LocalDate.parse("2023-09-05")
-        val zoneId = ZoneId.systemDefault()
-        clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
-        ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
+        setCurrentDate(currentDate)
 
         val m1Date = LocalDate.parse("2023-08-04")
 
@@ -255,9 +250,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     @Test
     internal fun `getBsStat by early repayment of credit card debt`() {
         val currentDate = LocalDate.parse("2023-09-02")
-        val zoneId = ZoneId.systemDefault()
-        clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
-        ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
+        setCurrentDate(currentDate)
 
         val interval = 2L
         val m1Date = currentDate.minusMonths(1)
@@ -346,9 +339,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
     @Test
     internal fun `getBsStat by recurrence charge from credit card`() {
         val currentDate = LocalDate.parse("2023-09-02")
-        val zoneId = ZoneId.systemDefault()
-        clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
-        ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
+        setCurrentDate(currentDate)
         val m1Date = currentDate.minusDays(1)
         val moneyOper = MoneyOper(MoneyOperStatus.Done, m1Date, mutableListOf(foodstuffsTag), period = Period.Month)
             .apply {
@@ -444,6 +435,76 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         assertThat(actual)
             .usingRecursiveComparison()
             .isEqualTo(expected)
+    }
+
+    @Test
+    internal fun `getBsStat by trend operation`() {
+        var currentDate = LocalDate.parse("2024-01-01").apply { setCurrentDate(this) }
+
+        val interval = 1L
+
+        val dates = IntStream.iterate(14) { it + 14 }
+            .limit(3)
+            .asLongStream()
+            .asSequence()
+            .map { currentDate.plusDays(it) }
+        dates.forEach {
+            MoneyOper(MoneyOperStatus.Done, it, mutableListOf(foodstuffsTag),
+                period = Period.Day, comment = "Продукты, дебетовая карта")
+                .apply {
+                    addItem(debitCard, BigDecimal("-100.00"))
+                    newAndComplete()
+                }
+        }
+
+        currentDate = LocalDate.parse("2024-02-12").apply { setCurrentDate(this) }
+
+        val actual = balanceSheetController.getBalanceSheetInfo(interval).data
+
+        val dayStatM1 = BsDayStatDto(localDateToLong(LocalDate.parse("2024-01-15")),
+            totalSaldo = BigDecimal("99900.00"),
+            freeAmount = BigDecimal("99900.00"),
+            chargeAmount = BigDecimal("100.00"))
+        val dayStatM2 = BsDayStatDto(localDateToLong(LocalDate.parse("2024-01-29")),
+            totalSaldo = BigDecimal("99800.00"),
+            freeAmount = BigDecimal("99800.00"),
+            chargeAmount = BigDecimal("100.00"))
+        val dayStatP1 = BsDayStatDto(localDateToLong(LocalDate.parse("2024-02-12")),
+            totalSaldo = BigDecimal("99700.00"),
+            freeAmount = BigDecimal("99700.00"),
+            chargeAmount = BigDecimal("100.00"))
+        val dayStatP2 = BsDayStatDto(localDateToLong(LocalDate.parse("2024-02-26")),
+            totalSaldo = BigDecimal("99600.00"),
+            freeAmount = BigDecimal("99600.00"),
+            chargeAmount = BigDecimal("100.00"))
+        val dayStatP3 = BsDayStatDto(localDateToLong(LocalDate.parse("2024-03-11")),
+            totalSaldo = BigDecimal("99500.00"),
+            freeAmount = BigDecimal("99500.00"),
+            chargeAmount = BigDecimal("100.00"))
+
+        val dayStats = listOf(dayStatM1, dayStatM2, dayStatP1, dayStatP2, dayStatP3)
+
+        val categories = run {
+            val foodstuffsCategoryStatDto = requireNotNull(conversionService.convert(CategoryStat.of(foodstuffsTag,
+                BigDecimal("300.00")), CategoryStatDto::class.java))
+            listOf(foodstuffsCategoryStatDto)
+        }
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
+            debitSaldo = BigDecimal("99700.00"),
+            totalSaldo = BigDecimal("99700.00"),
+            freeAmount = BigDecimal("99700.00"),
+            chargesAmount = BigDecimal("300.00"),
+            categories = categories,
+            dayStats = dayStats)
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .isEqualTo(expected)
+    }
+
+    private fun setCurrentDate(currentDate: LocalDate) {
+        val zoneId = ZoneId.systemDefault()
+        clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
+        ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
     }
 
 }
