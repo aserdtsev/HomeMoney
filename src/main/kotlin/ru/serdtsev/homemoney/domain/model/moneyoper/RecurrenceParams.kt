@@ -23,7 +23,7 @@ interface RecurrenceParams {
  */
 data class DayRecurrenceParams(val n: Int = 1) : RecurrenceParams {
     init {
-        assert(n > 0) { n }
+        require(n > 0) { n }
     }
 
     override fun getNext(date: LocalDate): LocalDate {

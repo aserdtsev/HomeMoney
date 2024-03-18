@@ -8,7 +8,9 @@ import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.time.Duration
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Service
 class CreateOrUpdateTrendMoneyOperHandler(
@@ -50,7 +52,7 @@ class CreateOrUpdateTrendMoneyOperHandler(
         val avg = sum.divide(count.toBigDecimal(), RoundingMode.HALF_UP)
         val calcIntervalDays = run {
             val days = dateToSumMap.map { it.first }
-            java.time.Period.between(days.min(), days.max()).days
+            ChronoUnit.DAYS.between(days.min(), days.max()).toInt()
         }
         val recurrenceParams = DayRecurrenceParams(calcIntervalDays / (count - 1))
         val balanceId = items.groupBy { it.balanceId }
