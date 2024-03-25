@@ -8,37 +8,37 @@ import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.time.Duration
+import java.time.Clock
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 @Service
 class CreateOrUpdateTrendMoneyOperHandler(
     private val moneyOperRepository: MoneyOperRepository,
-    private val balanceRepository: BalanceRepository
+    private val balanceRepository: BalanceRepository,
+    private val clock: Clock
 ) {
     private val log = KotlinLogging.logger {  }
 
     @EventListener
-    fun handler(event: MoneyOperStatusChanged) {
+    fun moneyOperStatusChangedHandlerHandler(event: MoneyOperStatusChanged) {
         val moneyOper = event.moneyOper
         val category = moneyOper.tags.firstOrNull { it.isCategory }
         val period = moneyOper.period ?: Period.Day
-        val calculatedDate = moneyOper.performed
         if (moneyOper.recurrenceId != null || period != Period.Day || category == null) {
             return
         }
-
-        createOrUpdateTrendMoneyOper(period, category, calculatedDate)
+        createOrUpdateTrendMoneyOper(period, category)
     }
 
     @EventListener
-    fun handler(event: TrendMoneyOperNeedsToBeUpdated) = with(event) {
-        createOrUpdateTrendMoneyOper(period, category, calculatedDate)
+    fun trendMoneyOperNeedsToBeUpdatedHandler(event: TrendMoneyOperNeedsToBeUpdated) = with(event) {
+        createOrUpdateTrendMoneyOper(period, category)
     }
 
-    private fun createOrUpdateTrendMoneyOper(period: Period, category: Tag, calculatedDate: LocalDate) {
-        val items = getItemsAndIntervalDays(period, category, calculatedDate)
+    private fun createOrUpdateTrendMoneyOper(period: Period, category: Tag) {
+        val currentDate = LocalDate.now(clock)
+        val items = getItemsAndIntervalDays(period, category)
         val dateToSumMap = items
             .groupBy { it.performed }
             .entries
@@ -50,10 +50,9 @@ class CreateOrUpdateTrendMoneyOperHandler(
             return
         }
         val avg = sum.divide(count.toBigDecimal(), RoundingMode.HALF_UP)
-        val calcIntervalDays = run {
-            val days = dateToSumMap.map { it.first }
-            ChronoUnit.DAYS.between(days.min(), days.max()).toInt()
-        }
+        val days = dateToSumMap.map { it.first }
+        val lastDate = requireNotNull(days.max())
+        val calcIntervalDays =  ChronoUnit.DAYS.between(days.min(), currentDate).toInt()
         val recurrenceParams = DayRecurrenceParams(calcIntervalDays / (count - 1))
         val balanceId = items.groupBy { it.balanceId }
             .entries
@@ -66,23 +65,23 @@ class CreateOrUpdateTrendMoneyOperHandler(
                 val item = this.items[0]
                 item.value = avg
                 item.balanceId = balanceId
-                if (items.none { moItem -> moItem.performed > calculatedDate }) {
-                    val calculatedDaySum = items.filter { moItem -> moItem.performed == calculatedDate }
-                            .sumOf { it.value }
-                            .abs()
-                    if (calculatedDaySum > avg.abs().multiply(BigDecimal("0.75"))) {
-                        this.performed = recurrenceParams.getNext(calculatedDate)
-                    } else if (calculatedDaySum > BigDecimal.ZERO) {
-                        this.performed = calculatedDate
-                    }
-                    while (this.performed < calculatedDate) {
-                        this.performed = recurrenceParams.getNext(this.performed)
-                    }
+                val currentDateSum = items.filter { moItem -> moItem.performed == currentDate }
+                        .sumOf { it.value }
+                        .abs()
+                if (currentDateSum > avg.abs().multiply(BigDecimal("0.75"))) {
+                    this.performed = recurrenceParams.getNext(currentDate)
+                } else if (currentDateSum > BigDecimal.ZERO) {
+                    this.performed = currentDate
+                }
+                while (this.performed < currentDate) {
+                    this.performed = recurrenceParams.getNext(this.performed)
                 }
             }
             ?: MoneyOper.of(MoneyOperStatus.Trend, Period.Day, recurrenceParams).apply {
                 this.setTags(listOf(category))
-                this.performed = recurrenceParams.getNext(calculatedDate)
+                this.performed = recurrenceParams.getNext(lastDate).let {
+                    if (it < currentDate) currentDate else it
+                }
                 val balance = balanceRepository.findById(balanceId)
                 this.addItem(balance, avg)
             }
@@ -90,11 +89,12 @@ class CreateOrUpdateTrendMoneyOperHandler(
         DomainEventPublisher.instance.publish(trendMoneyOper)
     }
 
-    private fun getItemsAndIntervalDays(period: Period, category: Tag, calculatedDate: LocalDate): List<MoneyOperItem> {
+    private fun getItemsAndIntervalDays(period: Period, category: Tag): List<MoneyOperItem> {
+        val currentDate = LocalDate.now(clock)
         var intervalDays = 30L
         lateinit var items: List<MoneyOperItem>
         while (intervalDays < 366L) {
-            val startDate = calculatedDate.minusDays(intervalDays)
+            val startDate = currentDate.minusDays(intervalDays)
             items = moneyOperRepository.findByStatusAndPerformedGreaterThan(MoneyOperStatus.Done, startDate)
                 .filter { it.period == period }
                 .filter { it.recurrenceId == null }
