@@ -26,7 +26,7 @@ class MoneyOperDao(
 ) : DomainModelDao<MoneyOper>, MoneyOperRepository {
     private val gson = Converters.registerAll(GsonBuilder()).create()
 
-    @CacheEvict(cacheNames = ["TagDao.findByObjId"], key = "#domainAggregate.id")
+    @CacheEvict(cacheNames = ["ObjIdTags"], key = "#domainAggregate.id")
     override fun save(domainAggregate: MoneyOper) {
         val sql = """
             insert into money_oper(id, balance_sheet_id, created_ts, trn_date, date_num, comment, period, 

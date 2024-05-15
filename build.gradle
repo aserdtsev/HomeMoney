@@ -97,7 +97,7 @@ dependencies {
     implementation('com.fasterxml.jackson.module:jackson-module-kotlin')
     implementation('org.postgresql:postgresql')
     implementation("org.flywaydb:flyway-core:$flywayVersion")
-    implementation 'org.ehcache:ehcache:3.8.2.1' // Ehcache 3.10 не поднимается.
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.2'
     implementation 'org.apache.commons:commons-lang3:3.13.0'

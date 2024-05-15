@@ -2,11 +2,11 @@ package ru.serdtsev.homemoney.port.converter.moneyoper
 
 import org.springframework.context.ApplicationContext
 import org.springframework.core.convert.converter.Converter
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
-import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
-import ru.serdtsev.homemoney.domain.model.moneyoper.Period
+import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
+import ru.serdtsev.homemoney.port.dto.moneyoper.DayRecurrenceParamsDto
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
+import ru.serdtsev.homemoney.port.dto.moneyoper.RecurrenceParamsDto
 import ru.serdtsev.homemoney.port.service.TagService
 
 class MoneyOperDtoToModelConverter(private val applicationContext: ApplicationContext) : Converter<MoneyOperDto, MoneyOper> {
@@ -27,6 +27,13 @@ class MoneyOperDtoToModelConverter(private val applicationContext: ApplicationCo
             }
             .toMutableList()
         return MoneyOper(source.id, items, source.status, source.operDate, tags, source.comment,
-            period, null, source.recurrenceId, dateNum)
+            period, toRecurrenceParams(source.recurrenceParams), source.recurrenceId, dateNum)
+    }
+
+    private fun toRecurrenceParams(source: RecurrenceParamsDto?): RecurrenceParams? {
+        return when (source?.data) {
+            is DayRecurrenceParamsDto -> DayRecurrenceParams((source.data as DayRecurrenceParamsDto).n)
+            else -> null
+        }
     }
 }

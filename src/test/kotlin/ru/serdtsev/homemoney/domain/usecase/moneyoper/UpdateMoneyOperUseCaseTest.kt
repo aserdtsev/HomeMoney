@@ -12,12 +12,14 @@ import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import java.math.BigDecimal
+import java.time.Clock
 import java.time.LocalDate
 
 internal class UpdateMoneyOperUseCaseTest: DomainBaseTest() {
     private val balanceRepository = repositoryRegistry.balanceRepository
     private val moneyOperRepository = repositoryRegistry.moneyOperRepository
-    private val useCase = UpdateMoneyOperUseCase(moneyOperRepository)
+    private val clock: Clock = Clock.systemDefaultZone()
+    private val useCase = UpdateMoneyOperUseCase(moneyOperRepository, clock)
 
     @Test
     fun run() {
@@ -28,7 +30,7 @@ internal class UpdateMoneyOperUseCaseTest: DomainBaseTest() {
         val tag1 = Tag.of("Tag 1")
         val tag2 = Tag.of("Tag 2")
 
-        val origMoneyOper = MoneyOper(MoneyOperStatus.Done, LocalDate.now().minusDays(1),
+        val origMoneyOper = MoneyOper(MoneyOperStatus.Done, LocalDate.now(clock).minusDays(1),
             mutableSetOf(tag1), "Comment 1", Period.Month, dateNum = 0
         ).apply {
             this.addItem(balance1, BigDecimal("1.00"))

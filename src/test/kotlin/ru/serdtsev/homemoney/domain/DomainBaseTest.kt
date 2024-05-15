@@ -6,7 +6,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import ru.serdtsev.homemoney.domain.event.DomainEventPublisher
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.RepositoryRegistry
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import kotlin.reflect.jvm.isAccessible

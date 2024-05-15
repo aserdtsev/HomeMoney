@@ -438,11 +438,15 @@ function MoneyOpersCtrl($scope, $rootScope, AccountsSvc, BalancesSvc, MoneyOpers
 
   $scope.getPeriodName = function(oper) {
     let period = oper['period'];
-    return (period === 'Day') ? 'День' :
+    let name = (period === 'Day') ? 'День' :
         (period === 'Week') ? 'Неделя' :
         (period === 'Month') ? 'Месяц' :
         (period === 'Year') ? 'Год' :
         (period === 'Single') ? 'Разовая' : '?';
+    if (oper.recurrenceParams !== 'undefined' && period === 'Day') {
+        name = name + ' (каждый ' + oper.recurrenceParams.data.n + '-й)'
+    }
+    return name;
   };
 
   $scope.formatMoney = function(amount, currencySymbol) {

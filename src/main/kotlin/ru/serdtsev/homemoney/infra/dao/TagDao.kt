@@ -33,7 +33,7 @@ class TagDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : DomainModel
         jdbcTemplate.update(sql, mapOf("id" to tag.id))
     }
 
-    @CacheEvict("TagDao.findByObjId", key = "#objId")
+    @CacheEvict("ObjIdTags", key = "#objId")
     override fun updateLinks(tags: Collection<Tag>, objId: UUID, objType: String) {
         deleteLinks(objId)
         tags.forEach { tag ->
@@ -79,7 +79,7 @@ class TagDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : DomainModel
         return jdbcTemplate.query(sql, mapOf("bsId" to ApiRequestContextHolder.balanceSheet.id), rowMapper)
     }
 
-    @Cacheable("TagDao.findByObjId")
+    @Cacheable("ObjIdTags")
     override fun findByObjId(objId: UUID): List<Tag> {
         val sql = "select t.* from tag2obj t2o, tag t where t2o.obj_id = :objId and t.id = t2o.tag_id"
         return jdbcTemplate.query(sql, mapOf("objId" to objId), rowMapper)

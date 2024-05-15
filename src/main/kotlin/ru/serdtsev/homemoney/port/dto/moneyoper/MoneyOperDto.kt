@@ -17,6 +17,7 @@ data class MoneyOperDto(
     val dateNum: Int = 0,
     val parentId: UUID? = null,
     val recurrenceId: UUID? = null,
+    var recurrenceParams: RecurrenceParamsDto? = null,
     val createdTs: Timestamp = Timestamp.valueOf(LocalDateTime.now()))
 {
     var items: List<MoneyOperItemDto> = ArrayList()

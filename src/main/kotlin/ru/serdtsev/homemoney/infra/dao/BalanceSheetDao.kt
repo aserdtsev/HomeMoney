@@ -27,7 +27,7 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
         jdbcTemplate.update(sql, paramMap)
     }
 
-    @CacheEvict("BalanceSheetDao.findById")
+    @CacheEvict("BalanceSheet")
     override fun deleteById(id: UUID) {
         val sql = "delete from balance_sheet where id = :id"
         jdbcTemplate.update(sql, mapOf("id" to id))
@@ -38,10 +38,10 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
         return jdbcTemplate.queryForList(sql, mapOf("id" to id), String::class.java).isNotEmpty()
     }
 
-    @Cacheable("BalanceSheetDao.findById", keyGenerator = "")
+    @Cacheable("BalanceSheet", keyGenerator = "")
     override fun findById(id: UUID): BalanceSheet = findByIdOrNull(id)!!
 
-    @Cacheable("BalanceSheetDao.findById", condition = "#result != null")
+    @Cacheable("BalanceSheet", condition = "#result != null")
     override fun findByIdOrNull(id: UUID): BalanceSheet? {
         val sql = "select * from balance_sheet where id = :id"
         return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()

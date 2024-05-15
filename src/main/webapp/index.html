@@ -134,7 +134,7 @@
           <div ng-show="oper['comment'].length > 0">
             <span>{{oper['comment']}}</span>
           </div>
-          <div ng-hide="oper['period'] == 'Day'">
+          <div ng-hide="oper['period'] == 'Day' && oper['recurrenceParams'] == 'undefined'">
             Период: <span ng-bind="getPeriodName(oper)"></span>
           </div>
         </div>

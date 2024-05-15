@@ -1,8 +1,6 @@
 package ru.serdtsev.homemoney.infra.dao
 
 import com.google.gson.Gson
-import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.cache.CacheManager
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
@@ -22,12 +20,11 @@ import java.util.*
 class BalanceDao(
     private val jdbcTemplate: NamedParameterJdbcTemplate,
     private val reserveDao: ReserveDao,
-    @Qualifier("firstLevelCacheManager") private val cacheManager: CacheManager
+    private val cacheManager: CacheManager
 ) : DomainModelDao<Balance>, BalanceRepository {
-    private val log = KotlinLogging.logger {  }
     private val gson = Gson()
 
-    @CacheEvict("Balance", key = "#domainAggregate.id", cacheManager = "firstLevelCacheManager")
+    @CacheEvict("Balance", key = "#domainAggregate.id")
     override fun save(domainAggregate: Balance) {
         val sql = """
             insert into account(id, balance_sheet_id, name, created_date, type, is_arc) 
@@ -50,7 +47,7 @@ class BalanceDao(
         jdbcTemplate.update(sql, paramMap)
     }
 
-    @CacheEvict("Balance", key = "#balance.id", cacheManager = "firstLevelCacheManager")
+    @CacheEvict("Balance", key = "#balance.id")
     override fun delete(balance: Balance) {
         val sql = """
             delete from balance where id = :id;
@@ -59,12 +56,13 @@ class BalanceDao(
         jdbcTemplate.update(sql, mapOf("id" to balance.id))
     }
 
+    @Suppress("SpringCacheableMethodCallsInspection")
     override fun exists(id: UUID): Boolean = findByIdOrNull(id) != null
 
-    @Cacheable("Balance", cacheManager = "firstLevelCacheManager")
+    @Cacheable("Balance")
     override fun findById(id: UUID): Balance = findByIdOrNull(id)!!
 
-    @Cacheable("Balance", cacheManager = "firstLevelCacheManager")
+    @Cacheable("Balance")
     override fun findByIdOrNull(id: UUID): Balance? {
         val sql = """
             select a.id, a.balance_sheet_id, a.name, a.created_date, a.type, a.is_arc,
@@ -72,7 +70,7 @@ class BalanceDao(
             from account a, balance b
             where a.id = :id and b.id = a.id
         """.trimIndent()
-        return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()
+        return jdbcTemplate.query(sql, mapOf("id" to id), cachedRowMapper).firstOrNull()
     }
 
     override fun findByBalanceSheet(balanceSheet: BalanceSheet): List<Balance> {
@@ -82,32 +80,36 @@ class BalanceDao(
             from account a, balance b
             where a.balance_sheet_id = :bsId and b.id = a.id and a.type in (:types)
             """.trimIndent()
-        val types = AccountType.values().filter { it.isBalance }.map { it.name }
+        val types = AccountType.entries.filter { it.isBalance }.map { it.name }
         val paramMap = mapOf("bsId" to balanceSheet.id, "types" to types)
-        return jdbcTemplate.query(sql, paramMap, rowMapper)
+        return jdbcTemplate.query(sql, paramMap, cachedRowMapper)
     }
 
-    private val rowMapper: (rs: ResultSet, rowNum: Int) -> Balance = { rs, _ ->
+    private val cachedRowMapper: (rs: ResultSet, rowNum: Int) -> Balance = { rs, _ ->
         val id = UUID.fromString(rs.getString("id"))
         cacheManager.getCache("Balance")?.get(id, Balance::class.java) ?: run {
-            val type = AccountType.valueOf(rs.getString("type"))
-            if (type == AccountType.reserve) {
-                reserveDao.findById(id)
-            } else {
-                val createdDate = rs.getDate("created_date").toLocalDate()
-                val name = rs.getString("name")
-                val isArc = rs.getBoolean("is_arc")
-                val value = rs.getBigDecimal("value")
-                val currencyCode = rs.getString("currency_code")
-                Balance(id, type, name, createdDate, isArc, currencyCode, value).apply {
-                    this.minValue = rs.getBigDecimal("min_value")
-                    this.credit = rs.getString("credit")
-                        ?.let { gson.fromJson(it, Credit::class.java) }
-                    this.reserve = rs.getString("reserve_id")
-                        ?.let { UUID.fromString(it) }
-                        ?.let { reserveDao.findByIdOrNull(it) }
-                    this.num = rs.getLong("num")
-                }
+            rowMapper(rs, id)
+        }
+    }
+
+    private fun rowMapper(rs: ResultSet, id: UUID): Balance {
+        val type = AccountType.valueOf(rs.getString("type"))
+        return if (type == AccountType.reserve) {
+            reserveDao.findById(id)
+        } else {
+            val createdDate = rs.getDate("created_date").toLocalDate()
+            val name = rs.getString("name")
+            val isArc = rs.getBoolean("is_arc")
+            val value = rs.getBigDecimal("value")
+            val currencyCode = rs.getString("currency_code")
+            Balance(id, type, name, createdDate, isArc, currencyCode, value).apply {
+                this.minValue = rs.getBigDecimal("min_value")
+                this.credit = rs.getString("credit")
+                    ?.let { gson.fromJson(it, Credit::class.java) }
+                this.reserve = rs.getString("reserve_id")
+                    ?.let { UUID.fromString(it) }
+                    ?.let { reserveDao.findByIdOrNull(it) }
+                this.num = rs.getLong("num")
             }
         }
     }

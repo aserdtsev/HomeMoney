@@ -1,5 +1,6 @@
 package ru.serdtsev.homemoney.port.controller
 
+import com.nhaarman.mockito_kotlin.whenever
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -13,13 +14,17 @@ import ru.serdtsev.homemoney.domain.model.account.AnnuityPayment
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.balancesheet.CategoryStat
-import ru.serdtsev.homemoney.domain.model.moneyoper.*
+import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
+import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
+import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
+import ru.serdtsev.homemoney.domain.model.moneyoper.Period
+import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
+import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import ru.serdtsev.homemoney.port.common.localDateToLong
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsDayStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.BsStatDto
 import ru.serdtsev.homemoney.port.dto.balancesheet.CategoryStatDto
 import java.math.BigDecimal
-import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.stream.IntStream
@@ -449,6 +454,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             .asSequence()
             .map { currentDate.plusDays(it) }
         dates.forEach {
+            setCurrentDate(it)
             MoneyOper(MoneyOperStatus.Done, it, mutableListOf(foodstuffsTag),
                 period = Period.Day, comment = "Продукты, дебетовая карта")
                 .apply {
@@ -503,8 +509,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
     private fun setCurrentDate(currentDate: LocalDate) {
         val zoneId = ZoneId.systemDefault()
-        clock = Clock.fixed(currentDate.atStartOfDay(zoneId).toInstant(), zoneId)
-        ReflectionTestUtils.setField(balanceSheetController, "clock", clock)
+        whenever(clock.instant()).thenReturn(currentDate.atStartOfDay(zoneId).toInstant())
     }
 
 }
