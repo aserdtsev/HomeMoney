@@ -6,6 +6,11 @@ import java.time.LocalDate
 import java.util.*
 
 data class ReserveDto(
-    val id: UUID, val type: AccountType, val name: String, val createdDate: LocalDate, val isArc: Boolean,
-    val currencyCode: String, val value: BigDecimal, val target: BigDecimal
+    val id: UUID,
+    val name: String,
+    val createdDate: LocalDate?,
+    val currencyCode: String?,
+    val value: BigDecimal?,
+    val target: BigDecimal?,
+    val isArc: Boolean?,
 )

@@ -10,19 +10,20 @@ import ru.serdtsev.homemoney.port.converter.balancesheet.BsDayStatToDtoConverter
 import ru.serdtsev.homemoney.port.converter.balancesheet.BsStatToDtoConverter
 import ru.serdtsev.homemoney.port.converter.balancesheet.CategoryStatToDtoConverter
 import ru.serdtsev.homemoney.port.converter.moneyoper.*
+import java.time.Clock
 
 @Configuration
 class ConverterConfiguration : ApplicationContextAware {
     private lateinit var applicationContext: ApplicationContext
 
     @Bean("conversionService")
-    fun getConversionService(): ConversionServiceFactoryBean = ConversionServiceFactoryBean().apply {
+    fun getConversionService(clock: Clock): ConversionServiceFactoryBean = ConversionServiceFactoryBean().apply {
         val converters = setOf(
             AccountToDto(),
             BalanceToDto(),
             BalanceDtoToModel(),
             ReserveToDto(),
-            ReserveDtoToModel(),
+            ReserveDtoToModel(clock),
             MoneyOperToDtoConverter(applicationContext),
             MoneyOperDtoToModelConverter(applicationContext),
             MoneyOperItemToDtoConverter(applicationContext),
