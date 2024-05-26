@@ -13,6 +13,7 @@ import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.AnnuityPayment
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
+import ru.serdtsev.homemoney.domain.model.account.Reserve
 import ru.serdtsev.homemoney.domain.model.balancesheet.CategoryStat
 import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
@@ -41,6 +42,8 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
 
     private lateinit var debitCard: Balance
     private lateinit var creditCard: Balance
+    private lateinit var deposit: Balance
+    private lateinit var reserve: Reserve
 
     @BeforeEach
     internal fun setUp() {
@@ -55,6 +58,12 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             val creditParams = Credit(BigDecimal("400000.00"), 12, 6)
             Balance(AccountType.debit, "Кредитная карта", credit = creditParams)
                 .apply { domainEventPublisher.publish(this) }
+        }
+        reserve = Reserve("Резерв").apply { domainEventPublisher.publish(this) }
+        val aReserve = reserve
+        deposit = Balance(AccountType.debit, "Депозит").apply {
+            this.reserve = aReserve
+            domainEventPublisher.publish(this)
         }
     }
 
@@ -82,6 +91,47 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
             freeAmount = BigDecimal("100100.00"),
             incomeAmount = BigDecimal("100.00"),
             dayStats = dayStats)
+        assertThat(actual)
+            .usingRecursiveComparison()
+            .isEqualTo(expected)
+    }
+
+    @Test
+    internal fun `getBsStat by transfer to deposit as reserve`() {
+        val currentDate = LocalDate.now(clock)
+        val interval = 1L
+
+        val m1Date = currentDate.minusDays(1)
+        MoneyOper(MoneyOperStatus.Done, m1Date, period = Period.Single)
+            .apply {
+                addItem(debitCard, BigDecimal("-100.00"))
+                addItem(deposit, BigDecimal("100.00"))
+                newAndComplete()
+            }
+        MoneyOper(MoneyOperStatus.Done, m1Date, period = Period.Single)
+            .apply {
+                addItem(reserve, BigDecimal("100.00"))
+                newAndComplete()
+            }
+
+        val actual = balanceSheetController.getBalanceSheetInfo(interval).data
+
+        val dayStatM1 = BsDayStatDto(localDateToLong(m1Date),
+            totalSaldo = BigDecimal("100000.00"),
+            freeAmount = BigDecimal("99900.00"),
+        )
+        val dayStats = listOf(dayStatM1)
+
+        val categories = listOf(CategoryStatDto.of(reserve, BigDecimal("100.00")))
+
+        val expected = BsStatDto(currentDate.minusMonths(interval), currentDate,
+            debitSaldo = BigDecimal("100000.00"),
+            totalSaldo = BigDecimal("100000.00"),
+            freeAmount = BigDecimal("99900.00"),
+            reserveSaldo = BigDecimal("100.00"),
+            dayStats = dayStats,
+            categories = categories
+        )
         assertThat(actual)
             .usingRecursiveComparison()
             .isEqualTo(expected)
