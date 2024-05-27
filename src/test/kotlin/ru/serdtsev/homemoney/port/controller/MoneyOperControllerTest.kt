@@ -12,7 +12,12 @@ import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
-import ru.serdtsev.homemoney.domain.model.moneyoper.*
+import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
+import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperItem
+import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
+import ru.serdtsev.homemoney.domain.model.moneyoper.Period
+import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
+import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.port.dao.RecurrenceOperDao

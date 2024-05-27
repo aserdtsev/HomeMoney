@@ -38,10 +38,10 @@ class BalanceSheetDao(private val jdbcTemplate: NamedParameterJdbcTemplate) : Do
         return jdbcTemplate.queryForList(sql, mapOf("id" to id), String::class.java).isNotEmpty()
     }
 
-    @Cacheable("BalanceSheet", keyGenerator = "")
+    @Cacheable("BalanceSheet")
     override fun findById(id: UUID): BalanceSheet = findByIdOrNull(id)!!
 
-    @Cacheable("BalanceSheet", condition = "#result != null")
+    @Cacheable("BalanceSheet", unless = "#result == null")
     override fun findByIdOrNull(id: UUID): BalanceSheet? {
         val sql = "select * from balance_sheet where id = :id"
         return jdbcTemplate.query(sql, mapOf("id" to id), rowMapper).firstOrNull()

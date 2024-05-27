@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.balancesheet.BalanceSheet
-import ru.serdtsev.homemoney.port.dao.BalanceSheetDao
 
 internal class BalanceSheetDaoTest: SpringBootBaseTest() {
     @Autowired

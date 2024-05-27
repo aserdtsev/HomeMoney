@@ -8,8 +8,6 @@ import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
-import ru.serdtsev.homemoney.port.dao.AccountDao
-import ru.serdtsev.homemoney.port.dao.BalanceDao
 import java.util.*
 
 internal class AccountDaoTest: SpringBootBaseTest() {

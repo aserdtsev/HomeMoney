@@ -9,8 +9,6 @@ import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
-import ru.serdtsev.homemoney.port.dao.MoneyOperDao
-import ru.serdtsev.homemoney.port.dao.RecurrenceOperDao
 
 internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
     @Autowired
