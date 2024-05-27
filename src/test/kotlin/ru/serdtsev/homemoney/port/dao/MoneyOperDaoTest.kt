@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,6 +17,8 @@ import ru.serdtsev.homemoney.domain.model.account.AnnuityPayment
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
+import ru.serdtsev.homemoney.port.dao.BalanceDao
+import ru.serdtsev.homemoney.port.dao.MoneyOperDao
 import java.math.BigDecimal
 import java.time.DayOfWeek.MONDAY
 import java.time.DayOfWeek.SUNDAY

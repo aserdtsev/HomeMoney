@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -8,6 +8,8 @@ import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.AccountType
 import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
+import ru.serdtsev.homemoney.port.dao.AccountDao
+import ru.serdtsev.homemoney.port.dao.BalanceDao
 import java.util.*
 
 internal class AccountDaoTest: SpringBootBaseTest() {

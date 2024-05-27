@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import org.springframework.context.event.EventListener
 import ru.serdtsev.homemoney.domain.event.DomainEvent

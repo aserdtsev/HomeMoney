@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.moneyoper.CategoryType
 import ru.serdtsev.homemoney.domain.model.moneyoper.Tag
+import ru.serdtsev.homemoney.port.dao.TagDao
 import java.util.*
 
 internal class TagDaoTest: SpringBootBaseTest() {

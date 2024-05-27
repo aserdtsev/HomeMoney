@@ -12,7 +12,7 @@ import ru.serdtsev.homemoney.domain.model.account.Balance
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
 import ru.serdtsev.homemoney.domain.repository.TagRepository
-import ru.serdtsev.homemoney.infra.dao.AccountDao
+import ru.serdtsev.homemoney.port.dao.AccountDao
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.*

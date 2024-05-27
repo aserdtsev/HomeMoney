@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import com.fatboyindustrial.gsonjavatime.Converters
 import com.google.gson.GsonBuilder

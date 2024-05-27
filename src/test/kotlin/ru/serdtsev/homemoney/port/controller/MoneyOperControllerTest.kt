@@ -15,7 +15,7 @@ import ru.serdtsev.homemoney.domain.model.account.Credit
 import ru.serdtsev.homemoney.domain.model.moneyoper.*
 import ru.serdtsev.homemoney.domain.repository.BalanceRepository
 import ru.serdtsev.homemoney.domain.repository.MoneyOperRepository
-import ru.serdtsev.homemoney.infra.dao.RecurrenceOperDao
+import ru.serdtsev.homemoney.port.dao.RecurrenceOperDao
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperDto
 import ru.serdtsev.homemoney.port.dto.moneyoper.MoneyOperItemDto
 import java.math.BigDecimal

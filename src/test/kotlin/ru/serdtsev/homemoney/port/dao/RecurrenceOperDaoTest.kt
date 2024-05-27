@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -9,6 +9,8 @@ import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOper
 import ru.serdtsev.homemoney.domain.model.moneyoper.MoneyOperStatus
 import ru.serdtsev.homemoney.domain.model.moneyoper.RecurrenceOper
+import ru.serdtsev.homemoney.port.dao.MoneyOperDao
+import ru.serdtsev.homemoney.port.dao.RecurrenceOperDao
 
 internal class RecurrenceOperDaoTest: SpringBootBaseTest() {
     @Autowired

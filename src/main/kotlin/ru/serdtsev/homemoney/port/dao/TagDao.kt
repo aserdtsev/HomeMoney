@@ -1,4 +1,4 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable

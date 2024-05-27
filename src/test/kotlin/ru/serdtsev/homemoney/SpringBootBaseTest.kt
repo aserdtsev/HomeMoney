@@ -14,7 +14,7 @@ import ru.serdtsev.homemoney.infra.ApiRequestContextHolder
 import ru.serdtsev.homemoney.infra.config.ClockTestConfig
 import ru.serdtsev.homemoney.infra.config.FlywayConfig
 import ru.serdtsev.homemoney.infra.config.PostgreSqlConfig
-import ru.serdtsev.homemoney.infra.dao.BalanceSheetDao
+import ru.serdtsev.homemoney.port.dao.BalanceSheetDao
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneId

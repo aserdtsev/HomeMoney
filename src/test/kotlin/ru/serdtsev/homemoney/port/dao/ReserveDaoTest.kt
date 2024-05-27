@@ -1,10 +1,11 @@
-package ru.serdtsev.homemoney.infra.dao
+package ru.serdtsev.homemoney.port.dao
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import ru.serdtsev.homemoney.SpringBootBaseTest
 import ru.serdtsev.homemoney.domain.model.account.Reserve
+import ru.serdtsev.homemoney.port.dao.ReserveDao
 import java.math.BigDecimal
 
 internal class ReserveDaoTest: SpringBootBaseTest() {
