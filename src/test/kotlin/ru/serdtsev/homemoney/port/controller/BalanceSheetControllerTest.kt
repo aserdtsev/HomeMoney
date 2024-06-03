@@ -404,7 +404,7 @@ internal class BalanceSheetControllerTest : SpringBootBaseTest() {
         val recurrenceOper = RecurrenceOper.of(moneyOper)
         val p1Date = recurrenceOper.nextDate
         val p2Date = moneyOper.items[0].dateWithGracePeriod
-        val p3Date = recurrenceOper.nextDate.plusMonths(1)
+        val p3Date = p1Date.plusMonths(1)
         val interval = 2L
 
         val actual = balanceSheetController.getBalanceSheetInfo(interval).data
